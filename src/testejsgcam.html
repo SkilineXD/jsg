@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JSGCam Teste</title>
+    <meta charset="UTF-8">
+    <script src="jsgcamera.js" type="text/javascript"></script>
+    <script src="jsg.js" type="text/javascript"></script>
+    <script src="jsg2d.js" type="text/javascript"></script>
+    <script src="jquery.js" type="text/javascript"></script>
+    <script src="jsgvision.js" type="text/javascript"></script>
+    <script language="JavaScript">
+	var jsgCam, jsg, gest, jsg2d, camera, time = 0, cv, ctx;
+
+    	function init(){		
+		jsg = createJSGObject("canvas");
+		jsg2d = jsg.jsg2d;
+		cv = document.getElementById("hist");
+		gest = new JsgVision(jsg2d);
+		ctx = cv.getContext("2d");
+		camera_test();
+	}
+
+	function hist_test() {
+		var img = new Image();
+		img.src = "exemplohist1.jpg";
+		jsg2d.context.drawImage(img, 0, 0);
+		
+		img.onload = function(){
+			var matriz = new Array(255);
+			for (var i = 0; i < 255; i++) {
+				matriz[i] = 0;
+			}
+			var iD = jsg2d.getImageData();
+			iD = gest.parseImageData(iD, gest.HIST_RGB, matriz, 0, 0, img.width, img.height);
+			drawHist("hist", matriz);
+		};
+	}
+
+	function camera_test() {
+		jsgCam = new JsgCam(document.getElementById("jsg_camera_div"), jsg.canvas.width, jsg2d.height, false);
+		camera = jsgCam.getCamera(true);
+		if (!camera){
+			alert("Your browser is not supported by jsgcamera.");
+		}
+		captureToCanvas()
+	}
+
+
+	function training(x, y, w, h) {
+		var dt = jsg2d.getImageData(x, y, w, h);
+		var out = gest.newGenericImageData(dt);
+		gest.parseImageData(dt, RGB2HSV, out);
+		gest.getHandStatistical(out, x, y, w, h);
+	}
+
+	function captureToCanvas(){
+		if (camera.isReady()){
+			if (camera.capture(handleImageData)) {
+				//TODO fazer algo
+			} else {
+				alert("captureToCanvas: " +  camera.error);		
+			}
+		}
+		window.setTimeout(captureToCanvas, 1000/24);
+	}
+
+	function drawHist(cv, matriz){
+		var j = createJSGObject(cv);
+		var j2d = j.jsg2d;
+		j.setIsotropicCoordSystem(510, 510);
+		var st = matriz;
+		
+		j2d.begin();
+		j2d.font("12px");
+		j2d.fillText("Pixels", -245, 230);
+		j2d.fillText("Intensity", 150, -230);
+		j2d.end();
+		
+		j2d.begin();
+			j2d.strokeStyle("rgb(255, 0, 0)");
+			j2d.moveTo(-255, -255);
+			j2d.lineTo(255, -255);
+			j2d.moveTo(-255, -255);
+			j2d.lineTo(-255, 255);
+		j2d.end();
+		j2d.stroke();
+
+		var min = 255;
+		var max = 0;
+		for  (var i = 0; i < st.length; i++) {
+			if (st[i] > max) max = st[i];
+			else if (st[i] < min) min = st[i];
+		}
+		
+		var d = max - min + 0.000001;
+		var ya = 100, yi = -200;
+		var pw = 2;
+		var px = 0;
+		for (var i = 0; i < st.length * pw; i += pw) {
+			var y = 0;			
+			y = (ya - yi) * (st[px]-min)/d + yi;
+			j2d.strokeStyle("rgb(0,0,255);");
+			j2d.begin();
+				j2d.moveTo(i-249, yi);
+				j2d.lineTo(i-249, y);
+			j2d.end();
+			j2d.stroke();
+			px++;
+		}
+	}
+
+	function getCandidateRegions(w, h, stat, data){
+		var sw = parseInt(w/3);
+		var sh = parseInt(h/3);
+		var pw = [[0, sw], [sw, 2 * sw], [2*sw, w]];
+		var ph = [[0, sh], [sh, 2 * sh], [2*sh, h]];
+		
+		var maxw = [0, 0, 0];
+		for (var j = 0; j < 3; j++){
+			for (var i = pw[j][0]; i < pw[j][1]; i++) {	
+				if (stat[0][i] > stat[0][maxw[j]]){
+					maxw[j] = i;			
+				}
+			}
+		}
+		
+		var maxh = [0, 0, 0];
+		for (var j = 0; j < 3; j++){
+			for (var i = ph[j][0]; i < ph[j][1]; i++) {
+				if (stat[1][i] > stat[1][maxh[j]]){
+					maxh[j] = i;			
+				}
+			}
+		}
+
+		var q = [ [0, 0, 0], [0, 0, 0], [0, 0, 0] ];
+
+		for (var i = 0; i < 3; i++) {
+			for (var j = 0; j < 3; j++) {
+				for (var k = pw[i][0]; k < pw[i][1]; k++) {
+					for (var l = ph[j][0]; l < ph[j][1]; l++) {
+						var p = jsg2d.getPixel(data, k, l);
+						if (p[0] == 255) {
+							q[i][j]++;	
+						}
+					}
+				} 
+			}
+		}
+
+		var mi = 0, mj = 0;
+		var res = [];
+		for (var i = 0; i < 3; i++) {
+			mi = i, mj = 0;
+			for (j = 0; j < 3; j++) {
+				if (q[i][j] > q[mi][mj]) {
+					mj = j;
+				}  
+			}
+			res.push([maxw[mi], maxh[mj]]);
+			q[mi][mj] = 0;
+		}
+		
+
+		return res;
+	}
+
+
+	function handleImageData(data){
+		var now = +new Date();
+		camera.drawImageData(jsg.canvas, data);
+		var iD = jsg2d.getImageData();	
+		var stat = [new Array(iD.width), new Array(iD.height)];
+		var out = gest.parseImageData(iD, [gest.SEG_RGB_RULES, gest.GET_WHITEPIXELSBYPOS], stat);
+		
+		var reg = getCandidateRegions(iD.width, iD.height, stat, out);
+		
+		//jsg2d.putImageData(out, 0, 0);
+		jsg2d.fillStyle("red");
+		for (var i = 0; i < 3; i++) {
+			jsg2d.begin();
+				jsg2d.fillCircle(reg[i][0], reg[i][1], 10);
+			jsg2d.end();
+		}
+
+		if (now - time > 500) {
+			handleTick(reg); //handleTick(gest.getStatisticString());
+			time = now;
+		}
+	}
+
+	function handleTick(value){
+		$("#jsg_camera_div").html(""+value);
+	}
+    </script>
+</head>
+
+<body onload="init();">
+    <canvas id="canvas" width="320" height="240" style="border:1px solid gray"></canvas>
+    <div id="jsg_camera_div">
+	
+    </div>
+    <canvas id="hist" width="320" height="240" style="border:1px solid gray"></canvas>
+    <!--http://searchco.de/codesearch/raw/8534909 //-->
+</body>
+</html>
