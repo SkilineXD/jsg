@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>Um Primeiro Exemplo Sobre WEBGL</title>
+	<script type="text/javascript" src="gl-matrix-min.js"></script>
+	<script type="text/javascript" src="monkey.js"></script>
+	<script type="text/javascript" src="jsgwebgl.js"></script>
+	<script type="text/javascript" src="jsgutils.js"></script>
+	<script type="text/javascript">
+		var jsg, obj3d, shader, shaders, shininess=100;
+
+		function init() {
+			shaders = {};
+			jsg = new jsggl.JsgGl("scenecanvas");
+			jsg.display = display;
+			jsg.initialize = initialize;
+			jsg.finalize = finalize; 
+    			mat4.perspective(45, jsg.canvas.width / jsg.canvas.height, 0.1, 10000.0, jsg.projectionMatrix);
+    			//distance
+    			mat4.translate(jsg.modelViewMatrix, [0.0, 0.0, -3.0]); 
+			mat4.rotate(jsg.modelViewMatrix, 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);			
+			obj3d = new jsggl.Drawable("sphere", jsg);
+			shaders["goraud"] = jsggl.GoraudShader;
+			shaders["phong"] = jsggl.PhongShader;
+			shader  = jsggl.GoraudShader;
+			if (!jsg.compileProgram( new shader(jsg) )){
+				alert(jsg.compileProgramStatus);
+			}
+			
+			obj3d.vertices = monkey.vertexList;
+
+			
+			obj3d.indices = monkey.objectList[0].data;
+			
+			obj3d.setRenderingMode(jsg.TRIANGLES);
+			obj3d.init();
+			jsg.mainLoop();
+		}
+		
+		function initialize() {
+			jsg.clearColor(0.12, 0.12, 0.12, 1.0);
+			jsg.clearDepth(100.0);
+			jsg.enableDepthTest();
+			jsg.depthFunc(jsg.gl.LEQUAL);
+			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
+		}
+		
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			obj3d.draw();
+			jsg.stopped = true;
+		}
+		
+		function finalize() {
+		
+		}
+
+		function setShininess(evt){
+			shininess = evt.value;
+		}	
+
+
+		function updateLight(){
+			jsg.lights["L"] = new jsggl.DiffuseLight("L", [-1.0, 0.0, -1.0], [0.5,0.5,0.5,1.0]);
+			jsg.lights["G"]  = new jsggl.PhongSpecularLight('G', shininess+1, [1.0, 1.0, 1.0, 1.0], jsg.lights["L"]);	
+	
+			if (!jsg.compileProgram(new shader(jsg))){
+				alert(jsg.compileProgramStatus);
+			}
+			display();
+		}
+
+		function selectShadingMethod(evt){
+			shader = shaders[evt.value];
+		}
+	</script>
+</head>
+<body onload="init();">
+	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
+	<div style="background: rgb(255, 255, 200);">	
+		<div><button onclick="updateLight()">Update Light</button></div>
+		<div>Shading Method</div>
+		<input type="radio" checked="true"  onchange="selectShadingMethod(this);" value="goraud" name="ShadingModel">Goraud</input>
+		<input type="radio" onchange="selectShadingMethod(this);" value="phong" name="ShadingModel">Phont</input>
+		<div>				
+		<div id="shininess">
+			<label for="shininessValue">Shininess</label><input id="shininessValue" min="0" max="500" step="1" onchange="setShininess(this);" type="range"></input>
+		</div></div>
+	</div>
+</body>
+</html>
