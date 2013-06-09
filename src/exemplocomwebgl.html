@@ -60,12 +60,24 @@
 			shininess = evt.value;
 		}	
 
-
-		function updateLight(){
-			jsg.lights["L"] = new jsggl.DiffuseLight("L", [-1.0, 0.0, -1.0], [0.5,0.5,0.5,1.0]);
-			jsg.lights["G"]  = new jsggl.PhongSpecularLight('G', shininess+1, [1.0, 1.0, 1.0, 1.0], jsg.lights["L"]);	
 	
-			if (!jsg.compileProgram(new shader(jsg))){
+		function updateLight(){
+			jsg.lights = [];
+			jsg.lightsKey = [];
+
+			var l0 = new jsggl.DiffusePositionalLight("K", [10, -10.0, -1.0], [1.0, 1.0, 1.0, 1.0], shader.type);
+
+			jsg.addLight(l0);
+
+			var l1 = new jsggl.DiffusePositionalLight("L", [-10, 0.0, -1.0], [1.0, 1.0, 1.0, 1.0], shader.type);
+
+			jsg.addLight(l1);
+			
+			jsg.addLight(new jsggl.PhongSpecularLight('G', shininess+1, [1.0, 1.0, 1.0, 1.0], l0));	
+			jsg.addLight(new jsggl.PhongSpecularLight('H', shininess+1, [1.0, 1.0, 1.0, 1.0], l1));	
+	
+			var shaderobj = new shader(jsg);
+			if (!jsg.compileProgram(shaderobj)){
 				alert(jsg.compileProgramStatus);
 			}
 			display();

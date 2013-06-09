@@ -8,7 +8,7 @@
 /* Add replaceAll method in String objects. 
 * parameter de : source string.
 * parameter para: target string.
-* returns new string with replacement of parameter de by parameter para.
+* returns new string with replacement of parameter 'de' by parameter 'para'.
 * Sample:
 * var str = "My las name is {lastname}. Meu sobrenome é {lastname}...".replaceAll("{lastname}", "Silva");
 */
@@ -27,6 +27,11 @@ String.prototype.replaceAll = function(de, para){
 var jsggl = jsggl || {};
 var JSGGL_ARRAY_TYPE = Float32Array || Array;
 var JSGGL_EPSLON = 0.000001;
+
+
+jsggl.LightPoint = function(name, position, type) {
+	
+}
 
 jsggl.ShaderFunction = function(name, returnType, paramNames, paramTypes) {
 	this.name = name;
@@ -90,12 +95,59 @@ jsggl.Shader = function(header, footer){
 	}
 }
 
+
+jsggl.DiffusePositionalLight = function(name, position, diffuseColor, shaderType){
+	this.name = name;
+	this.type = "diffuse";
+	this.shaderType=shaderType || "goraud";
+	this.position = position;
+	this.diffuseColor = diffuseColor;
+	this.globalDeclarations = [];
+	this.mainLogical = [];
+	this.vertexGlobalDeclarations = [];
+	this.fragGlobalDeclarations = [];
+	this.vertexMainLogical = [];
+	this.fragMainLogical = [];
+
+	this.vertexGlobalDeclarations.push("uniform vec3 {name}uLightPosition;".replaceAll("{name}", name));	
+	this.fragGlobalDeclarations.push("uniform vec3 {name}uLightPosition;".replaceAll("{name}", name));	
+
+	this.globalDeclarations.push("uniform vec4 {name}uLightDiffuse;".replaceAll("{name}", name));
+	
+	if (this.shaderType=="phong"){
+		this.vertexGlobalDeclarations.push("varying vec3 {name}vLightDir;".replaceAll("{name}", name));
+		this.fragGlobalDeclarations.push("varying vec3 {name}vLightDir;".replaceAll("{name}", name));
+		this.vertexMainLogical.push("{name}vLightDir = vertex.xyz - {name}uLightPosition;".replaceAll("{name}", name));
+	} else if (this.shaderType == "goraud") {
+		this.vertexMainLogical.push("vec3 {name}vLightDir;".replaceAll("{name}", name));
+		this.vertexMainLogical.push("{name}vLightDir = vertex.xyz - {name}uLightPosition;".replaceAll("{name}", name));
+	}
+
+	this.mainLogical.push("vec3 {name} = normalize({name}vLightDir);".replaceAll("{name}", name));
+	this.mainLogical.push("float {name}lambertTerm = clamp(dot(N, -{name}), 0.0, 1.0);".replaceAll("{name}", name));	
+	this.mainLogical.push("vec4 {name}Id  = uMaterialDiffuse * {name}uLightDiffuse * {name}lambertTerm;".replaceAll("{name}", name));
+	this.mainLogical.push("acm = acm + {name}Id;".replaceAll("{name}", name));
+
+	this.uniforms = ["{name}uLightDiffuse".replaceAll("{name}", name), "{name}uLightPosition".replaceAll("{name}", name)];
+	this.setValues = function(jsg) {
+		jsg.gl.uniform4fv(jsg.program[this.uniforms[0]], this.diffuseColor);
+		jsg.gl.uniform3fv(jsg.program[this.uniforms[1]], this.position);	
+	};	
+}
+
+
+
 jsggl.DiffuseLight = function(name, direction, diffuseColor){
 	this.name = name;
+	this.type = "diffuse";
 	this.direction = direction;
 	this.diffuseColor = diffuseColor;
 	this.globalDeclarations = [];
 	this.mainLogical = [];
+	this.vertexGlobalDeclarations = [];
+	this.fragGlobalDeclarations = [];
+	this.vertexMainLogical = [];
+	this.fragMainLogical = [];
 
 	this.globalDeclarations.push("uniform vec3 {name}uLightDirection;".replaceAll("{name}", name));	
 	this.globalDeclarations.push("uniform vec4 {name}uLightDiffuse;".replaceAll("{name}", name));
@@ -114,10 +166,15 @@ jsggl.DiffuseLight = function(name, direction, diffuseColor){
 
 jsggl.PhongSpecularLight = function(name, shininess, specularColor, base){
 	this.name = name;
+	this.type = "specular";
 	this.shininess = shininess;
 	this.specularColor = specularColor;
 	this.globalDeclarations = [];
 	this.mainLogical = [];
+	this.vertexGlobalDeclarations = [];
+	this.fragGlobalDeclarations = [];
+	this.vertexMainLogical = [];
+	this.fragMainLogical = [];
 	this.base = base || this;
 	this.globalDeclarations.push("uniform float {name}uShininess;".replaceAll("{name}", name));	
 	this.globalDeclarations.push("uniform vec4 {name}uLightSpecular;".replaceAll("{name}", name));
@@ -140,16 +197,15 @@ jsggl.PhongSpecularLight = function(name, shininess, specularColor, base){
 }
 
 jsggl.PhongShader = function(jsg){
+	this.type="phong";
 	this.vertexShader = new jsggl.Shader();
 	this.fragShader = new jsggl.Shader();
 	this.lights = jsg.lights;
 	this.uniforms = ["uMVMatrix", "uPMatrix","uNMatrix", "uMaterialDiffuse", "uLightAmbient", "uMaterialSpecular", "uMaterialAmbient"];
 
 	this.setGlobalValues = function(jsg){
-		for (var i in jsg.lights) {
-			if (jsg.lights.hasOwnProperty(i)){
+		for (var i=0; i < jsg.lights.length; i++) {
 				jsg.lights[i].setValues(jsg);
-			}
 		}
 		jsg.gl.uniform4fv(jsg.program.uLightAmbient, jsg.ambientLight);	 
 	};
@@ -195,36 +251,56 @@ jsggl.PhongShader = function(jsg){
 	this.fragShader.mainLogical.push("vec4 acm = vec4(0.0, 0.0, 0.0, 1.0);");
 	this.fragShader.mainLogical.push("vec3 E = normalize(vEyeVec);");
 
-	for (var i in this.lights) {
-		if (this.lights.hasOwnProperty(i)){
+	for (var i = 0; i < this.lights.length; i++) {
 			var l = this.lights[i];
 			var gd = l.globalDeclarations;
 			var ml = l.mainLogical;
+			var vgd = l.vertexGlobalDeclarations;
+			var fgd = l.fragGlobalDeclarations;
+			var vml = l.vertexMainLogical;
+			var fml = l.fragMainLogical;
+
 			for (var j = 0; j < gd.length; j++) {
 				this.fragShader.globalDeclarations.push(gd[j]);
+			}
+
+			for (var j = 0; j < vgd.length; j++) {
+				this.vertexShader.globalDeclarations.push(vgd[j]);
+			}
+
+			for (var j = 0; j < fgd.length; j++) {
+				this.fragShader.globalDeclarations.push(fgd[j]);
+			}
+
+			for (var j = 0; j < vml.length; j++) {
+				this.vertexShader.mainLogical.push(vml[j]);
+			}
+
+			for (var j = 0; j < fml.length; j++) {
+				this.fragShader.mainLogical.push(fml[j]);
 			}
 
 			for (var j = 0; j < ml.length; j++) {
 				this.fragShader.mainLogical.push(ml[j]);
 			}
-		}
 	}
 	this.fragShader.mainLogical.push("vec4 finalColor = Ia + acm;");	
 	this.fragShader.mainLogical.push("finalColor.a = 1.0;");
 	this.fragShader.mainLogical.push("gl_FragColor = finalColor;");
 }
 
+jsggl.PhongShader.type = "phong";
+
 jsggl.GoraudShader = function(jsg){
+	this.type="goraud";
 	this.vertexShader = new jsggl.Shader();
 	this.fragShader = new jsggl.Shader();
 	this.lights = jsg.lights;
 	this.uniforms = ["uMVMatrix", "uPMatrix","uNMatrix", "uMaterialDiffuse", "uLightAmbient", "uMaterialSpecular", "uMaterialAmbient"];
 
 	this.setGlobalValues = function(jsg){
-		for (var i in jsg.lights) {
-			if (jsg.lights.hasOwnProperty(i)){
+		for (var i=0; i < jsg.lights.length; i++) {
 				jsg.lights[i].setValues(jsg);
-			}
 		}
 		jsg.gl.uniform4fv(jsg.program.uLightAmbient, jsg.ambientLight);	 
 	};
@@ -239,6 +315,11 @@ jsggl.GoraudShader = function(jsg){
 	};
 
 	this.attributes = ["aVertexPosition","aVertexNormal"]
+
+
+	this.fragShader.globalDeclarations.push("#ifdef GL_ES");
+	this.fragShader.globalDeclarations.push("precision highp float;");
+	this.fragShader.globalDeclarations.push("#endif");
 
 	this.vertexShader.globalDeclarations.push("attribute vec3 aVertexPosition;");
 	this.vertexShader.globalDeclarations.push("attribute vec3 aVertexNormal;");
@@ -258,32 +339,51 @@ jsggl.GoraudShader = function(jsg){
 	this.vertexShader.mainLogical.push("vec3 eyeVec = -vec3(vertex.xyz);");	
 	this.vertexShader.mainLogical.push("vec3 E = normalize(eyeVec);");
 
-	for (var i in this.lights) {
-		if (this.lights.hasOwnProperty(i)){
+	for (var i = 0; i < this.lights.length; i++) {
 			var l = this.lights[i];
 			var gd = l.globalDeclarations;
 			var ml = l.mainLogical;
+			var vgd = l.vertexGlobalDeclarations;
+			var fgd = l.fragGlobalDeclarations;
+			var vml = l.vertexMainLogical;
+			var fml = l.fragMainLogical;
+			
+			for (var j = 0; j < vgd.length; j++) {
+				this.vertexShader.globalDeclarations.push(vgd[j]);
+			}
+		
+			for (var j = 0; j < vml.length; j++) {
+				this.vertexShader.mainLogical.push(vml[j]);
+			}
+
+			for (var j = 0; j < fml.length; j++) {
+				this.fragShader.mainLogical.push(fml[j]);
+			}
+
 			for (var j = 0; j < gd.length; j++) {
 				this.vertexShader.globalDeclarations.push(gd[j]);
 			}
-	
+
+
 			for (var j = 0; j < ml.length; j++) {
 				this.vertexShader.mainLogical.push(ml[j]);
 			}
-		}
+	
+
+			for (var j = 0; j < fgd.length; j++) {
+				this.fragShader.globalDeclarations.push(fgd[j]);
+			}
 	}
 	
 	this.vertexShader.mainLogical.push("vFinalColor = Ia + acm;");
 	this.vertexShader.mainLogical.push("vFinalColor.a = 1.0;");
 	this.vertexShader.mainLogical.push("gl_Position=uPMatrix*uMVMatrix*vec4(aVertexPosition,1.0);");
 
-	this.fragShader.globalDeclarations.push("#ifdef GL_ES");
-	this.fragShader.globalDeclarations.push("precision highp float;");
-	this.fragShader.globalDeclarations.push("#endif");
 	this.fragShader.globalDeclarations.push("varying vec4 vFinalColor;");
 	this.fragShader.mainLogical.push("gl_FragColor = vFinalColor;");
 }
 
+jsggl.GoraudShader.type="goraud";
 
 jsggl.JsgGl = function(id){
 	this.id = id;
@@ -294,9 +394,21 @@ jsggl.JsgGl = function(id){
 	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
 	this.materialSpecular = [1.0, 1.0, 1.0, 1.0];
 
-	this.lights = {};
+	this.lightsKey = {};
+	this.lights = [];
 	//this.lights["L"] = new jsggl.DiffuseLight("L", [-1.0, 0.0, -1.0], [0.5,0.5,0.5,1.0]);
 	//this.lights["G"]  = new jsggl.PhongSpecularLight('G', 1.0, [1.0, 1.0, 1.0, 1.0], this.lights["L"]);	
+
+
+	this.addLight = function(light){	
+		var idx = this.lights.length;
+		this.lights.push(light);
+		this.lightsKey[light.name] = idx;
+	}	
+
+	this.getLightIdx = function(name){
+		return this.lightsKey[name];
+	}
 
 	this.canvas = document.getElementById(id);
 
@@ -445,7 +557,7 @@ jsggl.JsgGl.prototype = {
 		prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
 		prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
 
-		for (var i in this.lights) {
+		for (var i = 0; i < this.lights.length; i++) {
 			var l = this.lights[i];
 			for (var j = 0; j < l.uniforms.length; j++){
 				prg[l.uniforms[j]] = this.gl.getUniformLocation(prg, l.uniforms[j]);
@@ -508,8 +620,7 @@ jsggl.Drawable.prototype = {
 
 	draw : function() {		
 		var prg = this.jsg.program;
-		this.gl.enableVertexAttribArray(prg.aVertexPosition);
-		this.gl.enableVertexAttribArray(prg.aVertexNormal);
+
 		
 		var pMatrix = jsg.projectionMatrix;
 		var mvMatrix = jsg.modelViewMatrix;
@@ -525,13 +636,16 @@ jsggl.Drawable.prototype = {
 		this.jsg.materialSpecular = this.materialSpecular;
 
 		this.jsg.shader.setLocalValues(this.jsg);
-    				
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
-    		this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
-
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer);
-    		this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
-
+		if (prg.aVertexPosition >= 0){
+			this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
+    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
+    			this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
+		}
+		if (prg.aVertexNormal >= 0){
+			this.gl.enableVertexAttribArray(prg.aVertexNormal);
+    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer);
+    			this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
+		}
     		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
     		this.gl.drawElements(this.getRenderingMode(), this.indices.length, this.gl.UNSIGNED_SHORT, 0);
 			    			
