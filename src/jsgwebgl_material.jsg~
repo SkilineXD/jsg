@@ -1,0 +1,5 @@
+var jsggl = jsggl || {};
+
+jsggl.Material = function(matAmb, matDiffuse, matSpecular) {
+	
+}

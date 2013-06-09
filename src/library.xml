@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<movie width="320" height="240" version="8">
+  <frame>
+    <library>
+      <clip id="VideoDisplay" name="VideoDisplay">
+        <frame>
+          <video id="VideoSurface" width="640" height="480" />
+          <place id="VideoSurface" name="video" />
+        </frame>
+      </clip>
+    </library>
+  </frame>
+</movie>
