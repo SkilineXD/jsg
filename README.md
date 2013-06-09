@@ -1,7 +1,7 @@
 JavaScript Graphics (JSG)
 =========================
 
-JavaScript Graphics is a graphical library for 2D and 3D Computer Graphics and Vision based in JavaScript language. Current version includes:
+JavaScript Graphics (JSG) is a graphical library for Computer Graphics and Vision. JSG Current version includes:
 #
 JSG: Core for 2D Applications.
 #
