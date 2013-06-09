@@ -14,7 +14,7 @@ JSGVision: Core for computer vision algorithms.
 
 Installation
 ===============================
-JSG installation is very simple. All need is to reference JavaScript files in your page (HTML file) and load page in your favority browser. 
+JSG installation is very simple. All you need is to reference JavaScript files in your page (HTML file) and load page in your favority browser. 
 
 For example, add the below code in your page
 
