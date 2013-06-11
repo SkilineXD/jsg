@@ -33,14 +33,15 @@
 
 			
 			obj3d.indices = sphere.objectList[0].data;
-			
-			obj3d.setRenderingMode(jsg.TRIANGLES);
+			obj3d.groupNameList = sphere.objectList[0].groupName;				
+		
+			obj3d.setRenderingMode(jsg.LINE_STRIP);
 			obj3d.init();
 			jsg.mainLoop();
 		}
 		
 		function initialize() {
-			jsg.clearColor(0.12, 0.12, 0.12, 1.0);
+			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
 			jsg.clearDepth(100.0);
 			jsg.enableDepthTest();
 			jsg.depthFunc(jsg.gl.LEQUAL);

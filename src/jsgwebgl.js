@@ -215,9 +215,10 @@ jsggl.JsgGl.prototype = {
 	},
 }
 
+//65535
 jsggl.Drawable = function(name, globj){	
 	this.vertices = [];
-	this.indices = [];
+	this.indices = [[]];
 	this.name = name;
 	this.vboName = "";
 	this.idoName = "";
@@ -227,8 +228,9 @@ jsggl.Drawable = function(name, globj){
 	this.indexBuffer = undefined;
 	this.normalsBuffer = undefined;
 	this.renderingmode = this.gl.LINES;
+	this.groupNameList = []
 	this.material = {};
-	this.material["material"] = new jsggl.Material("material", [0.001, 0.001, 0.001, 1.0], [0.1,0.5,0.8,1.0], [1.0, 1.0, 1.0, 1.0]);	
+	this.material["None"] = new jsggl.Material("None", [0.001, 0.001, 0.001, 1.0], [0.1,0.5,0.8,1.0], [1.0, 1.0, 1.0, 1.0]);	
 }
 
 jsggl.Drawable.prototype = {
@@ -236,21 +238,24 @@ jsggl.Drawable.prototype = {
 		this.vertexBuffer = this.gl.createBuffer();
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
 		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices), this.gl.STATIC_DRAW);
-
-		this.indexBuffer = this.gl.createBuffer();
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-		this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), this.gl.STATIC_DRAW);
-
-
-		this.normals = jsgutils.calcNormals(this.vertices, this.indices);
-   		
-   		this.normalsBuffer = this.gl.createBuffer();
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer);
-    		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.normals), this.gl.STATIC_DRAW);
+		this.indexBuffer = [];
+		this.normalsBuffer = [];
+		for (var i = 0; i < this.indices.length; i++) {
+			var iBuffer  = this.gl.createBuffer();
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices[i]), this.gl.STATIC_DRAW);
 		
+			this.normals = jsgutils.calcNormals(this.vertices, this.indices[i]);
+   		
+   			var nBuffer = this.gl.createBuffer();
+    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
+    			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.normals[i]), this.gl.STATIC_DRAW);
+			this.indexBuffer.push(iBuffer);
+			this.normalsBuffer.push(nBuffer);
+		}
+
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     		this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
-				
 	},
 	
 	setRenderingMode: function(rm) {
@@ -281,27 +286,37 @@ jsggl.Drawable.prototype = {
     			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
     			this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
 		}
-		if (prg.aVertexNormal >= 0){
-			this.gl.enableVertexAttribArray(prg.aVertexNormal);
-    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer);
-    			this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
-		}
 
-		for (var i in this.material) {
-			if (!this.material.hasOwnProperty(i)) continue;
-			var material = this.material[i];
+
+		if (this.groupNameList.length == 0){
+			var material = this.material["None"];
 			this.jsg.materialSpecular = material.specular;
 			this.jsg.materialDiffuse = material.diffuse;
 			this.jsg.materialAmbient = material.color;
-			
-			if (material.indexBuffer){
-    				this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, material.indexBuffer);
-			} else {
-				this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-			}
 			this.jsg.shader.setLocalValues(this.jsg);
+			for (var i = 0; i < this.indexBuffer.length; i++) {
+				if (prg.aVertexNormal >= 0){
+					this.gl.enableVertexAttribArray(prg.aVertexNormal);
+    					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
+    					this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
+				}
+				this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);			
+				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+			}
+		} else {		
+			for (var i = 0; i < this.groupNameList.length; i++) {
+				var group = this.groupNameList[i]
+				var material = this.material[group];
+				
+				this.jsg.materialSpecular = material.specular;
+				this.jsg.materialDiffuse = material.diffuse;
+				this.jsg.materialAmbient = material.color;
+				this.jsg.shader.setLocalValues(this.jsg);
 
-    			this.gl.drawElements(this.getRenderingMode(), this.indices.length, this.gl.UNSIGNED_SHORT, 0);	    	
+				this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);
+				
+    				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+			}
 		}
 
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
