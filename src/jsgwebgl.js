@@ -366,7 +366,7 @@ jsggl.Drawable.prototype = {
 			for (var i = 0; i < this.indexBuffer.length; i++) {
 				var group = this.groupNameList[i]
 				var material = this.material[group];
-			
+				if (!material) material = this.material["None"];
 				this.jsg.materialSpecular = material.specular;
 				this.jsg.materialDiffuse = material.diffuse;
 				this.jsg.materialAmbient = material.color;

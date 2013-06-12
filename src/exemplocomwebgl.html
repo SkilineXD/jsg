@@ -9,7 +9,7 @@
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, obj3d, shader, shaders, shininess=100;
+		var jsg, obj3d = [], shader, shaders, shininess=100;
 		function init() {
 			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
@@ -18,9 +18,10 @@
 			jsg.finalize = finalize; 
     			mat4.perspective(45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0, jsg.projectionMatrix);
     			//distance
-    			mat4.translate(jsg.modelViewMatrix, [0.0, 0.0, -5.0]); 
-			mat4.rotate(jsg.modelViewMatrix, 20.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);			
-			obj3d = new jsggl.Drawable("objson", jsg);
+    			mat4.translate(jsg.modelViewMatrix, [0.0, 0.0, -15.0]); 
+			mat4.rotate(jsg.modelViewMatrix, 122.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
+			mat4.rotate(jsg.modelViewMatrix, 20.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
+			
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
 			shader  = jsggl.GoraudShader;
@@ -28,15 +29,18 @@
 				alert(jsg.compileProgramStatus);
 			}
 
-			obj3d.indices = objson.objectList[0].indices;
-			obj3d.vertices = objson.objectList[0].vertices;
+			obj3d = new Array(objson.objectList.length);
+			for (var i = 0; i < obj3d.length; i++) {
+				obj3d[i] = new jsggl.Drawable("objson", jsg);
+				obj3d[i].indices = objson.objectList[i].indices;
+				obj3d[i].vertices = objson.objectList[i].vertices;
 			
-			obj3d.groupNameList = objson.objectList[0].groupName;				
-		
-			obj3d.setRenderingMode(jsg.TRIANGLES);
-
-			obj3d.init();
-
+				obj3d[i].groupNameList = objson.objectList[i].groupName;				
+			
+				obj3d[i].setRenderingMode(jsg.TRIANGLES);
+	
+				obj3d[i].init();
+			}
 			jsg.mainLoop();
 		}
 		
@@ -50,7 +54,9 @@
 		
 		function display() {
 			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
-			obj3d.draw();
+			for (var i = 0; i < obj3d.length; i++){
+				obj3d[i].draw();
+			}
 			jsg.stopped = true;
 		}
 		
