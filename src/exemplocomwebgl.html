@@ -10,32 +10,30 @@
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
 		var jsg, obj3d, shader, shaders, shininess=100;
-
 		function init() {
 			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
-    			mat4.perspective(45, jsg.canvas.width / jsg.canvas.height, 0.1, 10000.0, jsg.projectionMatrix);
+    			mat4.perspective(45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0, jsg.projectionMatrix);
     			//distance
-    			mat4.translate(jsg.modelViewMatrix, [0.0, 0.0, -3.0]); 
-			mat4.rotate(jsg.modelViewMatrix, 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);			
+    			mat4.translate(jsg.modelViewMatrix, [0.0, 0.0, -5.0]); 
+			mat4.rotate(jsg.modelViewMatrix, 20.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);			
 			obj3d = new jsggl.Drawable("objson", jsg);
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
 			shader  = jsggl.GoraudShader;
-			if (!jsg.compileProgram( new shader(jsg) )){
+			if (!jsg.compileProgram(new shader(jsg))){
 				alert(jsg.compileProgramStatus);
 			}
-			
 
 			obj3d.indices = objson.objectList[0].indices;
 			obj3d.vertices = objson.objectList[0].vertices;
-
+			
 			obj3d.groupNameList = objson.objectList[0].groupName;				
 		
-			obj3d.setRenderingMode(jsg.LINES);
+			obj3d.setRenderingMode(jsg.TRIANGLES);
 
 			obj3d.init();
 
@@ -64,7 +62,6 @@
 			shininess = evt.value;
 		}	
 
-	
 		function updateLight(){
 			/*var l0 = new jsggl.DiffusePositionalLight("A", [10, -10.0, -1.0], [1.0, 1.0, 1.0, 1.0], shader.type);
 			var l1 = new jsggl.PhongSpecularLight("B", shininess, [1.0, 1.0, 0.0, 1.0], l0);

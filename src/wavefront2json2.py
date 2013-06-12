@@ -28,12 +28,12 @@ class VertexGroup:
 		self.sum = 0
 
 	def addIndexValue(self, vertices, idx):
-		v = vertices[idx]
 		n = len(self.vertexList)/3
 		if (self.map.has_key(idx)):
 			n = self.map[idx]
 			self.indexList.append(n)
 		else:
+			v = vertices[idx]
 			self.map[idx] = n
 			self.vertexList.append(v.x)
 			self.vertexList.append(v.y)
@@ -48,7 +48,8 @@ class VertexGroup:
 	def generateJSON(self):
 		k = 0
 		print("["),
-		for i in self.indexList:
+		for idx in range(0, len(self.indexList)):
+			i = self.indexList[idx]
 			if (k > 0):
 				print(", "),
 			else:
@@ -59,7 +60,8 @@ class VertexGroup:
 	def generateJSON2(self):
 		k = 0
 		print("["),
-		for i in self.vertexList:
+		for idx in range(0, len(self.vertexList)):
+			i = self.vertexList[idx]
 			if (k > 0):
 				print(", "),
 			else:

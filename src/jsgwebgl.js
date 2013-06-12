@@ -192,7 +192,7 @@ jsggl.JsgGl.prototype = {
 
     		prg.aVertexPosition  = this.gl.getAttribLocation(prg, "aVertexPosition");
     		prg.aVertexNormal    = this.gl.getAttribLocation(prg, "aVertexNormal");
-		
+	
 		prg.uPMatrix = this.gl.getUniformLocation(prg, "uPMatrix");
 		prg.uMVMatrix = this.gl.getUniformLocation(prg, "uMVMatrix");
 		prg.uNMatrix = this.gl.getUniformLocation(prg, "uNMatrix");
@@ -200,6 +200,7 @@ jsggl.JsgGl.prototype = {
 		prg.uMaterialDiffuse = this.gl.getUniformLocation(prg, "uMaterialDiffuse");
 		prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
 		prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
+		
 
 		for (var i = 0; i < this.lights.length; i++) {
 			var l = this.lights[i];
@@ -230,19 +231,23 @@ jsggl.Drawable = function(name, globj){
 	this.renderingmode = this.gl.LINES;
 	this.groupNameList = []
 	this.material = {};
-	this.material["None"] = new jsggl.Material("None", [0.001, 0.001, 0.001, 1.0], [0.1,0.5,0.8,1.0], [1.0, 1.0, 1.0, 1.0]);	
-	this.material["Material"] = new jsggl.Material("Material", [0.001, 0.001, 0.001, 1.0], [0.1,0.5,0.8,1.0], [1.0, 1.0, 1.0, 1.0]);	
+	this.material["None"] = new jsggl.Material("None", [0.001, 0.001, 0.001, 1.0], [1.0,0.0,0.0,1.0], [1.0, 1.0, 1.0, 1.0]);	
+	this.material["Material"] = new jsggl.Material("Material", [0.001, 0.001, 0.001, 1.0], [0.0,1.0,0.0,1.0], [1.0, 1.0, 1.0, 1.0]);	
+	this.material["Material.001"] = new jsggl.Material("Material", [0.001, 0.001, 0.001, 1.0], [0.1,0.5,0.8,1.0], [1.0, 1.0, 1.0, 1.0]);	
 }
 
 jsggl.Drawable.prototype = {
 	init: function() {
 		this.vertexBuffer = [];
+		
+		
 		for (var i = 0; i < this.vertices.length; i++){
 			var vBuffer = this.gl.createBuffer();
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
 			this.vertexBuffer.push(vBuffer)
 		}
+	
 
 		this.indexBuffer = [];
 		this.normalsBuffer = [];
@@ -271,6 +276,57 @@ jsggl.Drawable.prototype = {
 		return this.renderingmode;
 	},
 
+
+	wireDraw: function(){
+		var prg = this.jsg.program;
+		var rMode = this.renderingmode;
+		this.setRenderingMode(this.jsg.LINE_LOOP);
+		
+		var pMatrix = jsg.projectionMatrix;
+		var mvMatrix = jsg.modelViewMatrix;
+		var nMatrix = mat4.create();
+		
+    		mat4.set(mvMatrix, nMatrix);
+    		mat4.inverse(nMatrix);
+    		mat4.transpose(nMatrix);
+		
+		this.jsg.normalMatrix = nMatrix;
+			
+		this.jsg.materialSpecular = [1.0001, 0.0001, 0.0001, 1.0];
+		this.jsg.materialDiffuse = [1.0001, 0.001, 0.001, 1.0];
+		this.jsg.materialAmbient = [1.001, 0.001, 0.001, 1.0];
+		this.jsg.shader.setLocalValues(this.jsg);
+		for (var i = 0; i < this.indexBuffer.length; i++) {
+			var m = this.indices[i].length;
+			for (var j = 0; j < m; j += 3) {
+				var faceArray;
+				var faceBuffer;
+				
+				if (prg.aVertexNormal >= 0){
+					this.gl.enableVertexAttribArray(prg.aVertexNormal);
+					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
+    					this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
+				}
+				if (prg.aVertexPosition >= 0){
+					faceArray = [this.indices[i][j],this.indices[i][j+1], this.indices[i][j+2]];
+					faceBuffer = this.gl.createBuffer();
+					
+					this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
+			   		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]); 
+			   		this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
+				
+					this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, faceBuffer);		
+					this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(faceArray),this.jsg.gl.STATIC_DRAW);	
+					this.gl.drawElements(this.getRenderingMode(), faceArray.length, this.gl.UNSIGNED_SHORT, 0);
+					this.gl.deleteBuffer(faceBuffer);
+				}
+			}
+		}
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+		this.setRenderingMode(rMode);
+	},
+
 	draw : function() {		
 		var prg = this.jsg.program;
 
@@ -284,8 +340,7 @@ jsggl.Drawable.prototype = {
     		mat4.transpose(nMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
-			
-
+		
 		if (this.groupNameList.length == 0){
 			var material = this.material["None"];
 			this.jsg.materialSpecular = material.specular;
@@ -308,7 +363,7 @@ jsggl.Drawable.prototype = {
 				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 			}
 		} else {		
-			for (var i = 0; i < this.groupNameList.length; i++) {
+			for (var i = 0; i < this.indexBuffer.length; i++) {
 				var group = this.groupNameList[i]
 				var material = this.material[group];
 			
@@ -335,6 +390,19 @@ jsggl.Drawable.prototype = {
 
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-	}
+	},
+
+	delete: function(){
+		for (var i = 0; i < this.indexBuffer.length; i++){
+			this.gl.deleteBuffer(this.indedexBuffer[i]);
+			this.gl.deleteBuffer(this.vertexBuffer[i]);
+			if (this.normalsBuffer && this.normalsBuffer[i]){
+				this.gl.deleteBuffer(this.normalsBuffer[i]);
+			}
+		}
+		this.indexBuffer = null;
+		this.vertexBuffer = null;
+		this.normalsBuffer = null;
+	}			
 }
 
