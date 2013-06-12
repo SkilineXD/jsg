@@ -7,66 +7,110 @@ class Vertex:
 		self.x = x
 		self.y = y
 		self.z = z
-	
+
 	def generateJSON(self):
-		print("{0}, {1}, {2}".format(self.x, self.y, self.z)),
+		print(self.x),
+		print(", "),
+		print(self.y),
+		print(", "),
+		print(self.x),
+
+	def toArray(self):
+		return [self.x, self.y, self.z]
 
 class VertexGroup:
 	def __init__(self, group):
 		self.group = group
-		self.vertexIndexList = []
-	
+		self.indexList = []
+		self.map = {}
+		self.vertexList = []
+		self.max = 65535
+		self.sum = 0
+
+	def addIndexValue(self, vertices, idx):
+		v = vertices[idx]
+		n = len(self.vertexList)/3
+		if (self.map.has_key(idx)):
+			n = self.map[idx]
+			self.indexList.append(n)
+		else:
+			self.map[idx] = n
+			self.vertexList.append(v.x)
+			self.vertexList.append(v.y)
+			self.vertexList.append(v.z)
+			self.indexList.append(n)
+			self.sum = self.sum + 3
+			if (self.sum >= self.max):
+				self.sum = 0
+				return True			
+		return False
+
 	def generateJSON(self):
 		k = 0
-		for i in self.vertexIndexList:
+		print("["),
+		for i in self.indexList:
 			if (k > 0):
 				print(", "),
-			k = k + 1
+			else:
+				k = k + 1
 			print(i),
+		print("]"),
+
+	def generateJSON2(self):
+		k = 0
+		print("["),
+		for i in self.vertexList:
+			if (k > 0):
+				print(", "),
+			else:
+				k = k + 1
+			print(i),
+		print("]"),
 
 class Object3D:
 	def __init__(self, name):
 		self.name = name
 		self.s = ""
-		self.idx = 0
-		self.faceTable = [[]]
+		self.faces = []
+		self.vertices = []
 		self.groups = []
-	
+		
 	def addVertexGroup(self, f):
-		n = len(self.faceTable[self.idx])*3
-		if (n < 65535):
-			self.groups.append(f.group)
-			self.faceTable[self.idx].append(f)		
-		else:
-			self.idx = self.idx + 1;
-			self.addVertexGroup(f)
-
+		self.groups.append(f.group)
+		self.faces.append(f)		
+		
 	def generateJSON(self):
 		print("{")
 		print("\"s\":\"{0}\",".format(self.s))
-		print("\"idx\":{0},".format(self.idx))
 		print("\"name\":\"{0}\",".format(self.name))
-		print("\"data\":["),
+		print("\"indices\":["),
 		j = 0;
-		for faceList in self.faceTable:
-			i = 0
-			print("["),	
+		for f in self.faces:
 			if (j > 0):
-				print(", ")
-			j = j + 1
-
-			for f in faceList:
-				if (i > 0):
-					print(", "),
-				f.generateJSON()
-				i = i + 1
-			print("]"),
+				print(", "),
+			else:
+				j = j + 1
+			f.generateJSON()
 		print("],")
+
+		print("\"vertices\":["),
+		j = 0;	
+
+		for f in self.faces:
+			if (j > 0):
+				print(", "),
+			else:
+				j = j + 1
+			f.generateJSON2()
+		print("],")
+
 		j = 0
 		print("\"groupName\":["),
 		for str in self.groups:
 			if (j > 0):
-				print (",")
+				print (","),
+			else:
+				j = j + 1
 			print("\"" + str + "\""),
 		print("]}"),
 
@@ -74,28 +118,25 @@ class ModelDescription:
 	def __init__(self, name):
 		self.mtllib = "";
 		self.objects = []
-		self.vertexTable = []
+		self.vertices = []
 		self.name = name
+	
+	def addVertex(self, v):
+		self.vertices.append(v)
 
 	def generateJSON(self):
 		print("var {0} = {1}".format(self.name,"{"))
 		print("\"mtllib\":\"{0}\",".format(self.mtllib))
 		i = 0
-		print("\"vertexList\":["),
-		for v in self.vertexTable:
-			if i > 0:
-				print(", "),
-			v.generateJSON()
-			i = i + 1
-		print("], ")
 		
-		i = 0
 		print("\"objectList\":["),
 		for obj in self.objects:
 			if i > 0:
 				print(", ")
+			else:
+				i = i  + 1
 			obj.generateJSON()
-			i = i  + 1
+			
 		print("]")
 		print("};")
 
@@ -117,14 +158,15 @@ def makeModelDescription(path, name):
 				break
 			data = line.split()
 			if data[0] == "v":
-				v = Vertex(float(data[1]), float(data[2]), float(data[3]))
-				model.vertexTable.append(v)
+				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
+				model.addVertex(v)
 			elif data[0] == "f":
 				if (cvGroup==None):
 					cvGroup = VertexGroup("Material")
-					currentObject.addVertexGroup(cvGroup) 			
+					currentObject.addVertexGroup(cvGroup)			
 				for i in data[1::]:
-					cvGroup.vertexIndexList.append(int(i)-1)
+					if cvGroup.addIndexValue(model.vertices, int(i)-1):
+						currentObject.addVertexGroup(cvGroup)
 			elif (data[0] == "o"):
 				if currentObject:
 					model.objects.append(currentObject)
