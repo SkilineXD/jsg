@@ -151,35 +151,47 @@ def makeModelDescription(path, name):
 		currentObject = None
 		currentMat = None
 		cvGroup = None
-		while True:
-			line = source.readline()
+		lines = source.readlines()
+		for line in lines:
 			line = line.strip()
-			if (len(line) == 0):
-				if (currentObject):			
-					model.objects.append(currentObject)
-				break
 			data = line.split()
+			if (len(line) == 0):
+				continue
 			if data[0] == "v":
 				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
 				model.addVertex(v)
+		
+		for line in lines:
+			line = line.strip()
+			data = line.split()
+			if (len(line) == 0):
+				continue
 			elif data[0] == "f":
 				if (cvGroup==None):
 					cvGroup = VertexGroup("Material")
 					currentObject.addVertexGroup(cvGroup)			
-				for i in data[1::]:
-					if cvGroup.addIndexValue(model.vertices, int(i)-1):
+				for vi in data[1::]:
+					vi = vi.strip()
+					l = vi
+					if (not vi.isdigit()):
+						if (vi.find("//") >= 0):
+							l = vi.split("//")
+						elif (vi.find("/") >= 0):
+							l = vi.split("/")
+						i = int(l[0]) - 1
+					else:
+						i = int(vi) - 1
+					if cvGroup.addIndexValue(model.vertices, i):
 						currentObject.addVertexGroup(cvGroup)
-			elif (data[0] == "o"):
-				if currentObject:
-					model.objects.append(currentObject)
+			elif (data[0] == "o" or data[0] == "g"):
 				currentObject = Object3D(data[1])
+				model.objects.append(currentObject)
 			elif data[0] == "mtllib":
 				model.mtllib = data[1]
 			elif data[0] == "usemtl":
 				cvGroup = VertexGroup(data[1])
 				currentObject.addVertexGroup(cvGroup)
-				
-
+		
 	except IOError:
 		print('Input/Output error: no open file default.obj')
 		print('Try again...')
