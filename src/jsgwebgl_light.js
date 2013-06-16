@@ -1,12 +1,5 @@
 var jsggl = jsggl || {};
 
-jsggl.Material = function(name, matAmb, matDiffuse, matSpecular) {
-	this.name = name;
-	this.color = matAmb;
-	this.diffuse = matDiffuse;
-	this.specular = matSpecular;
-}
-
 jsggl.SunLight = function(name, direction, difcolor){
 	this.name = name;
 	this.direction = direction;
