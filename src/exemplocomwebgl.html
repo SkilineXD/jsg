@@ -6,6 +6,7 @@
 	<script type="text/javascript" src="gl-matrix-min.js"></script>
 	<script type="text/javascript" src="objson.js"></script>
 	<script type="text/javascript" src="jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="jsgwebgl_material.js"></script>
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
@@ -18,9 +19,9 @@
 			jsg.finalize = finalize; 
     			mat4.perspective(45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0, jsg.projectionMatrix);
     			//distance
-    			mat4.translate(jsg.modelViewMatrix, [0.0, 0.0, -15.0]); 
-			mat4.rotate(jsg.modelViewMatrix, 122.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
-			mat4.rotate(jsg.modelViewMatrix, 20.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
+    			mat4.translate(jsg.modelViewMatrix, [0.0, -1.0, -3]); 
+			mat4.rotate(jsg.modelViewMatrix, 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
+			mat4.rotate(jsg.modelViewMatrix, 10.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
 			
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
@@ -29,23 +30,24 @@
 				alert(jsg.compileProgramStatus);
 			}
 
+
+			jsggl.loadMaterialsFromJSON(jsg, objsonmtl);
+
 			obj3d = new Array(objson.objectList.length);
+
 			for (var i = 0; i < obj3d.length; i++) {
 				obj3d[i] = new jsggl.Drawable("objson", jsg);
 				obj3d[i].indices = objson.objectList[i].indices;
-				obj3d[i].vertices = objson.objectList[i].vertices;
-			
+				obj3d[i].vertices = objson.objectList[i].vertices;			
 				obj3d[i].groupNameList = objson.objectList[i].groupName;				
-			
 				obj3d[i].setRenderingMode(jsg.TRIANGLES);
-	
 				obj3d[i].init();
 			}
 			jsg.mainLoop();
 		}
 		
 		function initialize() {
-			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
+			jsg.clearColor(0.9, 0.9, 0.9, 1.0);
 			jsg.clearDepth(100.0);
 			jsg.enableDepthTest();
 			jsg.depthFunc(jsg.gl.LEQUAL);
@@ -69,14 +71,10 @@
 		}	
 
 		function updateLight(){
-			/*var l0 = new jsggl.DiffusePositionalLight("A", [10, -10.0, -1.0], [1.0, 1.0, 1.0, 1.0], shader.type);
-			var l1 = new jsggl.PhongSpecularLight("B", shininess, [1.0, 1.0, 0.0, 1.0], l0);
-			jsg.addLight(l0);
-			jsg.addLight(l1);*/
 			
 			var pos0 = new jsggl.PointLight("A", [10, -10.0, -1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0], shininess, shader.type);
 			pos0.addTo(jsg, true);
-			
+
 			var sun = new jsggl.SunLight("B", [0.0, 0.0, -1.0], [0.5, 0.5, 0.5, 1.0]);
 			sun.addTo(jsg, true);			
 
