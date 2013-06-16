@@ -12,7 +12,6 @@
 * Sample:
 * var str = "My las name is {lastname}. Meu sobrenome é {lastname}...".replaceAll("{lastname}", "Silva");
 */
-
 String.prototype.replaceAll = function(de, para){
     var str = this;
     var pos = str.indexOf(de);
@@ -310,7 +309,6 @@ jsggl.Drawable.prototype = {
 				if (prg.aVertexPosition >= 0){
 					faceArray = [this.indices[i][j],this.indices[i][j+1], this.indices[i][j+2]];
 					faceBuffer = this.gl.createBuffer();
-					
 					this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
 			   		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]); 
 			   		this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
@@ -328,6 +326,10 @@ jsggl.Drawable.prototype = {
 	},
 
 	draw : function() {		
+
+		if (jsg.materials){
+			this.material = jsg.materials;
+		}
 		var prg = this.jsg.program;
 
 		
@@ -345,7 +347,7 @@ jsggl.Drawable.prototype = {
 			var material = this.material["None"];
 			this.jsg.materialSpecular = material.specular;
 			this.jsg.materialDiffuse = material.diffuse;
-			this.jsg.materialAmbient = material.color;
+			this.jsg.materialAmbient = material.ambient;
 			this.jsg.shader.setLocalValues(this.jsg);
 			for (var i = 0; i < this.indexBuffer.length; i++) {
 				if (prg.aVertexPosition >= 0){
@@ -369,7 +371,7 @@ jsggl.Drawable.prototype = {
 				if (!material) material = this.material["None"];
 				this.jsg.materialSpecular = material.specular;
 				this.jsg.materialDiffuse = material.diffuse;
-				this.jsg.materialAmbient = material.color;
+				this.jsg.materialAmbient = material.ambient;
 				this.jsg.shader.setLocalValues(this.jsg);
 				if (prg.aVertexPosition >= 0){
 					this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
@@ -405,4 +407,5 @@ jsggl.Drawable.prototype = {
 		this.normalsBuffer = null;
 	}			
 }
+
 
