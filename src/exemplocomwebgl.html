@@ -3,7 +3,7 @@
 <html>
 <head>
 	<title>Um Primeiro Exemplo Sobre WEBGL</title>
-	<script type="text/javascript" src="gl-matrix-min.js"></script>
+	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="objson.js"></script>
 	<script type="text/javascript" src="jsgwebgl_light.js"></script>
 	<script type="text/javascript" src="jsgwebgl_material.js"></script>
@@ -17,11 +17,11 @@
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
-    			mat4.perspective(45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0, jsg.projectionMatrix);
+    			mat4.perspective(jsg.projectionMatrix, 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);
     			//distance
-    			mat4.translate(jsg.modelViewMatrix, [0.0, -1.0, -20]); 
-			mat4.rotate(jsg.modelViewMatrix, 120.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
-			mat4.rotate(jsg.modelViewMatrix, 40.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
+    			mat4.translate(jsg.modelViewMatrix, jsg.modelViewMatrix, [0.0, -1.0, -30]); 
+			mat4.rotate(jsg.modelViewMatrix, jsg.modelViewMatrix, 120.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
+			mat4.rotate(jsg.modelViewMatrix, jsg.modelViewMatrix, 40.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
 			
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;

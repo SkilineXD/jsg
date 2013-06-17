@@ -285,9 +285,9 @@ jsggl.Drawable.prototype = {
 		var mvMatrix = jsg.modelViewMatrix;
 		var nMatrix = mat4.create();
 		
-    		mat4.set(mvMatrix, nMatrix);
-    		mat4.inverse(nMatrix);
-    		mat4.transpose(nMatrix);
+    		mat4.copy(nMatrix, mvMatrix);
+    		mat4.invert(nMatrix, nMatrix);
+    		mat4.transpose(nMatrix, nMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
 			
@@ -337,9 +337,9 @@ jsggl.Drawable.prototype = {
 		var mvMatrix = jsg.modelViewMatrix;
 		var nMatrix = mat4.create();
 		
-    		mat4.set(mvMatrix, nMatrix);
-    		mat4.inverse(nMatrix);
-    		mat4.transpose(nMatrix);
+    		mat4.copy(nMatrix, mvMatrix);
+    		mat4.invert(nMatrix, nMatrix);
+    		mat4.transpose(nMatrix, nMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
 		
