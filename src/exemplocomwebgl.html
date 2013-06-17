@@ -19,9 +19,9 @@
 			jsg.finalize = finalize; 
     			mat4.perspective(45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0, jsg.projectionMatrix);
     			//distance
-    			mat4.translate(jsg.modelViewMatrix, [0.0, -1.0, -3]); 
-			mat4.rotate(jsg.modelViewMatrix, 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
-			mat4.rotate(jsg.modelViewMatrix, 10.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
+    			mat4.translate(jsg.modelViewMatrix, [0.0, -1.0, -20]); 
+			mat4.rotate(jsg.modelViewMatrix, 120.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
+			mat4.rotate(jsg.modelViewMatrix, 40.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
 			
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;

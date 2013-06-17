@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import wavefront2json1
 import wavefront2json2
 import sys
 
@@ -13,3 +13,6 @@ if (n >=3):
 
 model = wavefront2json2.makeModelDescription(path, name)
 model.generateJSON()
+
+model2 = wavefront2json1.makeModelDescription(model.mtllib, name + "mtl")
+model2.generateJSON()
