@@ -76,6 +76,7 @@ class Object3D:
 		self.faces = []
 		self.vertices = []
 		self.groups = []
+		self.type = "o";
 		
 	def addVertexGroup(self, f):
 		self.groups.append(f.group)
@@ -122,6 +123,7 @@ class ModelDescription:
 		self.objects = []
 		self.vertices = []
 		self.name = name
+		self.type = "group"
 	
 	def addVertex(self, v):
 		self.vertices.append(v)
@@ -129,6 +131,7 @@ class ModelDescription:
 	def generateJSON(self):
 		print("var {0} = {1}".format(self.name,"{"))
 		print("\"mtllib\":\"{0}\",".format(self.mtllib))
+		print("\"type\":\"{0}\",".format(self.type))
 		i = 0
 		
 		print("\"objectList\":["),
@@ -185,6 +188,7 @@ def makeModelDescription(path, name):
 						currentObject.addVertexGroup(cvGroup)
 			elif (data[0] == "o" or data[0] == "g"):
 				currentObject = Object3D(data[1])
+				currentObject.type = data[0];
 				model.objects.append(currentObject)
 			elif data[0] == "mtllib":
 				model.mtllib = data[1]

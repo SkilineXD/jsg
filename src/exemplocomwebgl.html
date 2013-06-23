@@ -2,30 +2,36 @@
 
 <html>
 <head>
-	<title>Um Primeiro Exemplo Sobre WEBGL</title>
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="objson.js"></script>
+	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
 	<script type="text/javascript" src="jsgwebgl_light.js"></script>
 	<script type="text/javascript" src="jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="jsgwebgl_scene.js"></script>
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, obj3d = [], shader, shaders, shininess=100;
+		var jsg, scene, shader, shaders, shininess=100;
 		function init() {
 			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
-    			mat4.perspective(jsg.projectionMatrix, 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);
+    			mat4.perspective(jsg.getProjection(), 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);
     			//distance
-    			mat4.translate(jsg.modelViewMatrix, jsg.modelViewMatrix, [0.0, -1.0, -30]); 
-			mat4.rotate(jsg.modelViewMatrix, jsg.modelViewMatrix, 120.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
-			mat4.rotate(jsg.modelViewMatrix, jsg.modelViewMatrix, 40.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
-			
+    			mat4.translate(jsg.getModelView(), jsg.getModelView(), [0.0, -1.0, -2]); 
+			mat4.rotate(jsg.getModelView(), jsg.getModelView(), 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
+			mat4.rotate(jsg.getModelView(), jsg.getModelView(), 0.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
+	
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
 			shader  = jsggl.GoraudShader;
+
+			scene = new jsggl.Scene("Default");
+
 			if (!jsg.compileProgram(new shader(jsg))){
 				alert(jsg.compileProgramStatus);
 			}
@@ -33,15 +39,34 @@
 
 			jsggl.loadMaterialsFromJSON(jsg, objsonmtl);
 
-			obj3d = new Array(objson.objectList.length);
+			var n = objson.objectList.length;
 
-			for (var i = 0; i < obj3d.length; i++) {
-				obj3d[i] = new jsggl.Drawable("objson", jsg);
-				obj3d[i].indices = objson.objectList[i].indices;
-				obj3d[i].vertices = objson.objectList[i].vertices;			
-				obj3d[i].groupNameList = objson.objectList[i].groupName;				
-				obj3d[i].setRenderingMode(jsg.TRIANGLES);
-				obj3d[i].init();
+			if (objson.type == "group"){
+				var obj = new jsggl.Object("default");
+				for (var i = 0; i < n; i++) {
+					var ob = objson.objectList[i];
+					var obj3d = new jsggl.Drawable(ob.name, jsg);
+					obj3d.indices = ob.indices;
+					obj3d.vertices = ob.vertices;			
+					obj3d.groupNameList = ob.groupName;				
+					obj3d.setRenderingMode(jsg.TRIANGLES);
+					obj3d.init();
+					obj.addGroup(obj3d);
+				}
+				scene.addObject(obj);
+			} else {
+				for (var i = 0; i < n; i++) {
+					var ob = objson.objectList[i];
+					var obj = new jsggl.Object(ob.name);
+					var obj3d = new jsggl.Drawable(ob.name, jsg);
+					obj3d.indices = ob.indices;
+					obj3d.vertices = ob.vertices;			
+					obj3d.groupNameList = ob.groupName;				
+					obj3d.setRenderingMode(jsg.TRIANGLES);
+					obj3d.init();
+					obj.addGroup(obj3d);
+					scene.addObject(obj);
+				}
 			}
 			jsg.mainLoop();
 		}
@@ -56,9 +81,7 @@
 		
 		function display() {
 			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
-			for (var i = 0; i < obj3d.length; i++){
-				obj3d[i].draw();
-			}
+			scene.draw(jsg);
 			jsg.stopped = true;
 		}
 		
@@ -101,3 +124,4 @@
 	</div>
 </body>
 </html>
+

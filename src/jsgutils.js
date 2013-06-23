@@ -204,6 +204,15 @@ jsgutils.Vector3D = function(x, y, z) {
 			}
 };	
 
+
+jsgutils.Vector3D.equals = function(v1, v2) {
+	return v1[0] == v2[0] && v1[1] == v2[1] && v1[2] == v2[2];
+}
+
+jsgutils.Vector3D.fromArray = function(a){
+	return new jsgutils.Vector3D(a[0], a[1], a[2]);
+};
+
 jsgutils.Point3D = function(x, y, z) {
 	this.x = x;
 	this.y = y;
