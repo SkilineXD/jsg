@@ -5,6 +5,7 @@
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="objson.js"></script>
+	<script type="text/javascript" src="jsg_collections.js"></script>
 	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
 	<script type="text/javascript" src="jsgwebgl_light.js"></script>
 	<script type="text/javascript" src="jsgwebgl_material.js"></script>
@@ -93,15 +94,16 @@
 			shininess = evt.value;
 		}	
 
-		function updateLight(){
-			
+		function updateLight(){			
 			var pos0 = new jsggl.PointLight("A", [10, -10.0, -1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0], shininess, shader.type);
-			pos0.addTo(jsg, true);
+			jsg.lights.put(pos0.name, pos0);
 
 			var sun = new jsggl.SunLight("B", [0.0, 0.0, -1.0], [0.5, 0.5, 0.5, 1.0]);
-			sun.addTo(jsg, true);			
+			jsg.lights.put(sun.name, sun);		
 
-			jsg.compileProgram(new shader(jsg));			
+			if (!jsg.compileProgram(new shader(jsg))){
+				alert("Error");			
+			}			
 			display();
 		}
 

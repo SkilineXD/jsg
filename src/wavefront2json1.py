@@ -74,6 +74,8 @@ def makeModelDescription(path, name):
 				mat.shininess = data[1]
 			elif data[0] == "Ni":
 				mat.opticalDensity = data[1]
+	except e:
+		print(e)
 	finally:
 		if source:
 			source.close()

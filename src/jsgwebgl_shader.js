@@ -71,8 +71,17 @@ jsggl.PhongShader = function(jsg){
 	this.uniforms = ["uMVMatrix", "uPMatrix","uNMatrix", "uMaterialDiffuse", "uLightAmbient", "uMaterialSpecular", "uMaterialAmbient"];
 
 	this.setGlobalValues = function(jsg){
-		for (var i=0; i < jsg.lights.length; i++) {
-				jsg.lights[i].setValues(jsg);
+		var keys = jsg.lights.getKeys();
+		for (var i=0; i < keys.length; i++) {
+			var li = jsg.lights.get(keys[i]);
+				
+			if (li.diffuse){
+				li.diffuse.setValues(jsg);
+			} 
+
+			if (li.specular){
+				li.specular.setValues(jsg);
+			} 
 		}
 		jsg.gl.uniform4fv(jsg.program.uLightAmbient, jsg.ambientLight);	 
 	};
@@ -117,38 +126,48 @@ jsggl.PhongShader = function(jsg){
 	this.fragShader.mainLogical.push("vec4 Ia = uLightAmbient * uMaterialAmbient;");
 	this.fragShader.mainLogical.push("vec4 acm = vec4(0.0, 0.0, 0.0, 1.0);");
 	this.fragShader.mainLogical.push("vec3 E = normalize(vEyeVec);");
-
-	for (var i = 0; i < this.lights.length; i++) {
-			var l = this.lights[i];
-			var gd = l.globalDeclarations;
-			var ml = l.mainLogical;
-			var vgd = l.vertexGlobalDeclarations;
-			var fgd = l.fragGlobalDeclarations;
-			var vml = l.vertexMainLogical;
-			var fml = l.fragMainLogical;
-
-			for (var j = 0; j < gd.length; j++) {
-				this.fragShader.globalDeclarations.push(gd[j]);
+	var keys = this.lights.getKeys();
+	for (var i = 0; i < keys.length; i++) {
+			var lobj = this.lights.get(keys[i]);
+			l = [];
+			if (lobj.diffuse){ 
+				l.push(lobj.diffuse);
 			}
 
-			for (var j = 0; j < vgd.length; j++) {
-				this.vertexShader.globalDeclarations.push(vgd[j]);
+			if (lobj.specular){
+				l.push(lobj.specular);
 			}
+			for (k = 0; k < l.length; k++){
+				var gd = l[k].globalDeclarations;
+				var ml = l[k].mainLogical;
+				var vgd = l[k].vertexGlobalDeclarations;
+				var fgd = l[k].fragGlobalDeclarations;
+				var vml = l[k].vertexMainLogical;
+				var fml = l[k].fragMainLogical;
 
-			for (var j = 0; j < fgd.length; j++) {
-				this.fragShader.globalDeclarations.push(fgd[j]);
-			}
+				for (var j = 0; j < gd.length; j++) {
+					this.fragShader.globalDeclarations.push(gd[j]);
+				}
 
-			for (var j = 0; j < vml.length; j++) {
-				this.vertexShader.mainLogical.push(vml[j]);
-			}
+				for (var j = 0; j < vgd.length; j++) {
+					this.vertexShader.globalDeclarations.push(vgd[j]);
+				}
 
-			for (var j = 0; j < fml.length; j++) {
-				this.fragShader.mainLogical.push(fml[j]);
-			}
+				for (var j = 0; j < fgd.length; j++) {
+					this.fragShader.globalDeclarations.push(fgd[j]);
+				}
 
-			for (var j = 0; j < ml.length; j++) {
-				this.fragShader.mainLogical.push(ml[j]);
+				for (var j = 0; j < vml.length; j++) {
+					this.vertexShader.mainLogical.push(vml[j]);
+				}
+
+				for (var j = 0; j < fml.length; j++) {
+					this.fragShader.mainLogical.push(fml[j]);
+				}
+
+				for (var j = 0; j < ml.length; j++) {
+					this.fragShader.mainLogical.push(ml[j]);
+				}
 			}
 	}
 	this.fragShader.mainLogical.push("vec4 finalColor = Ia + acm;");	
@@ -166,8 +185,19 @@ jsggl.GoraudShader = function(jsg){
 	this.uniforms = ["uMVMatrix", "uPMatrix","uNMatrix", "uMaterialDiffuse", "uLightAmbient", "uMaterialSpecular", "uMaterialAmbient"];
 
 	this.setGlobalValues = function(jsg){
-		for (var i=0; i < jsg.lights.length; i++) {
-				jsg.lights[i].setValues(jsg);
+		var keys = jsg.lights.getKeys();
+
+		for (var i=0; i < keys.length; i++) {
+				var li = jsg.lights.get(keys[i]);
+				
+				
+				if (li.diffuse){
+					li.diffuse.setValues(jsg);
+				} 
+
+				if (li.specular){
+					li.specular.setValues(jsg);
+				}
 		}
 		jsg.gl.uniform4fv(jsg.program.uLightAmbient, jsg.ambientLight);	 
 	};
@@ -206,39 +236,48 @@ jsggl.GoraudShader = function(jsg){
 	this.vertexShader.mainLogical.push("vec3 eyeVec = -vec3(vertex.xyz);");	
 	this.vertexShader.mainLogical.push("vec3 E = normalize(eyeVec);");
 
-	for (var i = 0; i < this.lights.length; i++) {
-			var l = this.lights[i];
-			var gd = l.globalDeclarations;
-			var ml = l.mainLogical;
-			var vgd = l.vertexGlobalDeclarations;
-			var fgd = l.fragGlobalDeclarations;
-			var vml = l.vertexMainLogical;
-			var fml = l.fragMainLogical;
-			
-			for (var j = 0; j < vgd.length; j++) {
-				this.vertexShader.globalDeclarations.push(vgd[j]);
-			}
+	var keys = this.lights.getKeys();
+	for (var i = 0; i < keys.length; i++) {
+			var lobj = this.lights.get(keys[i]);
+			l = [];
+			if (lobj.diffuse)
+				l.push(lobj.diffuse);
+			if (lobj.specular)
+				l.push(lobj.specular);
+
+			for (var k = 0; k < l.length; k++) {	
+				var gd = l[k].globalDeclarations;
+				var ml = l[k].mainLogical;
+				var vgd = l[k].vertexGlobalDeclarations;
+				var fgd = l[k].fragGlobalDeclarations;
+				var vml = l[k].vertexMainLogical;
+				var fml = l[k].fragMainLogical;
+				
+				for (var j = 0; j < vgd.length; j++) {
+					this.vertexShader.globalDeclarations.push(vgd[j]);
+				}
 		
-			for (var j = 0; j < vml.length; j++) {
-				this.vertexShader.mainLogical.push(vml[j]);
-			}
+				for (var j = 0; j < vml.length; j++) {
+					this.vertexShader.mainLogical.push(vml[j]);
+				}
 
-			for (var j = 0; j < fml.length; j++) {
-				this.fragShader.mainLogical.push(fml[j]);
-			}
+				for (var j = 0; j < fml.length; j++) {
+					this.fragShader.mainLogical.push(fml[j]);
+				}
 
-			for (var j = 0; j < gd.length; j++) {
-				this.vertexShader.globalDeclarations.push(gd[j]);
-			}
-
-
-			for (var j = 0; j < ml.length; j++) {
-				this.vertexShader.mainLogical.push(ml[j]);
-			}
+				for (var j = 0; j < gd.length; j++) {
+					this.vertexShader.globalDeclarations.push(gd[j]);
+				}
 	
 
-			for (var j = 0; j < fgd.length; j++) {
-				this.fragShader.globalDeclarations.push(fgd[j]);
+				for (var j = 0; j < ml.length; j++) {
+					this.vertexShader.mainLogical.push(ml[j]);
+				}
+	
+
+				for (var j = 0; j < fgd.length; j++) {
+					this.fragShader.globalDeclarations.push(fgd[j]);
+				}
 			}
 	}
 	

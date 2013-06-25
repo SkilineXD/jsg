@@ -14,9 +14,6 @@ jsggl.Drawable = function(name, globj){
 	this.renderingmode = this.gl.LINES;
 	this.groupNameList = []
 	this.material = {};
-	this.material["None"] = new jsggl.Material("None", [0.001, 0.001, 0.001, 1.0], [1.0,0.0,0.0,1.0], [1.0, 1.0, 1.0, 1.0]);	
-	this.material["Material"] = new jsggl.Material("Material", [0.001, 0.001, 0.001, 1.0], [0.0,1.0,0.0,1.0], [1.0, 1.0, 1.0, 1.0]);	
-	this.material["Material.001"] = new jsggl.Material("Material", [0.001, 0.001, 0.001, 1.0], [0.1,0.5,0.8,1.0], [1.0, 1.0, 1.0, 1.0]);	
 }
 
 jsggl.Drawable.prototype = {
@@ -75,53 +72,33 @@ jsggl.Drawable.prototype = {
     		mat4.transpose(nMatrix, nMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
-		
-		if (this.groupNameList.length == 0){
-			var material = this.material["None"];
+				
+		for (var i = 0; i < this.indexBuffer.length; i++) {
+			var group = this.groupNameList[i]
+			var material = this.material[group];
+
+			if (!material) material = this.material["None"];
+			
 			this.jsg.materialSpecular = material.specular;
 			this.jsg.materialDiffuse = material.diffuse;
 			this.jsg.materialAmbient = material.ambient;
 			this.jsg.shader.setLocalValues(this.jsg);
-			for (var i = 0; i < this.indexBuffer.length; i++) {
-				if (prg.aVertexPosition >= 0){
-					this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
-			    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
-			    		this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
-				}
+			if (prg.aVertexPosition >= 0){
+				this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
+			    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
+			   	this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
+			}
 
 			if (prg.aVertexNormal >= 0){
-					this.gl.enableVertexAttribArray(prg.aVertexNormal);
-    					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
-    					this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
-				}
-				this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);			
-				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+				this.gl.enableVertexAttribArray(prg.aVertexNormal);
+    				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
+    				this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
 			}
-		} else {		
-			for (var i = 0; i < this.indexBuffer.length; i++) {
-				var group = this.groupNameList[i]
-				var material = this.material[group];
-				if (!material) material = this.material["None"];
-				this.jsg.materialSpecular = material.specular;
-				this.jsg.materialDiffuse = material.diffuse;
-				this.jsg.materialAmbient = material.ambient;
-				this.jsg.shader.setLocalValues(this.jsg);
-				if (prg.aVertexPosition >= 0){
-					this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
-			    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
-			    		this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
-				}
 
-				if (prg.aVertexNormal >= 0){
-					this.gl.enableVertexAttribArray(prg.aVertexNormal);
-    					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
-    					this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
-				}
-
-				this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);				
-    				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
-			}
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);				
+    			this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 		}
+		
 
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
@@ -143,18 +120,14 @@ jsggl.Drawable.prototype = {
 
 jsggl.Object = function(name) {
 	this.name = name;
-	this.group = [];
-	this.groupKey = {};
+	this.groups = new jsgcol.ArrayMap();
 
 	this.addGroup = function(g){
-		if (this.groupKey.hasOwnProperty(g.name)){
-			var idx = this.groupKey[g.name];
-			this.group[idx] = g;
-		} else {
-			var idx = this.group.length;
-			this.group.push(g);
-			this.groupKey[g.name] = idx;
-		}
+		this.groups.put(g.name, g);
+	}
+
+	this.removeGroup = function(name){
+		this.groups.remove(name);
 	}
 
 	this.transformation = mat4.create();
@@ -164,8 +137,9 @@ jsggl.Object = function(name) {
 		var mv = mat4.create();
 		mat4.multiply(mv, jsg.getModelView(), this.transformation);
 		jsg.modelViewStack.push(mv);
-		for (var i = 0; i < this.group.length; i++) {
-			this.group[i].draw();
+		var keys = this.groups.getKeys();
+		for (var i = 0; i < keys.length; i++) {
+			this.groups.get(keys[i]).draw();
 		}
 		jsg.modelViewStack.pop();
 	}
@@ -177,18 +151,14 @@ jsggl.Scene = function(name){
 	this.cameras = {};
 	this.cameras["Default"] = new jsggl.Camera("Default", [0.0, 0.0, 0.0], [0.0, 0.0, -1.0], [0.0, 1.0, 0.0]);
 	this.activeCamera = "Default";
-	this.objects = [];
-	this.objectKey = {};
+	this.objects = new jsgcol.ArrayMap();
 
 	this.addObject = function(obj) {
-		if (this.objectKey.hasOwnProperty(obj.name)){
-			var idx = this.objectKey[obj.name];
-			this.objects[idx] = obj;
-		} else {
-			var idx = this.objects.length;
-			this.objects.push(obj);
-			this.objectKey[obj.name] = idx;
-		}
+		this.objects.put(obj.name, obj);
+	}
+
+	this.removeObject = function(name) {
+		this.objects.remove(name);
 	}
 
 	this.setActiveCamera = function(camName){ 
@@ -204,8 +174,9 @@ jsggl.Scene = function(name){
 		var cm = cam.getMatrix();
 		mat4.multiply(cm, jsg.getModelView(), cm);
 		jsg.modelViewStack.push(cm);
-		for (var i = 0; i < this.objects.length; i++) {
-				this.objects[i].draw(jsg);
+		var keys = this.objects.getKeys();
+		for (var i = 0; i < keys.length; i++) {
+			this.objects.get(keys[i]).draw(jsg);
 		}
 		jsg.modelViewStack.pop();
 	}

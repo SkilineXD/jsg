@@ -1,6 +1,6 @@
 var objson = {
 "mtllib":"Jimmy.mtl",
-"type":"group",
+"type":"object",
 "objectList":[ {
 "s":"",
 "name":"Mesh",

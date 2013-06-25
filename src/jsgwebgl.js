@@ -33,23 +33,8 @@ jsggl.JsgGl = function(id){
 	this.materialDiffuse = [0.001,0.001 ,0.001,1.0];
 	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
 	this.materialSpecular = [0.001, 0.001, 0.001, 1.0];
-	this.lightsKey = {};
-	this.lights = [];
-
-	this.addLight = function(light){	
-		var idx = this.lights.length;
-		this.lights.push(light);
-		this.lightsKey[light.name] = idx;
-	}	
-
-	this.getLightIdx = function(name){
-		if (this.lightsKey.hasOwnProperty(name)) {
-			return this.lightsKey[name];
-		} else {
-			return -1;
-		}
-	}
-
+	this.lights = new jsgcol.ArrayMap();
+	
 	this.canvas = document.getElementById(id);
 
 	if (!this.canvas){
@@ -181,7 +166,6 @@ jsggl.JsgGl.prototype = {
             		return false;
         	}
 
-
 		var shaderfs = this.getShader("x-shader/x-fragment", fragShader);		
 		if (!this.gl.getShaderParameter(shaderfs, this.gl.COMPILE_STATUS)) {
 			this.compileProgramStatus =  "Fragment shader: " + this.gl.getShaderInfoLog(shaderfs);
@@ -210,12 +194,24 @@ jsggl.JsgGl.prototype = {
 		prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
 		prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
 		
+		var keys = this.lights.getKeys();
 
-		for (var i = 0; i < this.lights.length; i++) {
-			var l = this.lights[i];
-			for (var j = 0; j < l.uniforms.length; j++){
-				prg[l.uniforms[j]] = this.gl.getUniformLocation(prg, l.uniforms[j]);
+		for (var i = 0; i < keys.length; i++) {
+			var lobj = this.lights.get(keys[i]);
+			var l = [];
+			if (lobj.diffuse) {
+				l.push(lobj.diffuse);
 			}
+
+			if (lobj.specular) {
+				l.push(lobj.specular);
+			}
+
+			for (var k = 0; k < l.length; k++) {
+				for (var j = 0; j < l[k].uniforms.length; j++){
+					prg[l[k].uniforms[j]] = this.gl.getUniformLocation(prg, l[k].uniforms[j]);
+				}
+			}	
 		}
 
 		this.program = prg;

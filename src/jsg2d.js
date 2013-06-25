@@ -184,6 +184,9 @@ function createJSG2DObject(jsg) {
 		this.y = y;	
 	}
 
+	jsg2d.clear = function(){
+		jsg2d.clearRect(0, 0, jsg2d.jsg.width, jsg2d.jsg.height);
+	}
 
 	jsg2d.font = function(style) {
 		jsg2d.context.font = style;
@@ -213,3 +216,4 @@ function createJSG2DObject(jsg) {
 	
 	return jsg2d;
 }
+

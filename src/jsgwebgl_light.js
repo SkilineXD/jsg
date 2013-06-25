@@ -6,23 +6,10 @@ jsggl.SunLight = function(name, direction, difcolor){
 	this.diffuseColor = difcolor;
 	
 	this.update = function() {
-		this.diffuse = new jsggl.DiffuseLight(this.name + "1", this.direction, this.diffuseColor);
+		this.diffuse = new jsggl.DiffuseLight(this.name, this.direction, this.diffuseColor);
 	};
 
 	this.update();
-
-	this.addTo = function(jsg, over){
-		var idx = jsg.getLightIdx(this.diffuse.name);
-		if (idx < 0){
-			jsg.addLight(this.diffuse);
-			return true;
-		} else if (over) {
-			this.update();
-			jsg.lights[idx] = this.diffuse;
-			return true;
-		}
-		return false;
-	}
 }
 
 jsggl.PointLight = function(name, position, difcolor, specColor, shininess, shaderType){
@@ -40,21 +27,6 @@ jsggl.PointLight = function(name, position, difcolor, specColor, shininess, shad
 	}
 
 	this.update();
-
-	this.addTo = function(jsg, over){
-		var idx = jsg.getLightIdx(this.diffuse.name);
-		if (idx < 0){
-			jsg.addLight(this.diffuse);
-			jsg.addLight(this.specular);
-			return true;
-		} else if (over) {
-			this.update();
-			jsg.lights[idx] = this.diffuse;
-			jsg.lights[idx+1] = this.specular;
-			return true;
-		}
-		return false;
-	}
 }
 
 jsggl.DiffusePositionalLight = function(name, position, diffuseColor, shaderType){
