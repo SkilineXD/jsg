@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="gl-matrix.js"></script>
+	<script type="text/javascript" src="objson.js"></script>
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="jsggl_interaction.js"></script>
+	<script type="text/javascript" src="jsg_collections.js"></script>
+	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="jsgwebgl.js"></script>
+	<script type="text/javascript" src="jsgutils.js"></script>
+	<script type="text/javascript">
+		var jsg, scene, shader, shaders, shininess=100, pos = [0, 0, 0], az = 0, el = 0, roll = 0, pos = null, cam;
+		function init() {
+			shaders = {};
+			jsg = new jsggl.JsgGl("scenecanvas");
+			jsg.display = display;
+			jsg.initialize = initialize;
+			jsg.finalize = finalize; 
+    			mat4.perspective(jsg.getProjection(), 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);
+    			//distance
+    			mat4.translate(jsg.getModelView(), jsg.getModelView(), [0.0, -1.0, -2]); 
+			mat4.rotate(jsg.getModelView(), jsg.getModelView(), 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
+			mat4.rotate(jsg.getModelView(), jsg.getModelView(), 0.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
+	
+			shaders["goraud"] = jsggl.GoraudShader;
+			shaders["phong"] = jsggl.PhongShader;
+			shader  = jsggl.GoraudShader;
+
+			scene = new jsggl.Scene("Default");
+
+			if (!jsg.compileProgram(new shader(jsg))){
+				alert(jsg.compileProgramStatus);
+			}
+
+
+			jsggl.loadMaterialsFromJSON(jsg, objsonmtl);
+
+			var n = objson.objectList.length;
+
+			if (objson.type == "group"){
+				var obj = new jsggl.Object("default");
+				for (var i = 0; i < n; i++) {
+					var ob = objson.objectList[i];
+					var obj3d = new jsggl.Drawable(ob.name, jsg);
+					obj3d.indices = ob.indices;
+					obj3d.vertices = ob.vertices;			
+					obj3d.groupNameList = ob.groupName;				
+					obj3d.setRenderingMode(jsg.TRIANGLES);
+					obj3d.init();
+					obj.addGroup(obj3d);
+				}
+				scene.addObject(obj);
+			} else {
+				for (var i = 0; i < n; i++) {
+					var ob = objson.objectList[i];
+					var obj = new jsggl.Object(ob.name);
+					var obj3d = new jsggl.Drawable(ob.name, jsg);
+					obj3d.indices = ob.indices;
+					obj3d.vertices = ob.vertices;			
+					obj3d.groupNameList = ob.groupName;				
+					obj3d.setRenderingMode(jsg.TRIANGLES);
+					obj3d.init();
+					obj.addGroup(obj3d);
+					scene.addObject(obj);
+				}
+			}
+			
+
+			$("#scenecanvas").mouseenter(function(evt){
+				pos = [evt.clientX, evt.clientY];
+			});
+
+			$("#scenecanvas").mouseleave(function(evt){
+				pos = null;
+			});
+
+			$("#scenecanvas").mousemove(function(evt){
+				if (pos != null) {
+					var npos = [evt.clientX, evt.clientY];
+					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
+					delta[0] = delta[0] * 0.001;
+					delta[1] = delta[1] * 0.001;
+					cam.position[0] += delta[0] * 10;
+					cam.position[1] += -delta[1] * 10;
+					cam.update();					
+					pos = npos;
+					jpos = jsgint.Utils.getCanvasCoords($("#scenecanvas"), evt.pageX, evt.pageY);
+					var p = jsgint.Utils.unproject(jpos[0], jpos[1], 0.001, mat4.multiply(mat4.create(),cam.getMatrix(), jsg.getModelView()), jsg.getProjection(), jsg.canvas.width, jsg.canvas.height);
+					$("#display").html(p[0] + ", " + p[1] + ", " + p[2]);
+					display();
+				}
+			});
+
+			cam = scene.getActiveCamera();
+			jsg.mainLoop();
+		}
+		
+		function initialize() {
+			jsg.clearColor(0.9, 0.9, 0.9, 1.0);
+			jsg.clearDepth(100.0);
+			jsg.enableDepthTest();
+			jsg.depthFunc(jsg.gl.LEQUAL);
+			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
+		}
+		
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			scene.draw(jsg);
+			jsg.stopped = true;
+		}
+		
+		function finalize() {
+		
+		}
+
+		function setShininess(evt){
+			shininess = evt.value;
+		}	
+
+		function updateLight(){			
+			var pos0 = new jsggl.PointLight("A", [10, -10.0, -1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0], shininess, shader.type);
+			jsg.lights.put(pos0.name, pos0);
+
+			var sun = new jsggl.SunLight("B", [0.0, 0.0, -1.0], [0.5, 0.5, 0.5, 1.0]);
+			jsg.lights.put(sun.name, sun);		
+
+			if (!jsg.compileProgram(new shader(jsg))){
+				alert("Error");			
+			}			
+			display();
+		}
+
+		function selectShadingMethod(evt){
+			shader = shaders[evt.value];
+		}
+	</script>
+</head>
+<body onload="init();">
+	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
+	<div style="background: rgb(255, 255, 200);">	
+		<div><button onclick="updateLight()">Update Light</button></div>
+		<div>Shading Method</div>
+		<input type="radio" checked="true"  onchange="selectShadingMethod(this);" value="goraud" name="ShadingModel">Goraud</input>
+		<input type="radio" onchange="selectShadingMethod(this);" value="phong" name="ShadingModel">Phong</input>
+		<div>				
+		<div id="shininess">
+			<label for="shininessValue">Shininess</label><input id="shininessValue" min="0" max="500" step="1" onchange="setShininess(this);" type="range"></input>
+		</div></div>
+	</div>
+	<div id="display"></div>
+</body>
+</html>
+
