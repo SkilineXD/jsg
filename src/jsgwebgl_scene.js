@@ -1,5 +1,6 @@
 var jsggl = jsggl || {};
 
+
 jsggl.Drawable = function(name, globj){	
 	this.vertices = [];
 	this.indices = [];
@@ -149,9 +150,10 @@ jsggl.Object = function(name) {
 jsggl.Scene = function(name){
 	this.name = name;
 	this.cameras = {};
-	this.cameras["Default"] = new jsggl.Camera("Default", [0.0, 0.0, 0.0], [0.0, 0.0, -1.0], [0.0, 1.0, 0.0]);
+	this.cameras["Default"] = new jsggl.TCamera("Default", [0.0, 0.0, 0.0], 10, 10, 0);
 	this.activeCamera = "Default";
 	this.objects = new jsgcol.ArrayMap();
+
 
 	this.addObject = function(obj) {
 		this.objects.put(obj.name, obj);
@@ -159,6 +161,10 @@ jsggl.Scene = function(name){
 
 	this.removeObject = function(name) {
 		this.objects.remove(name);
+	}
+
+	this.getActiveCamera = function(){
+		return this.cameras[this.activeCamera];
 	}
 
 	this.setActiveCamera = function(camName){ 

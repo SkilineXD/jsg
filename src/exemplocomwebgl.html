@@ -5,6 +5,7 @@
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="objson.js"></script>
+	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript" src="jsg_collections.js"></script>
 	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
 	<script type="text/javascript" src="jsgwebgl_light.js"></script>
@@ -14,7 +15,7 @@
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, scene, shader, shaders, shininess=100;
+		var jsg, scene, shader, shaders, shininess=100, pos = [0, 0, 0], az = 0, el = 0, roll = 0, pos = null, cam;
 		function init() {
 			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
@@ -69,6 +70,31 @@
 					scene.addObject(obj);
 				}
 			}
+			
+
+			$("#scenecanvas").mouseenter(function(evt){
+				pos = [evt.clientX, evt.clientY];
+			});
+
+			$("#scenecanvas").mouseleave(function(evt){
+				pos = null;
+			});
+
+			$("#scenecanvas").mousemove(function(evt){
+				if (pos != null) {
+					var npos = [evt.clientX, evt.clientY];
+					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
+					delta[0] = delta[0] * 0.001;
+					delta[1] = delta[1] * 0.001;
+					cam.position[0] += delta[0] * 10;
+					cam.position[1] += -delta[1] * 10;
+					pos = npos;
+					cam.update();
+					display();
+				}
+			});
+
+			cam = scene.getActiveCamera();
 			jsg.mainLoop();
 		}
 		

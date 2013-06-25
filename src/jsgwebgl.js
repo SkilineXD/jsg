@@ -83,8 +83,6 @@ jsggl.JsgGl = function(id){
 	this.stopped = false;
 	var self = this;
 
-	this.camera = new jsggl.Camera([0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 1.0, 0.0]);
-
 	function mainLoop(time) {
 			if (!time) {
 				time = +new Date();
@@ -211,7 +209,7 @@ jsggl.JsgGl.prototype = {
 				for (var j = 0; j < l[k].uniforms.length; j++){
 					prg[l[k].uniforms[j]] = this.gl.getUniformLocation(prg, l[k].uniforms[j]);
 				}
-			}	
+			}
 		}
 
 		this.program = prg;
