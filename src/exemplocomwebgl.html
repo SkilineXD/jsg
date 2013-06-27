@@ -6,6 +6,7 @@
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="objson.js"></script>
 	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="jsggl_interaction.js"></script>
 	<script type="text/javascript" src="jsg_collections.js"></script>
 	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
 	<script type="text/javascript" src="jsgwebgl_light.js"></script>
@@ -15,7 +16,7 @@
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, scene, shader, shaders, shininess=100, pos = [0, 0, 0], az = 0, el = 0, roll = 0, pos = null, cam;
+		var jsg, scene, shader, shaders, shininess=100, pos = [0, 0], z = 0, az = 0, el = 0, roll = 0, pos = null, cam;
 		function init() {
 			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
@@ -23,10 +24,9 @@
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
     			mat4.perspective(jsg.getProjection(), 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);
-    			//distance
-    			mat4.translate(jsg.getModelView(), jsg.getModelView(), [0.0, -1.0, -2]); 
-			mat4.rotate(jsg.getModelView(), jsg.getModelView(), 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
-			mat4.rotate(jsg.getModelView(), jsg.getModelView(), 0.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
+    			//distanc
+			//mat4.rotate(jsg.getModelView(), jsg.getModelView(), 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
+			//mat4.rotate(jsg.getModelView(), jsg.getModelView(), 0.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
 	
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
@@ -72,7 +72,7 @@
 			}
 			
 
-			$("#scenecanvas").mouseenter(function(evt){
+			$("#scenecanvas").mousedown(function(evt){
 				pos = [evt.clientX, evt.clientY];
 			});
 
@@ -80,24 +80,105 @@
 				pos = null;
 			});
 
+			$(document).keydown(function(evt){
+
+				switch(evt.which){
+					case 38:
+						z++;
+						break;
+					case 40:
+						z--;
+						break;
+				}	
+
+				cam.position[2] = z;
+				cam.update();
+				display();
+			});
+
+			$("#scenecanvas").mouseup(function(evt){
+				pos = null;
+			});
+
 			$("#scenecanvas").mousemove(function(evt){
 				if (pos != null) {
-					var npos = [evt.clientX, evt.clientY];
+					var npos = [evt.clientX, evt.clientY, 0.0];
 					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
-					delta[0] = delta[0] * 0.001;
-					delta[1] = delta[1] * 0.001;
-					cam.position[0] += delta[0] * 10;
-					cam.position[1] += -delta[1] * 10;
+					delta[0] = delta[0] * 0.005;
+					delta[1] = delta[1] * 0.005;
+					cam.azimute += delta[0] * 10;
+					cam.elevation += -delta[1] * 10;
+					//cam.position[2] += z;
+					cam.update();					
 					pos = npos;
-					cam.update();
 					display();
 				}
 			});
-
+			
+			var floor = Floor;
+			floor.build(10, 1);
+			var floor3D = new jsggl.Drawable("floor", jsg);
+			floor3D.vertices = [floor.vertices];
+			floor3D.indices = [floor.indices];
+			floor3D.groupNameList = ["floor"];	
+			floor3D.init();
+			
+		
+			var floorObj = new jsggl.Object("floor");
+			floorObj.addGroup(floor3D);	
+			scene.addObject(floorObj);
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING);
+			scene.setActiveCamera("tracking");
+			
+			jsg.materials["floor"]  = floor.material;
+			
 			cam = scene.getActiveCamera();
+			
 			jsg.mainLoop();
 		}
 		
+		var Floor = {
+		    alias       : 'floor',
+		    wireframe   : true,
+		    dim         : 50,
+		    lines       : 50,
+		    vertices    : [],
+		    indices     : [],
+		    material : { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.7, 0.7, 0.7, 1.0], "specular":[0.7, 0.7, 0.7, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 },
+		    build : function(d,e){
+	                    if (d) Floor.dim = d;
+	                    if (e) Floor.lines = 2*Floor.dim/e;
+	                    var inc = 2*Floor.dim/Floor.lines;
+	                    var v = [];
+	                    var i = [];
+	
+	                    for(var l=0;l<=Floor.lines;l++){
+	                        v[6*l] = -Floor.dim; 
+	                        v[6*l+1] = 0;
+	                        v[6*l+2] = -Floor.dim+(l*inc);
+	                        
+	                        v[6*l+3] = Floor.dim;
+	                        v[6*l+4] = 0;
+	                        v[6*l+5] = -Floor.dim+(l*inc);
+                        
+	                        v[6*(Floor.lines+1)+6*l] = -Floor.dim+(l*inc); 
+	                        v[6*(Floor.lines+1)+6*l+1] = 0;
+	                        v[6*(Floor.lines+1)+6*l+2] = -Floor.dim;
+                        
+	                        v[6*(Floor.lines+1)+6*l+3] = -Floor.dim+(l*inc);
+	                        v[6*(Floor.lines+1)+6*l+4] = 0;
+	                        v[6*(Floor.lines+1)+6*l+5] = Floor.dim;
+	                        
+	                        i[2*l] = 2*l;
+	                        i[2*l+1] = 2*l+1;
+	                        i[2*(Floor.lines+1)+2*l] = 2*(Floor.lines+1)+2*l;
+	                        i[2*(Floor.lines+1)+2*l+1] = 2*(Floor.lines+1)+2*l+1;        
+	                    }
+                    Floor.vertices = v;
+                    Floor.indices = i;
+              }}
+
 		function initialize() {
 			jsg.clearColor(0.9, 0.9, 0.9, 1.0);
 			jsg.clearDepth(100.0);
@@ -128,7 +209,7 @@
 			jsg.lights.put(sun.name, sun);		
 
 			if (!jsg.compileProgram(new shader(jsg))){
-				alert("Error");			
+				alert("Error: " + jsg.compileProgramStatus);			
 			}			
 			display();
 		}
@@ -136,6 +217,14 @@
 		function selectShadingMethod(evt){
 			shader = shaders[evt.value];
 		}
+
+		function selectCameraType(evt){
+			scene.setActiveCamera(evt.value);
+			cam = scene.getActiveCamera();	
+			cam.reset();
+			display();
+		}
+
 	</script>
 </head>
 <body onload="init();">
@@ -150,6 +239,12 @@
 			<label for="shininessValue">Shininess</label><input id="shininessValue" min="0" max="500" step="1" onchange="setShininess(this);" type="range"></input>
 		</div></div>
 	</div>
+	<div>Camera Type</div>
+	<div>
+		<input type="radio"  onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
+		<input type="radio" checked="true"  onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
+	</div>
+	<div id="display"></div>
 </body>
 </html>
 
