@@ -1,5 +1,5 @@
 /**
-* This file contains code of JavaScript Graphical Library for WebGL (JSGWebGL).
+* This file contains code of JavaScript Graphics Library for WebGL (JSGWebGL).
 * JSGWebGL is free for non commercial propose.
 * Author: Gilzamir Ferreira Gomes (Todos os direitos reservados)
 * Date: jun/05/2013
