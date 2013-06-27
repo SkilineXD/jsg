@@ -56,6 +56,7 @@ jsggl.JsgGl = function(id){
 	this.id = id;
 	this.scenes = new jsgcol.ArrayMap();
 	this.activeScene = null;
+	this.currentScene = null;
 	this.ambientLight = [0.01,0.01,0.01,1.0];
 	this.materialDiffuse = [0.001,0.001 ,0.001,1.0];
 	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
@@ -106,6 +107,24 @@ jsggl.JsgGl = function(id){
 }
 
 jsggl.JsgGl.prototype = {
+
+	setActiveScene: function(name) {
+		this.currentScene = this.scenes.get(name);
+		this.activeScene = name;
+	},
+
+	addScene: function(scene) {
+		this.scenes.put(scene.name, scene);
+	},
+
+	removeScene: function(scene) {
+		if (this.scenes.hasKey(scene) && scene != this.activeScene){
+			this.scenes.remove(scene);
+			return true;
+		}
+		return false;
+	},
+
 	getModelView: function() {
 		return this.modelViewStack[this.modelViewStack.length - 1];
 	},	
@@ -154,48 +173,50 @@ jsggl.JsgGl.prototype = {
 	},
 
 	build: function() {
-		var shader = this.shader;
-		shader.build();
-		var vertexShader = shader.vertexShader.generateCode();
-		var fragShader = shader.fragShader.generateCode();
-		var prg = this.gl.createProgram();
-
-		var shadervs = this.getShader("x-shader/x-vertex", vertexShader);
-		if (!this.gl.getShaderParameter(shadervs, this.gl.COMPILE_STATUS)) {
-			this.compileProgramStatus =  "Vertex shader: " + this.gl.getShaderInfoLog(shadervs);
-            		return false;
-        	}
-
-		var shaderfs = this.getShader("x-shader/x-fragment", fragShader);		
-		if (!this.gl.getShaderParameter(shaderfs, this.gl.COMPILE_STATUS)) {
-			this.compileProgramStatus =  "Fragment shader: " + this.gl.getShaderInfoLog(shaderfs);
-            		return false;
-        	}
-		
-		this.gl.attachShader(prg, shadervs);
-		this.gl.attachShader(prg, shaderfs);
-		this.gl.linkProgram(prg);
-		
-		if (!this.gl.getProgramParameter(prg, this.gl.LINK_STATUS)){
-			this.compileProgramStatus = "Program link error.";
-			return false;
-		}
-		
-		this.gl.useProgram(prg);
-
-    		prg.aVertexPosition  = this.gl.getAttribLocation(prg, "aVertexPosition");
-    		prg.aVertexNormal    = this.gl.getAttribLocation(prg, "aVertexNormal");
-	
-		prg.uPMatrix = this.gl.getUniformLocation(prg, "uPMatrix");
-		prg.uMVMatrix = this.gl.getUniformLocation(prg, "uMVMatrix");
-		prg.uNMatrix = this.gl.getUniformLocation(prg, "uNMatrix");
-		prg.uLightAmbient = this.gl.getUniformLocation(prg, "uLightAmbient");
-		prg.uMaterialDiffuse = this.gl.getUniformLocation(prg, "uMaterialDiffuse");
-		prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
-		prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
-		this.program = prg;		
 		var scene = this.scenes.get(this.activeScene);
 		if (scene){
+			scene.build();
+			var shader = this.shader;
+			shader.build();
+			var vertexShader = shader.vertexShader.generateCode();
+			var fragShader = shader.fragShader.generateCode();
+			var prg = this.gl.createProgram();
+
+			var shadervs = this.getShader("x-shader/x-vertex", vertexShader);
+			if (!this.gl.getShaderParameter(shadervs, this.gl.COMPILE_STATUS)) {
+				this.compileProgramStatus =  "Vertex shader: " + this.gl.getShaderInfoLog(shadervs);
+		    		return false;
+			}
+
+			var shaderfs = this.getShader("x-shader/x-fragment", fragShader);		
+			if (!this.gl.getShaderParameter(shaderfs, this.gl.COMPILE_STATUS)) {
+				this.compileProgramStatus =  "Fragment shader: " + this.gl.getShaderInfoLog(shaderfs);
+		    		return false;
+			}
+		
+			this.gl.attachShader(prg, shadervs);
+			this.gl.attachShader(prg, shaderfs);
+			this.gl.linkProgram(prg);
+		
+			if (!this.gl.getProgramParameter(prg, this.gl.LINK_STATUS)){
+				this.compileProgramStatus = "Program link error.";
+				return false;
+			}
+		
+			this.gl.useProgram(prg);
+
+	    		prg.aVertexPosition  = this.gl.getAttribLocation(prg, "aVertexPosition");
+	    		prg.aVertexNormal    = this.gl.getAttribLocation(prg, "aVertexNormal");
+	
+			prg.uPMatrix = this.gl.getUniformLocation(prg, "uPMatrix");
+			prg.uMVMatrix = this.gl.getUniformLocation(prg, "uMVMatrix");
+			prg.uNMatrix = this.gl.getUniformLocation(prg, "uNMatrix");
+			prg.uLightAmbient = this.gl.getUniformLocation(prg, "uLightAmbient");
+			prg.uMaterialDiffuse = this.gl.getUniformLocation(prg, "uMaterialDiffuse");
+			prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
+			prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
+			this.program = prg;		
+
 			var lights = scene.lights;
 			var keys = lights.getKeys();
 			for (var i = 0; i < keys.length; i++) {
@@ -219,7 +240,126 @@ jsggl.JsgGl.prototype = {
 		this.shader.setGlobalValues();
 		return true;
 	},
+
+
+	run: function() {
+		if (this.currentScene) {
+			this.currentScene.draw(this);
+		}
+	}
 }
 
+jsggl.Drawable = function(name, globj){	
+	this.vertices = [];
+	this.indices = [];
+	this.name = name;
+	this.vboName = "";
+	this.idoName = "";
+	this.gl = globj.gl;
+	this.jsg = globj;
+	this.vertexBuffer = undefined;
+	this.indexBuffer = undefined;
+	this.normalsBuffer = undefined;
+	this.renderingmode = this.gl.LINES;
+	this.groupNameList = []
+	this.material = {};
+}
 
+jsggl.Drawable.prototype = {
+	build: function() {
+		this.vertexBuffer = [];
+		for (var i = 0; i < this.vertices.length; i++){
+			var vBuffer = this.gl.createBuffer();
+			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
+			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
+			this.vertexBuffer.push(vBuffer)
+		}
+	
+
+		this.indexBuffer = [];
+		this.normalsBuffer = [];
+		for (var i = 0; i < this.indices.length; i++) {
+			var iBuffer  = this.gl.createBuffer();
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices[i]), this.gl.STATIC_DRAW);
+			var normals = jsgutils.calcNormals(this.vertices[i], this.indices[i]);
+		
+   			var nBuffer = this.gl.createBuffer();
+			this.indexBuffer.push(iBuffer);
+			this.normalsBuffer.push(nBuffer);
+    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
+    			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
+		}
+
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
+	},
+	
+	setRenderingMode: function(rm) {
+		this.renderingmode = rm;
+	},
+
+	getRenderingMode: function() {
+		return this.renderingmode;
+	},
+
+	draw : function() {		
+		if (this.jsg.materials){
+			this.material = this.jsg.materials;
+		}
+		var prg = this.jsg.program;
+
+		var pMatrix = this.jsg.getProjection();
+		var mvMatrix = this.jsg.getModelView();
+		
+		var nMatrix = mat4.create();
+		
+    		mat4.transpose(nMatrix, mvMatrix);
+		
+		this.jsg.normalMatrix = nMatrix;
+				
+		for (var i = 0; i < this.indexBuffer.length; i++) {
+			var group = this.groupNameList[i]
+			var material = this.material[group];
+
+			if (!material) material = this.material["None"];
+			
+			this.jsg.materialSpecular = material.specular;
+			this.jsg.materialDiffuse = material.diffuse;
+			this.jsg.materialAmbient = material.ambient;
+			this.jsg.shader.setLocalValues(this.jsg);
+			if (prg.aVertexPosition >= 0){
+				this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
+			    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
+			   	this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
+			}
+
+			if (prg.aVertexNormal >= 0){
+				this.gl.enableVertexAttribArray(prg.aVertexNormal);
+    				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
+    				this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
+			}
+
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);				
+    			this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+		}
+		
+
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+	},
+
+	delete: function(){
+		for (var i = 0; i < this.indexBuffer.length; i++){
+			this.gl.deleteBuffer(this.indedexBuffer[i]);
+			this.gl.deleteBuffer(this.vertexBuffer[i]);
+			if (this.normalsBuffer && this.normalsBuffer[i]){
+				this.gl.deleteBuffer(this.normalsBuffer[i]);
+			}
+		}
+		this.indexBuffer = null;
+		this.vertexBuffer = null;
+		this.normalsBuffer = null;
+	}			
+}
 

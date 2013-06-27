@@ -47,7 +47,6 @@
 					obj3d.vertices = ob.vertices;			
 					obj3d.groupNameList = ob.groupName;				
 					obj3d.setRenderingMode(jsg.TRIANGLES);
-					obj3d.init();
 					obj.addGroup(obj3d);
 				}
 				scene.addObject(obj);
@@ -60,7 +59,6 @@
 					obj3d.vertices = ob.vertices;			
 					obj3d.groupNameList = ob.groupName;				
 					obj3d.setRenderingMode(jsg.TRIANGLES);
-					obj3d.init();
 					obj.addGroup(obj3d);
 					scene.addObject(obj);
 				}
@@ -115,8 +113,6 @@
 			floor3D.vertices = [floor.vertices];
 			floor3D.indices = [floor.indices];
 			floor3D.groupNameList = ["floor"];	
-			floor3D.init();
-			
 		
 			var floorObj = new jsggl.Object("floor");
 			floorObj.addGroup(floor3D);	
@@ -129,8 +125,8 @@
 			
 			cam = scene.getActiveCamera();
 			
-			jsg.scenes.put(scene.name, scene);
-			jsg.activeScene = scene.name;
+			jsg.addScene(scene);
+			jsg.setActiveScene(scene.name);
 
 			jsg.shader = new shader(jsg);
 			
@@ -192,7 +188,7 @@
 		
 		function display() {
 			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
-			scene.draw(jsg);
+			jsg.run();
 			jsg.stopped = true;
 		}
 		
