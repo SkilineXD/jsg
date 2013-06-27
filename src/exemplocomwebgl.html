@@ -132,10 +132,9 @@
 			jsg.scenes.put(scene.name, scene);
 			jsg.activeScene = scene.name;
 
-			var currentShader = new shader(jsg);
-			currentShader.build();
-
-			if (!jsg.compileProgram(currentShader)){
+			jsg.shader = new shader(jsg);
+			
+			if (!jsg.build()){
 				alert(jsg.compileProgramStatus);
 			}
 
@@ -213,10 +212,9 @@
 			var sun = new jsggl.SunLight("B", [0.0, 0.0, -1.0], [0.5, 0.5, 0.5, 1.0]);
 			scene.addLight(sun);
 
-			var currentShader = new shader(jsg);
-			currentShader.build();			
-
-			if (!jsg.compileProgram(currentShader)){
+			jsg.shader = new shader(jsg);
+	
+			if (!jsg.build()){
 				alert("Error: " + jsg.compileProgramStatus);			
 			}			
 			display();

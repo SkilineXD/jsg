@@ -24,8 +24,6 @@ String.prototype.replaceAll = function(de, para){
 
 /* The name jsggl contains objects for graphical manipulation. */
 var jsggl = jsggl || {};
-var JSGGL_ARRAY_TYPE = Float32Array || Array;
-var JSGGL_EPSLON = 0.000001;
 
 jsggl.JsgGl = function(id){
 	//BEGIN:configure canvas and context...	
@@ -62,9 +60,10 @@ jsggl.JsgGl = function(id){
 	this.materialDiffuse = [0.001,0.001 ,0.001,1.0];
 	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
 	this.materialSpecular = [0.001, 0.001, 0.001, 1.0];
-
+	this.shader = null;
 	this.modelViewStack = [mat4.identity(mat4.create())];
 	this.projectionStack = [mat4.identity(mat4.create())];
+	//BEGIN: state attributes
 
 	//BEGIN: WEBGL CONTEXT SHORTCUTS 
 	this.COLOR_BUFFER_BIT = this.gl.COLOR_BUFFER_BIT;
@@ -154,8 +153,9 @@ jsggl.JsgGl.prototype = {
 		return shader;
 	},
 
-	compileProgram: function(shader) {
-		this.shader = shader;
+	build: function() {
+		var shader = this.shader;
+		shader.build();
 		var vertexShader = shader.vertexShader.generateCode();
 		var fragShader = shader.fragShader.generateCode();
 		var prg = this.gl.createProgram();
