@@ -1,6 +1,5 @@
 var jsggl = jsggl || {};
 
-
 jsggl.Drawable = function(name, globj){	
 	this.vertices = [];
 	this.indices = [];
@@ -150,7 +149,16 @@ jsggl.Scene = function(name){
 	this.cameras = {};
 	this.cameras["Default"] = new jsggl.Camera("Default", jsggl.Camera.TRACKING);
 	this.activeCamera = "Default";
+	this.lights = new jsgcol.ArrayMap();
 	this.objects = new jsgcol.ArrayMap();
+
+	this.addLight = function(l){
+		this.lights.put(l.name, l);
+	}
+
+	this.removeLight = function(name){
+		return this.lights.remove(name);
+	}
 
 	this.addObject = function(obj) {
 		this.objects.put(obj.name, obj);

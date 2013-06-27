@@ -1,5 +1,4 @@
 
-
 FlashCam = function(base){
 	this.base = base;
 	this.width = base.width;

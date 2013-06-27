@@ -62,6 +62,13 @@ jsggl.DiffusePositionalLight = function(name, position, diffuseColor, shaderType
 	this.mainLogical.push("acm = acm + {name}Id;".replaceAll("{name}", name));
 
 	this.uniforms = ["{name}uLightDiffuse".replaceAll("{name}", name), "{name}uLightPosition".replaceAll("{name}", name)];
+
+	this.loadUniforms = function(jsg) {
+		for (var j = 0; j < this.uniforms.length; j++){
+			jsg.program[this.uniforms[j]] = jsg.gl.getUniformLocation(jsg.program, this.uniforms[j]);
+		}
+	}
+
 	this.setValues = function(jsg) {
 		jsg.gl.uniform4fv(jsg.program[this.uniforms[0]], this.diffuseColor);
 		jsg.gl.uniform3fv(jsg.program[this.uniforms[1]], this.position);	
@@ -91,6 +98,11 @@ jsggl.DiffuseLight = function(name, direction, diffuseColor){
 	this.mainLogical.push("acm = acm + {name}Id;".replaceAll("{name}", this.name));
 
 	this.uniforms = ["{name}uLightDiffuse".replaceAll("{name}", name), "{name}uLightDirection".replaceAll("{name}", name)];
+	this.loadUniforms = function(jsg) {
+		for (var j = 0; j < this.uniforms.length; j++){
+			jsg.program[this.uniforms[j]] = jsg.gl.getUniformLocation(jsg.program, this.uniforms[j]);
+		}
+	}
 	this.setValues = function(jsg) {
 		jsg.gl.uniform4fv(jsg.program[this.uniforms[0]], this.diffuseColor);
 		jsg.gl.uniform3fv(jsg.program[this.uniforms[1]], this.direction);	
@@ -122,7 +134,11 @@ jsggl.PhongSpecularLight = function(name, shininess, specularColor, base){
 	this.mainLogical.push("acm = acm + {name}Is;".replace("{name}",this.name));
 
 	this.uniforms = ["{name}uShininess".replaceAll("{name}", this.name), "{name}uLightSpecular".replaceAll("{name}", this.name)];
-
+	this.loadUniforms = function(jsg) {
+		for (var j = 0; j < this.uniforms.length; j++){
+			jsg.program[this.uniforms[j]] = jsg.gl.getUniformLocation(jsg.program, this.uniforms[j]);
+		}
+	}
 	this.setValues = function(jsg) {
 		jsg.gl.uniform1f(jsg.program[this.uniforms[0]], this.shininess);
 		jsg.gl.uniform4fv(jsg.program[this.uniforms[1]], this.specularColor);	

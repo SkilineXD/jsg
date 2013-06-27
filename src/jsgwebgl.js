@@ -28,23 +28,13 @@ var JSGGL_ARRAY_TYPE = Float32Array || Array;
 var JSGGL_EPSLON = 0.000001;
 
 jsggl.JsgGl = function(id){
-	this.id = id;
-	this.ambientLight = [0.01,0.01,0.01,1.0];
-	this.materialDiffuse = [0.001,0.001 ,0.001,1.0];
-	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
-	this.materialSpecular = [0.001, 0.001, 0.001, 1.0];
-	this.lights = new jsgcol.ArrayMap();
-	
+	//BEGIN:configure canvas and context...	
 	this.canvas = document.getElementById(id);
-
 	if (!this.canvas){
 		return undefined;
 	}
-	
 	var names = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
-
 	var ctx = null;
-	
 	for (var i = 0; i < names.length; ++i) {
 		try {
 			ctx = this.canvas.getContext(names[i]);
@@ -62,10 +52,21 @@ jsggl.JsgGl = function(id){
 	if (!this.gl) {
 		return undefined;
 	}
+	//END:configure canvas and context
+	
+	//BEGIN: state attributes
+	this.id = id;
+	this.scenes = new jsgcol.ArrayMap();
+	this.activeScene = null;
+	this.ambientLight = [0.01,0.01,0.01,1.0];
+	this.materialDiffuse = [0.001,0.001 ,0.001,1.0];
+	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
+	this.materialSpecular = [0.001, 0.001, 0.001, 1.0];
 
 	this.modelViewStack = [mat4.identity(mat4.create())];
 	this.projectionStack = [mat4.identity(mat4.create())];
 
+	//BEGIN: WEBGL CONTEXT SHORTCUTS 
 	this.COLOR_BUFFER_BIT = this.gl.COLOR_BUFFER_BIT;
 	this.DEPTH_BUFFER_BIT = this.gl.DEPTH_BUFFER_BIT;
 	this.LINE_LOOP = this.gl.LINE_LOOP;	
@@ -75,14 +76,15 @@ jsggl.JsgGl = function(id){
 	this.TRIANGLE_STRIP = this.gl.TRIANGLE_STRIP;
 	this.TRIANGLES = this.gl.TRIANGLES;
 	this.POINTS = this.gl.POINTS;
+	//END: WEBGL CONTEXT SHORTCUTS
 
+	//BEGIN: animation configuration
 	this.interval = 50;
 	this.initialize = this.initialize || function(){};
 	this.display = this.display || function(){};
 	this.finalize = this.finalize || function(){};
 	this.stopped = false;
 	var self = this;
-
 	function mainLoop(time) {
 			if (!time) {
 				time = +new Date();
@@ -101,10 +103,10 @@ jsggl.JsgGl = function(id){
 	};
 	
 	this.mainLoop = mainLoop;
+	//BAGIN: animation configuration
 }
 
 jsggl.JsgGl.prototype = {
-
 	getModelView: function() {
 		return this.modelViewStack[this.modelViewStack.length - 1];
 	},	
@@ -191,30 +193,30 @@ jsggl.JsgGl.prototype = {
 		prg.uMaterialDiffuse = this.gl.getUniformLocation(prg, "uMaterialDiffuse");
 		prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
 		prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
-		
-		var keys = this.lights.getKeys();
-
-		for (var i = 0; i < keys.length; i++) {
-			var lobj = this.lights.get(keys[i]);
-			var l = [];
-			if (lobj.diffuse) {
-				l.push(lobj.diffuse);
-			}
-
-			if (lobj.specular) {
-				l.push(lobj.specular);
-			}
-
-			for (var k = 0; k < l.length; k++) {
-				for (var j = 0; j < l[k].uniforms.length; j++){
-					prg[l[k].uniforms[j]] = this.gl.getUniformLocation(prg, l[k].uniforms[j]);
+		this.program = prg;		
+		var scene = this.scenes.get(this.activeScene);
+		if (scene){
+			var lights = scene.lights;
+			var keys = lights.getKeys();
+			for (var i = 0; i < keys.length; i++) {
+				var lobj = lights.get(keys[i]);
+				var l = [];
+				if (lobj.diffuse) {
+					l.push(lobj.diffuse);
+				}
+	
+				if (lobj.specular) {
+					l.push(lobj.specular);
+				}
+	
+				for (var k = 0; k < l.length; k++) {
+					l[k].loadUniforms(jsg);
 				}
 			}
 		}
 
-		this.program = prg;
 		this.compileProgramStatus =  this.gl.getShaderInfoLog(shaderfs);
-		this.shader.setGlobalValues(this);
+		this.shader.setGlobalValues();
 		return true;
 	},
 }
