@@ -1,7 +1,7 @@
 JavaScript Graphics (JSG)
 =========================
 
-JavaScript Graphics (JSG) is a graphical library for Computer Graphics and Vision. JSG Current version includes:
+JavaScript Graphics (JSG) is a library for Computer Graphics and Computer Vision. JSG Current version includes:
 #
 JSG: Core for 2D Applications.
 #
@@ -16,8 +16,3 @@ Installation
 ===============================
 JSG installation is very simple. All you need is to reference JavaScript files in your page (HTML file) and load page in your favority browser. 
 
-For example, add the below code in your page
-
-<script type="text/javascript" src="jsgwebgl.js"></script>
-
-and copy jsgwebgl.js file to page directory. 
