@@ -84,14 +84,14 @@
 
 				switch(evt.which){
 					case 38:
-						z++;
+						z = 1;
 						break;
 					case 40:
-						z--;
+						z = -1;
 						break;
 				}	
 
-				cam.position[2] = z;
+				cam.position[2] += z;
 				cam.update();
 				display();
 			});
@@ -106,9 +106,8 @@
 					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
 					delta[0] = delta[0] * 0.005;
 					delta[1] = delta[1] * 0.005;
-					cam.azimute += delta[0] * 10;
+					cam.azimute += -delta[0] * 10;
 					cam.elevation += -delta[1] * 10;
-					//cam.position[2] += z;
 					cam.update();					
 					pos = npos;
 					display();

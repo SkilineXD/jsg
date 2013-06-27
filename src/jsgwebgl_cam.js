@@ -32,12 +32,12 @@ jsggl.Camera = function(name, type){
 		mat4.identity(self.matrix);
 		if (self.type == jsggl.Camera.TRACKING) {
 			mat4.translate(self.matrix, self.matrix, self.position);
-			//mat4.rotateZ(self.matrix, self.matrix, self.roll * Math.PI/180.0);
+			mat4.rotateZ(self.matrix, self.matrix, self.roll * Math.PI/180.0);
 			mat4.rotateY(self.matrix, self.matrix, self.azimute * Math.PI/180.0);				
 			mat4.rotateX(self.matrix, self.matrix, self.elevation * Math.PI/180.0);
 			vec4.transformMat4(self.position, [0, 0, 0, 1], self.matrix);
 		} else {
-			//mat4.rotateZ(self.matrix, self.matrix, self.roll * Math.PI/180.0);
+			mat4.rotateZ(self.matrix, self.matrix, self.roll * Math.PI/180.0);
 			mat4.rotateY(self.matrix, self.matrix, self.azimute * Math.PI/180.0);				
 			mat4.rotateX(self.matrix, self.matrix, self.elevation * Math.PI/180.0);
 			mat4.translate(self.matrix, self.matrix, self.position);					
