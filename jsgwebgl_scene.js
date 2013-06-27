@@ -68,9 +68,7 @@ jsggl.Drawable.prototype = {
 		
 		var nMatrix = mat4.create();
 		
-    		mat4.copy(nMatrix, mvMatrix);
-    		mat4.invert(nMatrix, nMatrix);
-    		mat4.transpose(nMatrix, nMatrix);
+    		mat4.transpose(nMatrix, mvMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
 				
@@ -150,10 +148,9 @@ jsggl.Object = function(name) {
 jsggl.Scene = function(name){
 	this.name = name;
 	this.cameras = {};
-	this.cameras["Default"] = new jsggl.TCamera("Default", [0.0, 0.0, 0.0], 10, 10, 0);
+	this.cameras["Default"] = new jsggl.Camera("Default", jsggl.Camera.TRACKING);
 	this.activeCamera = "Default";
 	this.objects = new jsgcol.ArrayMap();
-
 
 	this.addObject = function(obj) {
 		this.objects.put(obj.name, obj);
@@ -178,7 +175,7 @@ jsggl.Scene = function(name){
 	this.draw = function(jsg){
 		var cam = this.cameras[this.activeCamera];
 		var cm = cam.getMatrix();
-		mat4.multiply(cm, jsg.getModelView(), cm);
+		mat4.multiply(cm, cm, jsg.getModelView());
 		jsg.modelViewStack.push(cm);
 		var keys = this.objects.getKeys();
 		for (var i = 0; i < keys.length; i++) {
