@@ -81,7 +81,7 @@ jsggl.JsgGl = function(id){
 	//END: WEBGL CONTEXT SHORTCUTS
 
 	//BEGIN: animation configuration
-	this.interval = 30;
+	this.interval = 1000/30.0;
 	this.initialize = this.initialize || function(){};
 	this.display = this.display || function(){};
 	this.finalize = this.finalize || function(){};

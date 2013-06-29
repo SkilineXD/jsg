@@ -6,6 +6,7 @@
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="cone.js"></script>
 	<script type="text/javascript" src="sphere.js"></script>
+	<script type="text/javascript" src="jimmy.js"></script>
 	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript" src="jsggl_interaction.js"></script>
 	<script type="text/javascript" src="jsg_collections.js"></script>
@@ -31,8 +32,8 @@
 
 			scene = new jsggl.Scene("Default");
 
-			var olist = [Cone, Sphere];
-			var mlist = [Conemtl, Spheremtl];	
+			var olist = [Cone, Sphere, jimmy];
+			var mlist = [Conemtl, Spheremtl, jimmymtl];	
 	
 			for (var j = 0; j < olist.length; j++) {			
 				var objson = olist[j];
