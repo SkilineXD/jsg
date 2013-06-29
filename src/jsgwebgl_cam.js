@@ -42,7 +42,6 @@ jsggl.Camera = function(name, type){
 			mat4.rotateX(self.matrix, self.matrix, self.elevation * Math.PI/180.0);
 			mat4.translate(self.matrix, self.matrix, self.position);					
 		}
-		$("#display").html(self.toString());
    		vec4.transformMat4(self.right, [1, 0, 0, 0], self.matrix);
     		vec4.transformMat4(self.up, [0, 1, 0, 0], self.matrix);
     		vec4.transformMat4(self.normal, [0, 0, 1, 0], self.matrix);

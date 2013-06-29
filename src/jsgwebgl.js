@@ -62,8 +62,10 @@ jsggl.JsgGl = function(id){
 	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
 	this.materialSpecular = [0.001, 0.001, 0.001, 1.0];
 	this.shader = null;
-	this.modelViewStack = [mat4.identity(mat4.create())];
-	this.projectionStack = [mat4.identity(mat4.create())];
+	this.modelView = mat4.identity(mat4.create());
+	this.projection = mat4.identity(mat4.create());
+	this.modelViewStack = [this.modelView];
+	this.projectionStack = [this.projection];
 	//BEGIN: state attributes
 
 	//BEGIN: WEBGL CONTEXT SHORTCUTS 
@@ -79,29 +81,47 @@ jsggl.JsgGl = function(id){
 	//END: WEBGL CONTEXT SHORTCUTS
 
 	//BEGIN: animation configuration
-	this.interval = 50;
+	this.interval = 30;
 	this.initialize = this.initialize || function(){};
 	this.display = this.display || function(){};
 	this.finalize = this.finalize || function(){};
 	this.stopped = false;
 	var self = this;
-	function mainLoop(time) {
-			if (!time) {
-				time = +new Date();
-			}
-			self.frameTime = time;
+
+	this.animationRate = 30;	
+
+	function requestNextFrame(animation){
+		window.setInterval(animation, self.interval);
+	}
+
+	window.requestAnimationFrame = window.requestAnimationFrame || requestNextFrame;
+
+	function onFrame() {
+		var time = +new Date();
+		var elapsedTime = time - self.frameTime;
+		if (elapsedTime < self.animationRate) return; 
+		var steps = Math.floor( elapsedTime / self.animationRate );			  
+		while (!self.stopped && steps > 0){
+			self.display();
+			steps -= 1;
+		}
+		self.frameTime = +new Date();			
+	}
+
+	function mainLoop(time) {	
 			if (!self.stopped) {
 				if (!self.started) {
+					self.frameTime = +new Date();
 					self.started = true;
 					self.initialize();
 				}
-				self.display();
+				onFrame();
 				window.requestAnimationFrame(mainLoop);
 			} else {
 				self.finalize();
 			}
 	};
-	
+
 	this.mainLoop = mainLoop;
 	//BAGIN: animation configuration
 }
@@ -126,11 +146,31 @@ jsggl.JsgGl.prototype = {
 	},
 
 	getModelView: function() {
-		return this.modelViewStack[this.modelViewStack.length - 1];
+		return this.modelView;
 	},	
 
 	getProjection: function() {
-		return this.projectionStack[this.projectionStack.length - 1];
+		return this.projection;
+	},
+
+	pushProjection: function(){
+		this.projection = mat4.clone(this.projection);
+		this.modelViewStack(this.projection);
+	},
+
+	popProjection: function(){
+		this.projectionStack.pop();
+		this.projection = this.projectionStack[this.projectionStack.length - 1];
+	},
+
+	pushModelView: function(){
+		this.modelView = mat4.clone(this.modelView);
+		this.modelViewStack.push(this.modelView);
+	},
+
+	popModelView: function(){
+		this.modelViewStack.pop();
+		this.modelView = this.modelViewStack[this.modelViewStack.length - 1];
 	},
 
 	enableDepthTest: function() {
@@ -320,8 +360,8 @@ jsggl.Drawable.prototype = {
 				
 		for (var i = 0; i < this.indexBuffer.length; i++) {
 			var group = this.groupNameList[i]
+					
 			var material = this.material[group];
-
 			if (!material) material = this.material["None"];
 			
 			this.jsg.materialSpecular = material.specular;

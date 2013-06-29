@@ -1,5 +1,48 @@
 var jsggl = jsggl || {};
 
+jsggl.Floor = {
+	alias       : 'floor',
+	dim         : 50,
+	lines       : 50,
+	vertices    : [],
+	indices     : [],
+	material : { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.7, 0.7, 0.7, 1.0], "specular":[0.7, 0.7, 0.7, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 },
+	build : function(d,e){
+	            var Floor = jsggl.Floor;
+	            if (d) Floor.dim = d;
+	            if (e) Floor.lines = 2*Floor.dim/e;
+	            var inc = 2*Floor.dim/Floor.lines;
+	            var v = [];
+	            var i = [];
+	
+	            for(var l=0;l<=Floor.lines;l++){
+	                        v[6*l] = -Floor.dim; 
+	                        v[6*l+1] = 0;
+	                        v[6*l+2] = -Floor.dim+(l*inc);
+	                        
+	                        v[6*l+3] = Floor.dim;
+	                        v[6*l+4] = 0;
+	                        v[6*l+5] = -Floor.dim+(l*inc);
+                        
+	                        v[6*(Floor.lines+1)+6*l] = -Floor.dim+(l*inc); 
+	                        v[6*(Floor.lines+1)+6*l+1] = 0;
+	                        v[6*(Floor.lines+1)+6*l+2] = -Floor.dim;
+                        
+	                        v[6*(Floor.lines+1)+6*l+3] = -Floor.dim+(l*inc);
+	                        v[6*(Floor.lines+1)+6*l+4] = 0;
+	                        v[6*(Floor.lines+1)+6*l+5] = Floor.dim;
+	                        
+	                        i[2*l] = 2*l;
+	                        i[2*l+1] = 2*l+1;
+	                        i[2*(Floor.lines+1)+2*l] = 2*(Floor.lines+1)+2*l;
+	                        i[2*(Floor.lines+1)+2*l+1] = 2*(Floor.lines+1)+2*l+1;        
+	            }
+                    Floor.vertices = v;
+                    Floor.indices = i;
+	}
+}
+
+
 jsggl.Object = function(name) {
 	this.name = name;
 	this.renderGroup = new jsgcol.ArrayMap();
@@ -12,8 +55,20 @@ jsggl.Object = function(name) {
 		this.renderGroup.remove(name);
 	}
 
-	this.transformation = mat4.create();
-	mat4.identity(this.transformation);
+	this.translate = function(tv){
+		mat4.translate(this.transforms, this.transforms, tv);
+	}
+
+	this.rotate = function(rad, axis) {
+		mat4.rotate(this.transforms, this.transforms, rad, axis);
+	}
+
+	this.scale = function(params){
+		mat4.scale(this.transforms, this.transforms,  params);
+	}
+
+	this.transforms = mat4.create();
+	mat4.identity(this.transforms);
 
 	this.build = function(){
 		var keys = this.renderGroup.getKeys();
@@ -24,21 +79,20 @@ jsggl.Object = function(name) {
 	
 	this.draw = function(jsg){
 		var mv = mat4.create();
-		mat4.multiply(mv, jsg.getModelView(), this.transformation);
-		jsg.modelViewStack.push(mv);
+		jsg.pushModelView();
+		mat4.multiply(jsg.modelView, jsg.modelView, this.transforms);
 		var keys = this.renderGroup.getKeys();
 		for (var i = 0; i < keys.length; i++) {
 			this.renderGroup.get(keys[i]).draw();
 		}
-		jsg.modelViewStack.pop();
+		jsg.popModelView();
 	}
 }
-
 
 jsggl.Scene = function(name){
 	this.name = name;
 	this.cameras = {};
-	this.currentCamera = new jsggl.Camera("Default", jsggl.Camera.TRACKING);
+	this.currentCamera = new jsggl.Camera("Default", jsggl.Camera.ORBITING);
 	this.cameras["Default"] = this.currentCamera;
 	this.activeCamera = "Default";
 	this.lights = new jsgcol.ArrayMap();
@@ -80,17 +134,16 @@ jsggl.Scene = function(name){
 		return false;
 	}
 
-
 	this.draw = function(jsg){
 		var cam = this.currentCamera;
-		var cm = cam.getMatrix();
-		mat4.multiply(cm, cm, jsg.getModelView());
-		jsg.modelViewStack.push(cm);
+		jsg.pushModelView();
+		mat4.multiply(jsg.modelView, cam.getMatrix(), jsg.modelView);
 		var keys = this.objects.getKeys();
 		for (var i = 0; i < keys.length; i++) {
-			this.objects.get(keys[i]).draw(jsg);
+			var obj = this.objects.get(keys[i]);
+			obj.draw(jsg);
 		}
-		jsg.modelViewStack.pop();
+		jsg.popModelView();
 	}
 }
 

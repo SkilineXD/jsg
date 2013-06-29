@@ -4,7 +4,8 @@
 <head>
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="gl-matrix.js"></script>
-	<script type="text/javascript" src="objson.js"></script>
+	<script type="text/javascript" src="cone.js"></script>
+	<script type="text/javascript" src="sphere.js"></script>
 	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript" src="jsggl_interaction.js"></script>
 	<script type="text/javascript" src="jsg_collections.js"></script>
@@ -16,54 +17,60 @@
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, scene, shader, shaders, shininess=100, pos = [0, 0], z = 0, az = 0, el = 0, roll = 0, pos = null, cam;
+		var jsg, scene, shader, shaders, shininess=100, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		function init() {
 			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
-    			mat4.perspective(jsg.getProjection(), 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);
-    			//distanc
-			//mat4.rotate(jsg.getModelView(), jsg.getModelView(), 10.0 * Math.PI/180.0, [0.0, 1.0, 0.0]);
-			//mat4.rotate(jsg.getModelView(), jsg.getModelView(), 0.0 * Math.PI/180.0, [1.0, 0.0, 0.0]);			
-	
+    			mat4.perspective(jsg.getProjection(), 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);	
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
 			shader  = jsggl.GoraudShader;
 
 			scene = new jsggl.Scene("Default");
-			
-			jsggl.Material.loadMaterialsFromJSON(jsg, objsonmtl);
 
-			var n = objson.objectList.length;
+			var olist = [Cone, Sphere];
+			var mlist = [Conemtl, Spheremtl];	
+	
+			for (var j = 0; j < olist.length; j++) {			
+				var objson = olist[j];
+				var objsonmtl = mlist[j];
+				jsggl.Material.loadMaterialsFromJSON(jsg, objsonmtl);
 
-			if (objson.type == "group"){
-				var obj = new jsggl.Object("default");
-				for (var i = 0; i < n; i++) {
-					var ob = objson.objectList[i];
-					var obj3d = new jsggl.Drawable(ob.name, jsg);
-					obj3d.indices = ob.indices;
-					obj3d.vertices = ob.vertices;			
-					obj3d.groupNameList = ob.groupName;				
-					obj3d.setRenderingMode(jsg.TRIANGLES);
-					obj.addGroup(obj3d);
-				}
-				scene.addObject(obj);
-			} else {
-				for (var i = 0; i < n; i++) {
-					var ob = objson.objectList[i];
-					var obj = new jsggl.Object(ob.name);
-					var obj3d = new jsggl.Drawable(ob.name, jsg);
-					obj3d.indices = ob.indices;
-					obj3d.vertices = ob.vertices;			
-					obj3d.groupNameList = ob.groupName;				
-					obj3d.setRenderingMode(jsg.TRIANGLES);
-					obj.addGroup(obj3d);
+				var n = objson.objectList.length;
+
+				if (objson.type == "group"){
+					var obj = new jsggl.Object("default");
+					for (var i = 0; i < n; i++) {
+						var ob = objson.objectList[i];
+						var obj3d = new jsggl.Drawable(ob.name, jsg);
+						obj3d.indices = ob.indices;
+						obj3d.vertices = ob.vertices;			
+						obj3d.groupNameList = ob.groupName;				
+						obj3d.setRenderingMode(jsg.TRIANGLES);
+						obj.addGroup(obj3d);
+					}
 					scene.addObject(obj);
+				} else {
+					for (var i = 0; i < n; i++) {
+						var ob = objson.objectList[i];
+						var obj = new jsggl.Object(ob.name);
+						var obj3d = new jsggl.Drawable(ob.name, jsg);
+						obj3d.indices = ob.indices;
+						obj3d.vertices = ob.vertices;			
+						obj3d.groupNameList = ob.groupName;				
+						obj3d.setRenderingMode(jsg.TRIANGLES);
+						obj.addGroup(obj3d);
+						if (obj.name=="Cone") {
+							obj.scale([0.7, 0.7, 0.7]);
+							obj.translate([0.0, -1.2, 0.0]);
+						}
+						scene.addObject(obj);
+					}
 				}
 			}
-			
 
 			$("#scenecanvas").mousedown(function(evt){
 				pos = [evt.clientX, evt.clientY];
@@ -86,7 +93,6 @@
 
 				cam.position[2] += z;
 				cam.update();
-				display();
 			});
 
 			$("#scenecanvas").mouseup(function(evt){
@@ -103,11 +109,10 @@
 					cam.elevation += -delta[1] * 10;
 					cam.update();					
 					pos = npos;
-					display();
 				}
 			});
 			
-			var floor = Floor;
+			var floor = jsggl.Floor;
 			floor.build(10, 1);
 			var floor3D = new jsggl.Drawable("floor", jsg);
 			floor3D.vertices = [floor.vertices];
@@ -128,56 +133,10 @@
 			jsg.addScene(scene);
 			jsg.setActiveScene(scene.name);
 
-			jsg.shader = new shader(jsg);
-			
-			if (!jsg.build()){
-				alert(jsg.compileProgramStatus);
-			}
-
+			updateLight();			
 			jsg.mainLoop();
 		}
 		
-		var Floor = {
-		    alias       : 'floor',
-		    wireframe   : true,
-		    dim         : 50,
-		    lines       : 50,
-		    vertices    : [],
-		    indices     : [],
-		    material : { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.7, 0.7, 0.7, 1.0], "specular":[0.7, 0.7, 0.7, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 },
-		    build : function(d,e){
-	                    if (d) Floor.dim = d;
-	                    if (e) Floor.lines = 2*Floor.dim/e;
-	                    var inc = 2*Floor.dim/Floor.lines;
-	                    var v = [];
-	                    var i = [];
-	
-	                    for(var l=0;l<=Floor.lines;l++){
-	                        v[6*l] = -Floor.dim; 
-	                        v[6*l+1] = 0;
-	                        v[6*l+2] = -Floor.dim+(l*inc);
-	                        
-	                        v[6*l+3] = Floor.dim;
-	                        v[6*l+4] = 0;
-	                        v[6*l+5] = -Floor.dim+(l*inc);
-                        
-	                        v[6*(Floor.lines+1)+6*l] = -Floor.dim+(l*inc); 
-	                        v[6*(Floor.lines+1)+6*l+1] = 0;
-	                        v[6*(Floor.lines+1)+6*l+2] = -Floor.dim;
-                        
-	                        v[6*(Floor.lines+1)+6*l+3] = -Floor.dim+(l*inc);
-	                        v[6*(Floor.lines+1)+6*l+4] = 0;
-	                        v[6*(Floor.lines+1)+6*l+5] = Floor.dim;
-	                        
-	                        i[2*l] = 2*l;
-	                        i[2*l+1] = 2*l+1;
-	                        i[2*(Floor.lines+1)+2*l] = 2*(Floor.lines+1)+2*l;
-	                        i[2*(Floor.lines+1)+2*l+1] = 2*(Floor.lines+1)+2*l+1;        
-	                    }
-                    Floor.vertices = v;
-                    Floor.indices = i;
-              }}
-
 		function initialize() {
 			jsg.clearColor(0.9, 0.9, 0.9, 1.0);
 			jsg.clearDepth(100.0);
@@ -186,10 +145,17 @@
 			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
 		}
 		
+		function calcPositions() {
+			objpos[2] += objdir;
+			scene.objects.get("Sphere").translate([0,0,objdir * 0.2]);
+			scene.objects.get("Cone").translate([objdir * 0.2, 0,0]);
+			if (objpos[2] >= 50 || objpos[2] <= -50) objdir = -objdir;
+		}
+
 		function display() {
 			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			calcPositions();
 			jsg.run();
-			jsg.stopped = true;
 		}
 		
 		function finalize() {
@@ -212,8 +178,7 @@
 	
 			if (!jsg.build()){
 				alert("Error: " + jsg.compileProgramStatus);			
-			}			
-			display();
+			}		
 		}
 
 		function selectShadingMethod(evt){
@@ -224,7 +189,6 @@
 			scene.setActiveCamera(evt.value);
 			cam = scene.getActiveCamera();	
 			cam.reset();
-			display();
 		}
 
 	</script>
@@ -243,8 +207,8 @@
 	</div>
 	<div>Camera Type</div>
 	<div>
-		<input type="radio"  onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
-		<input type="radio" checked="true"  onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
+		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
+		<input type="radio"   onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
 	</div>
 	<div id="display"></div>
 </body>
