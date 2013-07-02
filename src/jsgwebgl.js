@@ -65,7 +65,6 @@ jsggl.JsgGl = function(id){
 	this.modelView = mat4.identity(mat4.create());
 	this.projection = mat4.identity(mat4.create());
 	this.modelViewStack = [this.modelView];
-	this.projectionStack = [this.projection];
 	//BEGIN: state attributes
 
 	//BEGIN: WEBGL CONTEXT SHORTCUTS 
@@ -81,20 +80,26 @@ jsggl.JsgGl = function(id){
 	//END: WEBGL CONTEXT SHORTCUTS
 
 	//BEGIN: animation configuration
-	this.interval = 1000/30.0;
 	this.initialize = this.initialize || function(){};
 	this.display = this.display || function(){};
 	this.finalize = this.finalize || function(){};
 	this.stopped = false;
 	var self = this;
 
-	this.animationRate = 30;	
-
 	function requestNextFrame(animation){
-		window.setInterval(animation, self.interval);
+		if (!self.intervalID){
+			if (!self.animationRate){	
+				self.animationRate = 30;
+			}
+			self.intervalID = window.setInterval(animation, self.animationRate/1000);
+		} else {
+			if (self.stopped) {
+				window.clearInterval(self.intervalID);
+			}
+		}
 	}
 
-	window.requestAnimationFrame = window.requestAnimationFrame || requestNextFrame;
+	window.requestAnimationFrame = requestNextFrame;
 
 	function onFrame() {
 		var time = +new Date();
@@ -153,14 +158,8 @@ jsggl.JsgGl.prototype = {
 		return this.projection;
 	},
 
-	pushProjection: function(){
-		this.projection = mat4.clone(this.projection);
-		this.modelViewStack(this.projection);
-	},
-
-	popProjection: function(){
-		this.projectionStack.pop();
-		this.projection = this.projectionStack[this.projectionStack.length - 1];
+	resetProjection: function() {
+		this.projection = mat4.identity(mat4.create());
 	},
 
 	pushModelView: function(){
@@ -302,7 +301,7 @@ jsggl.Drawable = function(name, globj){
 	this.normalsBuffer = undefined;
 	this.renderingmode = this.gl.LINES;
 	this.groupNameList = []
-	this.material = {};
+	this.material = undefined;
 }
 
 jsggl.Drawable.prototype = {
@@ -343,13 +342,9 @@ jsggl.Drawable.prototype = {
 		return this.renderingmode;
 	},
 
-	draw : function() {		
-		if (this.jsg.materials){
-			this.material = this.jsg.materials;
-		}
+	draw : function() {
 		var prg = this.jsg.program;
 
-		var pMatrix = this.jsg.getProjection();
 		var mvMatrix = this.jsg.getModelView();
 		
 		var nMatrix = mat4.create();
@@ -361,7 +356,7 @@ jsggl.Drawable.prototype = {
 		for (var i = 0; i < this.indexBuffer.length; i++) {
 			var group = this.groupNameList[i]
 					
-			var material = this.material[group];
+			var material = this.material || this.jsg.materials[group];
 			if (!material) material = this.material["None"];
 			
 			this.jsg.materialSpecular = material.specular;
@@ -384,7 +379,6 @@ jsggl.Drawable.prototype = {
     			this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 		}
 		
-
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 	},

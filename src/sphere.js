@@ -11,3 +11,4 @@ var Sphere = {
 var Spheremtl = {
 "materialList":[ { "name":"None", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.8, 0.8, 0.8, 1.0], "specular":[0.8, 0.8, 0.8, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 } ]
 };
+

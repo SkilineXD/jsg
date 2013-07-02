@@ -1,8 +1,61 @@
 var jsggl = jsggl || {};
 
-jsggl.Camera = function(name, type){
+
+jsggl.Projection = function(type){
+	this.type = type;
+	if (type == jsggl.Projection.type.PERSPECTIVE) {
+		this.FOV = 45;
+		this.near = 0.01;
+		this.far = 10000;
+		this.aspectRatio = 1.0;
+	} else if (type == jsggl.Projection.type.ORTOGRAPHIC){
+		this.left = -1.0;
+		this.right = 1.0;
+		this.top = 1.0;
+		this.bottom = -1.0;
+		this.near = 0.01;
+		this.far = 2.0;
+	} else {
+		throw new Error("Invalid projection type");
+	}	
+
+	this.getMatrix = function() {
+		if (this.type == jsggl.Projection.type.PERSPECTIVE){
+			return mat4.perspective(mat4.create(), this.FOV, this.aspectRatio, this.near, this.far);
+		} else if (this.type == jsggl.Projection.type.ORTOGRAPHIC) {
+			return mat4.ortho(mat4.create(), this.left, this.right, this.bottom, this.top, this.near, this.far);
+		}
+	}
+}
+
+jsggl.Projection.newPerspective = function(fov, aspectRatio, near, far) {
+	var p = new jsggl.Projection(jsggl.Projection.type.PERSPECTIVE);
+	p.FOV = fov;
+	p.aspectRatio = aspectRatio;
+	p.near = near;
+	p.far = far;
+	return p;
+}
+
+jsggl.Projection.newOrtographic = function(left, right, bottom, top, near, far) {
+	var p = new jsggl.Projection(jsggl.projection.type.ORTOGRAPHIC);
+	p.left = left;
+	p.right = right;
+	p.bottom = bottom;
+	p.top = top;
+	p.near = near;
+	p.far = far;
+	return p;
+}
+
+jsggl.Projection.type = {};
+jsggl.Projection.type.PERSPECTIVE = 0;
+jsggl.Projection.type.ORTOGRAPHIC = 1;
+
+jsggl.Camera = function(name, type, projection){
 	this.type = type;
 	this.name = name;
+	this.projection = projection || new jsggl.Projection(jsggl.Projection.type.PERSPECTIVE);
 
 	var self = this;
 	this.reset = function() {

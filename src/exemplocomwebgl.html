@@ -25,7 +25,8 @@
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
-    			mat4.perspective(jsg.getProjection(), 45, jsg.canvas.width / jsg.canvas.height, 0.01, 10000.0);	
+
+		
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
 			shader  = jsggl.GoraudShader;
@@ -38,41 +39,53 @@
 			for (var j = 0; j < olist.length; j++) {			
 				var objson = olist[j];
 				var objsonmtl = mlist[j];
-				jsggl.Material.loadMaterialsFromJSON(jsg, objsonmtl);
-
-				var n = objson.objectList.length;
+				jsggl.Material.loadFromJSON(jsg, objsonmtl);
 
 				if (objson.type == "group"){
-					var obj = new jsggl.Object("default");
-					for (var i = 0; i < n; i++) {
-						var ob = objson.objectList[i];
-						var obj3d = new jsggl.Drawable(ob.name, jsg);
-						obj3d.indices = ob.indices;
-						obj3d.vertices = ob.vertices;			
-						obj3d.groupNameList = ob.groupName;				
-						obj3d.setRenderingMode(jsg.TRIANGLES);
-						obj.addGroup(obj3d);
-					}
-					scene.addObject(obj);
+					var newObj = jsggl.Object.loadFromJSON(objson, "group", "default");
+					scene.addObject(newObj);
 				} else {
-					for (var i = 0; i < n; i++) {
-						var ob = objson.objectList[i];
-						var obj = new jsggl.Object(ob.name);
-						var obj3d = new jsggl.Drawable(ob.name, jsg);
-						obj3d.indices = ob.indices;
-						obj3d.vertices = ob.vertices;			
-						obj3d.groupNameList = ob.groupName;				
-						obj3d.setRenderingMode(jsg.TRIANGLES);
-						obj.addGroup(obj3d);
-						if (obj.name=="Cone") {
-							obj.scale([0.7, 0.7, 0.7]);
-							obj.translate([0.0, -1.2, 0.0]);
+					for (var i = 0; i < objson.objectList.length; i++) {
+						var newObj = jsggl.Object.loadFromJSON(objson, "object", i);
+						if (newObj.name=="Cone") {
+							newObj.scale([0.7, 0.7, 0.7]);
+							newObj.translate([0.0, -1.2, 0.0]);
 						}
-						scene.addObject(obj);
+						scene.addObject(newObj);
 					}
 				}
 			}
+			
+			var floor = jsggl.Floor;
+			floor.build(10, 1);
+			var floor3D = new jsggl.Drawable("floor", jsg);
+			floor3D.vertices = [floor.vertices];
+			floor3D.indices = [floor.indices];
+			floor3D.groupNameList = ["floor"];	
+		
+			var floorObj = new jsggl.Object("floor");
+			floorObj.addGroup(floor3D);	
+			scene.addObject(floorObj);
+			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
 
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
+			scene.setActiveCamera("tracking");
+			
+			jsg.materials["floor"]  = floor.material;
+			
+			cam = scene.getActiveCamera();
+			
+			jsg.addScene(scene);
+			jsg.setActiveScene(scene.name);
+			updateLight();			
+
+			configureEvents();
+
+			jsg.mainLoop();
+		}
+		
+		function configureEvents() {
 			$("#scenecanvas").mousedown(function(evt){
 				pos = [evt.clientX, evt.clientY];
 			});
@@ -112,34 +125,10 @@
 					pos = npos;
 				}
 			});
-			
-			var floor = jsggl.Floor;
-			floor.build(10, 1);
-			var floor3D = new jsggl.Drawable("floor", jsg);
-			floor3D.vertices = [floor.vertices];
-			floor3D.indices = [floor.indices];
-			floor3D.groupNameList = ["floor"];	
-		
-			var floorObj = new jsggl.Object("floor");
-			floorObj.addGroup(floor3D);	
-			scene.addObject(floorObj);
-			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING);
-			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING);
-			scene.setActiveCamera("tracking");
-			
-			jsg.materials["floor"]  = floor.material;
-			
-			cam = scene.getActiveCamera();
-			
-			jsg.addScene(scene);
-			jsg.setActiveScene(scene.name);
-
-			updateLight();			
-			jsg.mainLoop();
 		}
-		
+
 		function initialize() {
-			jsg.clearColor(0.9, 0.9, 0.9, 1.0);
+			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
 			jsg.clearDepth(100.0);
 			jsg.enableDepthTest();
 			jsg.depthFunc(jsg.gl.LEQUAL);

@@ -7,7 +7,12 @@ jsggl.Material = function(name, matAmb, matDiffuse, matSpecular) {
 	this.specular = matSpecular;
 }
 
-jsggl.Material.loadMaterialsFromJSON = function(jsg, obj){
+
+jsggl.Material.newMaterial = function(name, ambient, diffuse, specular, s, t, o) {
+ 	return {"name":name, "ambient":ambient, "diffuse":diffuse, "specular":specular || [0.0, 0.0, 0.0, 1.0], "shininess":s || 1.0, "transparence":t || 1.0, "opticalDensity":o || 1.0};
+}
+
+jsggl.Material.loadFromJSON = function(jsg, obj){
 	jsg.materials = jsg.materials || {};
 	for (i = 0; i < obj.materialList.length; i++) {
 		var mtl = obj.materialList[i];

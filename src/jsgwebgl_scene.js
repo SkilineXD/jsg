@@ -42,10 +42,22 @@ jsggl.Floor = {
 	}
 }
 
-
 jsggl.Object = function(name) {
 	this.name = name;
 	this.renderGroup = new jsgcol.ArrayMap();
+	this.transforms = mat4.create();
+	mat4.identity(this.transforms);
+
+	this.setPosition = function(pos){
+		this.transforms[13] = pos[0];
+		this.transforms[14] = pos[1];
+		this.transforms[15] = pos[2];
+	}
+
+
+	this.getPosition = function() {
+		return [this.transforms[13], this.transforms[14], this.transforms[15]];
+	}
 
 	this.addGroup = function(g){
 		this.renderGroup.put(g.name, g);
@@ -67,8 +79,12 @@ jsggl.Object = function(name) {
 		mat4.scale(this.transforms, this.transforms,  params);
 	}
 
-	this.transforms = mat4.create();
-	mat4.identity(this.transforms);
+	this.linkDataCopy = function(name) {
+		var obj = new jsggl.Object(name);
+		obj.renderGroup = this.renderGroup;
+		return obj;
+	}
+
 
 	this.build = function(){
 		var keys = this.renderGroup.getKeys();
@@ -83,9 +99,38 @@ jsggl.Object = function(name) {
 		mat4.multiply(jsg.modelView, jsg.modelView, this.transforms);
 		var keys = this.renderGroup.getKeys();
 		for (var i = 0; i < keys.length; i++) {
-			this.renderGroup.get(keys[i]).draw();
+			var g = this.renderGroup.get(keys[i]); 
+			g.material = this.material;
+			g.draw();
 		}
 		jsg.popModelView();
+	}
+}
+
+jsggl.Object.loadFromJSON = function(objson, type, ID) {
+	if (!type) type = "object";
+	if (type == "group") {
+		var obj = new jsggl.Object(ID || "default");
+		for (var i = 0; i < objson.objectList.length; i++) {
+			var ob = objson.objectList[i];
+			var obj3d = new jsggl.Drawable(ob.name, jsg);
+			obj3d.indices = ob.indices;
+			obj3d.vertices = ob.vertices;			
+			obj3d.groupNameList = ob.groupName;				
+			obj3d.setRenderingMode(jsg.TRIANGLES);
+			obj.addGroup(obj3d);
+		}
+		return obj;
+	} else if (type == "object") {
+		var ob = objson.objectList[ID || 0];
+		var obj = new jsggl.Object(ob.name);
+		var obj3d = new jsggl.Drawable(ob.name, jsg);
+		obj3d.indices = ob.indices;
+		obj3d.vertices = ob.vertices;			
+		obj3d.groupNameList = ob.groupName;				
+		obj3d.setRenderingMode(jsg.TRIANGLES);
+		obj.addGroup(obj3d);
+		return obj;
 	}
 }
 
@@ -103,6 +148,10 @@ jsggl.Scene = function(name){
 		for (var i = 0; i < keys.length; i++) {
 			this.objects.get(keys[i]).build();
 		}
+	}
+
+	this.getObject = function(name) {
+		return this.objects.get(name);
 	}
 
 	this.addLight = function(l){
@@ -137,6 +186,7 @@ jsggl.Scene = function(name){
 	this.draw = function(jsg){
 		var cam = this.currentCamera;
 		jsg.pushModelView();
+		jsg.projection = cam.projection.getMatrix();
 		mat4.multiply(jsg.modelView, cam.getMatrix(), jsg.modelView);
 		var keys = this.objects.getKeys();
 		for (var i = 0; i < keys.length; i++) {
