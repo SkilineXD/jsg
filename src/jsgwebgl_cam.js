@@ -38,7 +38,7 @@ jsggl.Projection.newPerspective = function(fov, aspectRatio, near, far) {
 }
 
 jsggl.Projection.newOrtographic = function(left, right, bottom, top, near, far) {
-	var p = new jsggl.Projection(jsggl.projection.type.ORTOGRAPHIC);
+	var p = new jsggl.Projection(jsggl.Projection.type.ORTOGRAPHIC);
 	p.left = left;
 	p.right = right;
 	p.bottom = bottom;
