@@ -8,6 +8,7 @@
 	<script type="text/javascript" src="sphere.js"></script>
 	<script type="text/javascript" src="jimmy.js"></script>
 	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
 	<script type="text/javascript" src="jsggl_interaction.js"></script>
 	<script type="text/javascript" src="jsg_collections.js"></script>
 	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
@@ -56,24 +57,15 @@
 				}
 			}
 			
-			var floor = jsggl.Floor;
-			floor.build(10, 1);
-			var floor3D = new jsggl.Drawable("floor", jsg);
-			floor3D.vertices = [floor.vertices];
-			floor3D.indices = [floor.indices];
-			floor3D.groupNameList = ["floor"];	
-		
-			var floorObj = new jsggl.Object("floor");
-			floorObj.addGroup(floor3D);	
+			var floorObj = new jsggl.builtin.getFloor(jsg, 50, 50);
 			scene.addObject(floorObj);
+
 			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
 
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
 			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
 			scene.setActiveCamera("tracking");
-			
-			jsg.materials["floor"]  = floor.material;
-			
+	
 			cam = scene.getActiveCamera();
 			
 			jsg.addScene(scene);

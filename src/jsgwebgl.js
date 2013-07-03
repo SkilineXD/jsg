@@ -369,35 +369,48 @@ jsggl.Drawable.prototype = {
     		mat4.transpose(nMatrix, mvMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
-				
-		for (var i = 0; i < this.indexBuffer.length; i++) {
-			var group = this.groupNameList[i]
-					
-			var material = this.material || this.jsg.materials[group];
-			if (!material) material = this.material["None"];
+
+		if (this.material) {
+			var material = this.material
 			
 			this.jsg.materialSpecular = material.specular;
 			this.jsg.materialDiffuse = material.diffuse;
 			this.jsg.materialAmbient = material.ambient;
-			this.jsg.shader.setLocalValues(this.jsg);
+			this.jsg.shader.setLocalValues(this.jsg);		
+		}
+		
+		for (var i = 0; i < this.indexBuffer.length; i++) {
+			var group = this.groupNameList[i]
+					
+			if (!this.material) {
+				var material = this.jsg.materials[group];
+				if (!material) { 
+					material = this.material["None"];
+				}
+				this.jsg.materialSpecular = material.specular;
+				this.jsg.materialDiffuse = material.diffuse;
+				this.jsg.materialAmbient = material.ambient;
+				this.jsg.shader.setLocalValues(this.jsg);
+			}
+			
 			if (prg.aVertexPosition >= 0){
 				this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
-			    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
+			    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
 			   	this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
 			}
 
 			if (prg.aVertexNormal >= 0){
 				this.gl.enableVertexAttribArray(prg.aVertexNormal);
-    				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
-    				this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
+    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
+    			this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
 			}
 
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);				
-    			this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+    		this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 		}
 		
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 	},
 
 	delete: function(){
