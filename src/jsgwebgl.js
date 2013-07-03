@@ -85,21 +85,34 @@ jsggl.JsgGl = function(id){
 	this.finalize = this.finalize || function(){};
 	this.stopped = false;
 	var self = this;
+	self.animationRate = 30;
 
 	function requestNextFrame(animation){
 		if (!self.intervalID){
-			if (!self.animationRate){	
-				self.animationRate = 30;
-			}
+			alert("OLA");
+			self.animationMethod = animation;
 			self.intervalID = window.setInterval(animation, self.animationRate/1000);
+
+			window.onfocus = function(evt) {
+				if (!self.intervalID) {
+					self.intervalID = window.setInterval(self.animationMethod, self.animationRate/1000);
+				}
+			};
+
+			window.onblur = function(evt){
+				if (self.intervalID) {
+					window.clearInterval(self.intervalID);
+					self.intervalID = null;
+				}
+			};
 		} else {
 			if (self.stopped) {
 				window.clearInterval(self.intervalID);
 			}
 		}
 	}
-
-	window.requestAnimationFrame = requestNextFrame;
+	
+	window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || requestNextFrame;
 
 	function onFrame() {
 		var time = +new Date();
@@ -211,10 +224,13 @@ jsggl.JsgGl.prototype = {
 		return shader;
 	},
 
-	build: function() {
+	build: function(updateScene) {
+		updateScene = updateScene || true;
 		var scene = this.scenes.get(this.activeScene);
 		if (scene){
-			scene.build();
+			if (updateScene) {
+				scene.build();
+			}
 			var shader = this.shader;
 			shader.build();
 			var vertexShader = shader.vertexShader.generateCode();
@@ -306,6 +322,8 @@ jsggl.Drawable = function(name, globj){
 
 jsggl.Drawable.prototype = {
 	build: function() {
+		if (this.built) return;
+		this.built = true;
 		this.vertexBuffer = [];
 		for (var i = 0; i < this.vertices.length; i++){
 			var vBuffer = this.gl.createBuffer();
@@ -313,7 +331,6 @@ jsggl.Drawable.prototype = {
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
 			this.vertexBuffer.push(vBuffer)
 		}
-	
 
 		this.indexBuffer = [];
 		this.normalsBuffer = [];

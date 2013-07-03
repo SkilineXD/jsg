@@ -6,7 +6,7 @@ jsggl.Floor = {
 	lines       : 50,
 	vertices    : [],
 	indices     : [],
-	material : { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.7, 0.7, 0.7, 1.0], "specular":[0.7, 0.7, 0.7, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 },
+	material : { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.7, 0.7, 0.7, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 },
 	build : function(d,e){
 	            var Floor = jsggl.Floor;
 	            if (d) Floor.dim = d;
@@ -85,6 +85,13 @@ jsggl.Object = function(name) {
 		return obj;
 	}
 
+	this.forEachRenderGroup = function(callback){
+		var keys = this.renderGroup.getKeys();
+		for (var i = 0; i < keys.length; i++) {
+			var g = this.renderGroup.get(keys[i]);
+			callback(g);
+		}
+	}
 
 	this.build = function(){
 		var keys = this.renderGroup.getKeys();
@@ -156,6 +163,14 @@ jsggl.Scene = function(name){
 
 	this.addLight = function(l){
 		this.lights.put(l.name, l);
+	}
+
+	this.forEachObject = function(callback) {
+		var keys = this.objects.getKeys();
+		for (var i = 0; i < keys.length; i++) {
+			var obj = this.objects.get(keys[i]);
+			callback(obj);
+		}
 	}
 
 	this.removeLight = function(name){
