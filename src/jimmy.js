@@ -33,9 +33,9 @@ var jimmy = {
 "groupName":[ "01___Default" ]} ]
 };
 var jimmymtl = {
-"materialList":[ { "name":"Material__25", "ambient":[1.0000, 0.0000, 0.0000, 1.0], "diffuse":[1.0000, 0.0000, 0.0000, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":0.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
-{ "name":"02___Defaultp__p", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":10.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
-{ "name":"02___Defaultoppo", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":10.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
-{ "name":"02___Default", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":10.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
-{ "name":"01___Default", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":10.0000, "transparence":0.0000, "opticalDensity":1.5000 } ]
+"materialList":[ { "name":"Material__25", "ambient":[1.0000, 0.0000, 0.0000, 1.0], "diffuse":[1.0000, 0.0000, 0.0000, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":1000.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
+{ "name":"02___Defaultp__p", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":1000.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
+{ "name":"02___Defaultoppo", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":1000.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
+{ "name":"02___Default", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":1000.0000, "transparence":0.0000, "opticalDensity":1.5000 } , 
+{ "name":"01___Default", "ambient":[0.5882, 0.5882, 0.5882, 1.0], "diffuse":[0.5882, 0.5882, 0.5882, 1.0], "specular":[0.0000, 0.0000, 0.0000, 1.0], "shininess":1000.0000, "transparence":0.0000, "opticalDensity":1.5000 } ]
 };

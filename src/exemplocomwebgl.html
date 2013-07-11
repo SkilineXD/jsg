@@ -1,5 +1,9 @@
+<!--
+This file implements JSG (JavaScript for Graphics) application for demonstration propose.
+Author: Gilzamir F. Gomes.
+Publication Date: 10 de julho de 2013.
+-->
 <!DOCTYPE html>
-
 <html>
 <head>
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
@@ -19,21 +23,20 @@
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, scene, shader, shaders, shininess=100, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
+		var jsg, scene, shader, shaders, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		function init() {
-			shaders = {};
+			
 			jsg = new jsggl.JsgGl("scenecanvas");
-			jsg.display = display;
-			jsg.initialize = initialize;
-			jsg.finalize = finalize; 
-
-		
-			shaders["goraud"] = jsggl.GoraudShader;
-			shaders["phong"] = jsggl.PhongShader;
-			shader  = jsggl.GoraudShader;
-
-			scene = new jsggl.Scene("Default");
-
+	
+			//BEGIN:CONFIGURE SCENE
+			scene = new jsggl.Scene("Default", jsg);
+			
+			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
+			scene.setActiveCamera("tracking");
+			cam = scene.getActiveCamera();
+			
 			var olist = [Cone, Sphere, jimmy];
 			var mlist = [Conemtl, Spheremtl, jimmymtl];	
 	
@@ -59,22 +62,35 @@
 			
 			var floorObj = new jsggl.builtin.getFloor(jsg, 50, 50);
 			scene.addObject(floorObj);
-
-			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
-
-			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
-			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
-			scene.setActiveCamera("tracking");
-	
-			cam = scene.getActiveCamera();
-			
+			installLights();
 			jsg.addScene(scene);
 			jsg.setActiveScene(scene.name);
-			updateLight();			
-
+			//END:CONFIGURE SCENE
+			
+			//BEGIN: SETUP SHADER
+			shaders = {};
+			shaders["goraud"] = jsggl.GoraudShader;
+			shaders["phong"] = jsggl.PhongShader;
+			shader  = jsggl.GoraudShader;			
+			jsg.shader = new shader(jsg);
+			//END: SETUP SHADER
+			
+			//BEGIN:ENVIRONMENT BUILDING
+			if (!jsg.build()){
+				alert("Error: " + jsg.compileProgramStatus);			
+			}			
 			configureEvents();
-
+			//END: ENVIRONMENT BUILDING
+			
+			//BEGIN:APPLICATION LOOP CONFIGURATION
+			jsg.display = display;
+			jsg.initialize = initialize;
+			jsg.finalize = finalize; 
+			//END:APLICATION LOOP CONFIGURATION
+			
+			//BEGIN:APPLICATION LOOP INICIALIZATION
 			jsg.mainLoop();
+			//END:APPLICATION LOOP INICIALIZATION
 		}
 		
 		function configureEvents() {
@@ -136,7 +152,7 @@
 
 		function display() {
 			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
-			calcPositions();
+			//calcPositions();
 			jsg.run();
 		}
 		
@@ -144,27 +160,44 @@
 		
 		}
 
-		function setShininess(evt){
-			shininess = evt.value;
-		}	
-
-		function updateLight(){
+		function installLights(){
 			scene.lights.clear();
-			var pos0 = new jsggl.PointLight("A", [10, -10.0, -1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0], shininess, shader.type);
-			scene.addLight(pos0);
-
-			var sun = new jsggl.SunLight("B", [0.0, 0.0, -1.0], [0.5, 0.5, 0.5, 1.0]);
-			scene.addLight(sun);
-
-			jsg.shader = new shader(jsg);
-	
-			if (!jsg.build()){
-				alert("Error: " + jsg.compileProgramStatus);			
-			}		
+			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([10.0, 0.0, 0.0], [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			
+			var pos1 = new jsggl.Light("B", jsggl.Light.types.POSITIONAL).build([-10.0, 0.0, 0.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			
+			var pos2 = new jsggl.Light("C", jsggl.Light.types.POSITIONAL).build([0.0, 0.0, 10.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			
+			var pos3 = new jsggl.Light("D", jsggl.Light.types.DIRECTIONAL).build([0.0, 10.0, 0.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			scene.addLight(pos0);			
+			scene.addLight(pos1);
+			scene.addLight(pos2);
+			scene.addLight(pos3);
+			scene.updateLights();
+		}
+		
+		function updateLights(){
+			var x = parseFloat($("#txtX").attr("value")),
+				y = parseFloat($("#txtY").attr("value")),
+				z = parseFloat($("#txtZ").attr("value"));
+			var R = parseFloat($("#txtR").attr("value")),
+				G = parseFloat($("#txtG").attr("value")),
+				B = parseFloat($("#txtB").attr("value"));
+			var pos = [x, y, z];
+			var color = [R, G, B, 1.0];
+			var l = scene.lights.get("A");
+			l.position = pos;
+			l.color = color;
+			scene.updateLights();
+			jsg.shader.setGlobalValues();
 		}
 
 		function selectShadingMethod(evt){
 			shader = shaders[evt.value];
+			jsg.shader = new shader(jsg);
+			if (!jsg.build()){
+				alert("Error: " + jsg.compileProgramStatus);			
+			}			
 		}
 
 		function selectCameraType(evt){
@@ -178,21 +211,36 @@
 <body onload="init();">
 	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
 	<div style="background: rgb(255, 255, 200);">	
-		<div><button onclick="updateLight()">Update Light</button></div>
 		<div>Shading Method</div>
 		<input type="radio" checked="true"  onchange="selectShadingMethod(this);" value="goraud" name="ShadingModel">Goraud</input>
 		<input type="radio" onchange="selectShadingMethod(this);" value="phong" name="ShadingModel">Phong</input>
 		<div>				
-		<div id="shininess">
-			<label for="shininessValue">Shininess</label><input id="shininessValue" min="0" max="500" step="1" onchange="setShininess(this);" type="range"></input>
-		</div></div>
+	</div>
 	</div>
 	<div>Camera Type</div>
 	<div>
 		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
 		<input type="radio"   onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
 	</div>
-	<div id="display"></div>
+	<div><hr />
+		Light Position
+		<div>
+			<label>XYZ: </label>
+			<input id="txtX" type="text" value="10"></input>
+			<input id="txtY" type="text" value="0"></input>
+			<input id="txtZ" type="text" value="0"></input>
+		</div>
+	</div>
+	<div><hr />
+		Light Color
+		<div>
+			<label>RGB: </label>
+			<input id="txtR" type="text" value="0.0"></input>
+			<input id="txtG" type="text" value="0.5"></input>
+			<input id="txtB" type="text" value="0.5"></input>
+		</div>
+	</div>
+	<div><button onclick="updateLights()">Update Light</button></div>
 </body>
 </html>
 

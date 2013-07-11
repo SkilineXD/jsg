@@ -57,10 +57,19 @@ jsggl.JsgGl = function(id){
 	this.scenes = new jsgcol.ArrayMap();
 	this.activeScene = null;
 	this.currentScene = null;
-	this.ambientLight = [0.01,0.01,0.01,1.0];
-	this.materialDiffuse = [0.001,0.001 ,0.001,1.0];
-	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
-	this.materialSpecular = [0.001, 0.001, 0.001, 1.0];
+	this.ambientColor = [0.8,0.8,0.8,1.0];
+	this.materialColor = [0.001,0.001 ,0.001,1.0];
+	this.specularColor = [0.001, 0.001, 0.001, 1.0];
+	this.shininess = 100.0;
+	this.positionalLightQtd = 0;
+	this.directionalLightQtd = 0;
+	this.pLightColor = [0,0,0,0];
+	this.dLightColor = [0, 0, 0, 0];
+	this.specularLight = [0, 0, 0, 0];
+	this.lightPosition = [0,0,0];
+	this.lightDirection = [0, 0, 0];
+	this.currentVertexPosition = null;
+	this.currentVertexNormal = null;
 	this.shader = null;
 	this.modelView = mat4.identity(mat4.create());
 	this.projection = mat4.identity(mat4.create());
@@ -145,7 +154,6 @@ jsggl.JsgGl = function(id){
 }
 
 jsggl.JsgGl.prototype = {
-
 	setActiveScene: function(name) {
 		this.currentScene = this.scenes.get(name);
 		this.activeScene = name;
@@ -254,45 +262,16 @@ jsggl.JsgGl.prototype = {
 			this.gl.linkProgram(prg);
 		
 			if (!this.gl.getProgramParameter(prg, this.gl.LINK_STATUS)){
-				this.compileProgramStatus = "Program link error.";
+				this.compileProgramStatus = "Program link error: " + this.gl.getProgramInfoLog(prg);
 				return false;
 			}
 		
 			this.gl.useProgram(prg);
-
-	    		prg.aVertexPosition  = this.gl.getAttribLocation(prg, "aVertexPosition");
-	    		prg.aVertexNormal    = this.gl.getAttribLocation(prg, "aVertexNormal");
-	
-			prg.uPMatrix = this.gl.getUniformLocation(prg, "uPMatrix");
-			prg.uMVMatrix = this.gl.getUniformLocation(prg, "uMVMatrix");
-			prg.uNMatrix = this.gl.getUniformLocation(prg, "uNMatrix");
-			prg.uLightAmbient = this.gl.getUniformLocation(prg, "uLightAmbient");
-			prg.uMaterialDiffuse = this.gl.getUniformLocation(prg, "uMaterialDiffuse");
-			prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
-			prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
 			this.program = prg;		
-
-			var lights = scene.lights;
-			var keys = lights.getKeys();
-			for (var i = 0; i < keys.length; i++) {
-				var lobj = lights.get(keys[i]);
-				var l = [];
-				if (lobj.diffuse) {
-					l.push(lobj.diffuse);
-				}
-	
-				if (lobj.specular) {
-					l.push(lobj.specular);
-				}
-	
-				for (var k = 0; k < l.length; k++) {
-					l[k].loadUniforms(jsg);
-				}
-			}
+			shader.load();
+			shader.setGlobalValues();
+			this.compileProgramStatus =  this.gl.getShaderInfoLog(shaderfs);
 		}
-
-		this.compileProgramStatus =  this.gl.getShaderInfoLog(shaderfs);
-		this.shader.setGlobalValues();
 		return true;
 	},
 
@@ -343,8 +322,8 @@ jsggl.Drawable.prototype = {
    			var nBuffer = this.gl.createBuffer();
 			this.indexBuffer.push(iBuffer);
 			this.normalsBuffer.push(nBuffer);
-    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
-    			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
+    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
+    		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
 		}
 
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
@@ -366,17 +345,13 @@ jsggl.Drawable.prototype = {
 		
 		var nMatrix = mat4.create();
 		
-    		mat4.transpose(nMatrix, mvMatrix);
+    	mat4.transpose(nMatrix, mvMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
 
 		if (this.material) {
-			var material = this.material
-			
-			this.jsg.materialSpecular = material.specular;
-			this.jsg.materialDiffuse = material.diffuse;
-			this.jsg.materialAmbient = material.ambient;
-			this.jsg.shader.setLocalValues(this.jsg);		
+			var material = this.material;
+			this.jsg.materialColor = material.diffuse;
 		}
 		
 		for (var i = 0; i < this.indexBuffer.length; i++) {
@@ -387,28 +362,21 @@ jsggl.Drawable.prototype = {
 				if (!material) { 
 					material = this.material["None"];
 				}
-				this.jsg.materialSpecular = material.specular;
-				this.jsg.materialDiffuse = material.diffuse;
-				this.jsg.materialAmbient = material.ambient;
-				this.jsg.shader.setLocalValues(this.jsg);
+				this.jsg.materialColor = material.diffuse;
+				this.jsg.specularColor = material.specular;
+				this.jsg.shininess = material.shininess;
 			}
 			
-			if (prg.aVertexPosition >= 0){
-				this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
-			    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
-			   	this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
-			}
-
-			if (prg.aVertexNormal >= 0){
-				this.gl.enableVertexAttribArray(prg.aVertexNormal);
-    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
-    			this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
-			}
-
+			this.jsg.currentVertexPosition = this.vertexBuffer[i];
+			this.jsg.currentVertexNormal = this.normalsBuffer[i];
+			this.jsg.shader.setLocalValues();			
+			
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);				
     		this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 		}
 		
+		this.currentVertexPosition = null;
+		this.currentVertexNormal = null;
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 	},

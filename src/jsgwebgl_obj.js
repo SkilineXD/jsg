@@ -36,7 +36,7 @@ jsggl.builtin.getFloor = function(jsg, dim, lines){
 	g.groupNameList = ["floor"];
 	var obj  = new jsggl.Object("floor");
 	obj.addGroup(g);
-	obj.material =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.7, 0.7, 0.7, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 };
+	obj.material =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 0.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 };
 	
 	return obj;
 }

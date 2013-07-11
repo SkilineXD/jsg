@@ -1,6 +1,7 @@
 
-jsggl.Scene = function(name){
+jsggl.Scene = function(name, jsg){
 	this.name = name;
+	this.jsg = jsg;
 	this.cameras = {};
 	this.currentCamera = new jsggl.Camera("Default", jsggl.Camera.ORBITING);
 	this.cameras["Default"] = this.currentCamera;
@@ -9,10 +10,10 @@ jsggl.Scene = function(name){
 	this.objects = new jsgcol.ArrayMap();
 
 	this.build = function() {
-		var keys = this.objects.getKeys();
-		for (var i = 0; i < keys.length; i++) {
-			this.objects.get(keys[i]).build();
-		}
+		this.forEachObject(function(obj){
+			obj.build();
+		});
+		this.updateLights();
 	}
 
 	this.getObject = function(name) {
@@ -23,6 +24,14 @@ jsggl.Scene = function(name){
 		this.lights.put(l.name, l);
 	}
 
+	this.forEachLight = function(callback) {
+		var keys = this.lights.getKeys();
+		for (var i = 0; i < keys.length; i++) {
+			var obj = this.lights.get(keys[i]);
+			callback(obj);
+		}	
+	}
+	
 	this.forEachObject = function(callback) {
 		var keys = this.objects.getKeys();
 		for (var i = 0; i < keys.length; i++) {
@@ -34,11 +43,45 @@ jsggl.Scene = function(name){
 	this.removeLight = function(name){
 		return this.lights.remove(name);
 	}
-
+	
 	this.addObject = function(obj) {
 		this.objects.put(obj.name, obj);
 	}
-
+	
+	this.updateLights = function() {
+		var p = [];
+		var d = [];
+		var spec = [];
+		var dspec = [];
+		var pc = [];
+		var dc = [];
+		var dq = 0;
+		var pq = 0;
+		this.forEachLight(
+			function(l) {
+				if (l.type == jsggl.Light.types.POSITIONAL) {
+					p = p.concat(l.position);
+					pc = pc.concat(l.color);
+					spec = spec.concat(l.specularColor);
+					pq++;
+				} else {
+					dspec = dspec.concat(l.specularColor);
+					d = d.concat(l.direction);
+					dc = dc.concat(l.color);
+					dq++;
+				}
+			}
+		);
+		this.jsg.positionalLightQtd = pq;
+		this.jsg.directionalLightQtd = dq;
+		this.jsg.lightPosition = p;
+		this.jsg.lightDirection = d;
+		this.jsg.directionalSpecularLight = dspec;
+		this.jsg.specularLight = spec;
+		this.jsg.pLightColor = pc;
+		this.jsg.dLightColor = dc;
+	}
+	
 	this.removeObject = function(name) {
 		this.objects.remove(name);
 	}
@@ -56,7 +99,8 @@ jsggl.Scene = function(name){
 		return false;
 	}
 
-	this.draw = function(jsg){
+	this.draw = function(){
+		var jsg = this.jsg;
 		var cam = this.currentCamera;
 		jsg.pushModelView();
 		jsg.projection = cam.projection.getMatrix();
