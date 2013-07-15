@@ -36,13 +36,16 @@ jsggl.builtin.getFloor = function(jsg, dim, lines){
 	g.groupNameList = ["floor"];
 	var obj  = new jsggl.Object("floor");
 	obj.addGroup(g);
-	obj.material =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 0.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 };
+	obj.material =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0 };
 	
 	return obj;
 }
 
 jsggl.Object = function(name) {
 	this.name = name;
+	this.showOneTime = true;
+	this.showFrontFace = true;
+	this.showBackFace = true;
 	this.renderGroup = new jsgcol.ArrayMap();
 	this.transforms = mat4.create();
 	mat4.identity(this.transforms);
@@ -52,8 +55,7 @@ jsggl.Object = function(name) {
 		this.transforms[14] = pos[1];
 		this.transforms[15] = pos[2];
 	}
-
-
+	
 	this.getPosition = function() {
 		return [this.transforms[13], this.transforms[14], this.transforms[15]];
 	}
@@ -100,12 +102,14 @@ jsggl.Object = function(name) {
 	}
 	
 	this.draw = function(jsg){
-		var mv = mat4.create();
 		jsg.pushModelView();
 		mat4.multiply(jsg.modelView, jsg.modelView, this.transforms);
 		var keys = this.renderGroup.getKeys();
 		for (var i = 0; i < keys.length; i++) {
-			var g = this.renderGroup.get(keys[i]); 
+			var g = this.renderGroup.get(keys[i]);
+			g.showFrontFace = this.showFrontFace;
+			g.showBackFace = this.showBackFace;
+			g.showOneTime = this.showOneTime;			
 			g.material = this.material;
 			g.draw();
 		}

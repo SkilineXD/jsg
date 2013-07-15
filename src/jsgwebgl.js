@@ -57,7 +57,8 @@ jsggl.JsgGl = function(id){
 	this.scenes = new jsgcol.ArrayMap();
 	this.activeScene = null;
 	this.currentScene = null;
-	this.ambientColor = [0.8,0.8,0.8,1.0];
+	this.ambientLight = [1.0, 1.0, 1.0, 1.0];
+	this.ambientColor = [0.0,0.0,0.0, 1.0];
 	this.materialColor = [0.001,0.001 ,0.001,1.0];
 	this.specularColor = [0.001, 0.001, 0.001, 1.0];
 	this.shininess = 100.0;
@@ -68,6 +69,10 @@ jsggl.JsgGl = function(id){
 	this.specularLight = [0, 0, 0, 0];
 	this.lightPosition = [0,0,0];
 	this.lightDirection = [0, 0, 0];
+	this.lightPositionDirection = [0, 0, 0];
+	this.updateLightPosition = true;
+	this.diffuseCutOff = 0.1;
+	this.lightMatrix = mat4.identity(mat4.create());
 	this.currentVertexPosition = null;
 	this.currentVertexNormal = null;
 	this.shader = null;
@@ -87,7 +92,8 @@ jsggl.JsgGl = function(id){
 	this.TRIANGLES = this.gl.TRIANGLES;
 	this.POINTS = this.gl.POINTS;
 	//END: WEBGL CONTEXT SHORTCUTS
-
+	this.beforeDraw = function(){};
+	this.afterDraw = function(){};
 	//BEGIN: animation configuration
 	this.initialize = this.initialize || function(){};
 	this.display = this.display || function(){};
@@ -95,44 +101,20 @@ jsggl.JsgGl = function(id){
 	this.stopped = false;
 	var self = this;
 	self.animationRate = 30;
-
-	function requestNextFrame(animation){
-		if (!self.intervalID){
-			alert("OLA");
-			self.animationMethod = animation;
-			self.intervalID = window.setInterval(animation, self.animationRate/1000);
-
-			window.onfocus = function(evt) {
-				if (!self.intervalID) {
-					self.intervalID = window.setInterval(self.animationMethod, self.animationRate/1000);
-				}
-			};
-
-			window.onblur = function(evt){
-				if (self.intervalID) {
-					window.clearInterval(self.intervalID);
-					self.intervalID = null;
-				}
-			};
-		} else {
-			if (self.stopped) {
-				window.clearInterval(self.intervalID);
-			}
-		}
-	}
 	
-	window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || requestNextFrame;
+	window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame;
 
 	function onFrame() {
 		var time = +new Date();
 		var elapsedTime = time - self.frameTime;
 		if (elapsedTime < self.animationRate) return; 
-		var steps = Math.floor( elapsedTime / self.animationRate );			  
+		var steps = Math.floor( elapsedTime / self.animationRate );			
+		if (steps > 1000) steps = 1000;
 		while (!self.stopped && steps > 0){
 			self.display();
 			steps -= 1;
 		}
-		self.frameTime = +new Date();			
+		self.frameTime = +new Date();	
 	}
 
 	function mainLoop(time) {	
@@ -242,6 +224,7 @@ jsggl.JsgGl.prototype = {
 			var shader = this.shader;
 			shader.build();
 			var vertexShader = shader.vertexShader.generateCode();
+			//alert(vertexShader);
 			var fragShader = shader.fragShader.generateCode();
 			var prg = this.gl.createProgram();
 
@@ -289,6 +272,9 @@ jsggl.Drawable = function(name, globj){
 	this.name = name;
 	this.vboName = "";
 	this.idoName = "";
+	this.showFrontFace = true;
+	this.showBackFace = true;
+	this.showOneTine = true;
 	this.gl = globj.gl;
 	this.jsg = globj;
 	this.vertexBuffer = undefined;
@@ -327,7 +313,8 @@ jsggl.Drawable.prototype = {
 		}
 
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
+    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
+		this.jsg.afterDraw();
 	},
 	
 	setRenderingMode: function(rm) {
@@ -340,7 +327,7 @@ jsggl.Drawable.prototype = {
 
 	draw : function() {
 		var prg = this.jsg.program;
-
+		this.jsg.beforeDraw();
 		var mvMatrix = this.jsg.getModelView();
 		
 		var nMatrix = mat4.create();
@@ -348,7 +335,7 @@ jsggl.Drawable.prototype = {
     	mat4.transpose(nMatrix, mvMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
-
+	
 		if (this.material) {
 			var material = this.material;
 			this.jsg.materialColor = material.diffuse;
@@ -363,6 +350,7 @@ jsggl.Drawable.prototype = {
 					material = this.material["None"];
 				}
 				this.jsg.materialColor = material.diffuse;
+				this.jsg.ambientColor = material.ambient;
 				this.jsg.specularColor = material.specular;
 				this.jsg.shininess = material.shininess;
 			}
@@ -371,8 +359,19 @@ jsggl.Drawable.prototype = {
 			this.jsg.currentVertexNormal = this.normalsBuffer[i];
 			this.jsg.shader.setLocalValues();			
 			
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);				
-    		this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);
+			if (this.showOneTime){
+				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+			} else {
+				if (this.showBackFace) {
+					this.gl.cullFace(this.gl.FRONT);
+					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+				}
+				if (this.showFrontFace) {
+					this.gl.cullFace(this.gl.BACK);
+					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+				}
+			}
 		}
 		
 		this.currentVertexPosition = null;

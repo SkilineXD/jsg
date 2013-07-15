@@ -55,6 +55,7 @@ jsggl.Scene = function(name, jsg){
 		var dspec = [];
 		var pc = [];
 		var dc = [];
+		var pd = [];
 		var dq = 0;
 		var pq = 0;
 		this.forEachLight(
@@ -62,6 +63,7 @@ jsggl.Scene = function(name, jsg){
 				if (l.type == jsggl.Light.types.POSITIONAL) {
 					p = p.concat(l.position);
 					pc = pc.concat(l.color);
+					pd = pd.concat(l.direction);
 					spec = spec.concat(l.specularColor);
 					pq++;
 				} else {
@@ -75,6 +77,7 @@ jsggl.Scene = function(name, jsg){
 		this.jsg.positionalLightQtd = pq;
 		this.jsg.directionalLightQtd = dq;
 		this.jsg.lightPosition = p;
+		this.jsg.lightPositionDirection = pd;
 		this.jsg.lightDirection = d;
 		this.jsg.directionalSpecularLight = dspec;
 		this.jsg.specularLight = spec;
@@ -101,10 +104,10 @@ jsggl.Scene = function(name, jsg){
 
 	this.draw = function(){
 		var jsg = this.jsg;
-		var cam = this.currentCamera;
+		var cm = this.currentCamera.getMatrix();
 		jsg.pushModelView();
 		jsg.projection = cam.projection.getMatrix();
-		mat4.multiply(jsg.modelView, cam.getMatrix(), jsg.modelView);
+		mat4.multiply(jsg.modelView, cm, jsg.modelView);
 		var keys = this.objects.getKeys();
 		for (var i = 0; i < keys.length; i++) {
 			var obj = this.objects.get(keys[i]);
