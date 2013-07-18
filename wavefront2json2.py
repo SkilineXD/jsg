@@ -24,20 +24,34 @@ class VertexGroup:
 		self.indexList = []
 		self.map = {}
 		self.vertexList = []
+		self.texList = []
 		self.max = 65535
 		self.sum = 0
 
-	def addIndexValue(self, vertices, idx):
+	def addIndexValue(self, model, idx, te):
+		vertices = model.vertices
+		texVertices = model.texVertices
 		n = len(self.vertexList)/3
 		if (self.map.has_key(idx)):
 			n = self.map[idx]
 			self.indexList.append(n)
 		else:
 			v = vertices[idx]
+			vt = None
+			if (te != None):
+				vt =  texVertices[te]
 			self.map[idx] = n
 			self.vertexList.append(v.x)
 			self.vertexList.append(v.y)
 			self.vertexList.append(v.z)
+			if (vt != None):
+				self.texList.append(vt.x)
+				self.texList.append(vt.y)
+				self.texList.append(vt.z)
+			else:
+				self.texList.append(-2)
+				self.texList.append(-2)
+				self.texList.append(-2)
 			self.indexList.append(n)
 			self.sum = self.sum + 3
 			if (self.sum >= self.max):
@@ -68,6 +82,19 @@ class VertexGroup:
 				k = k + 1
 			print(i),
 		print("]"),
+		
+	def generateJSON3(self):
+		k = 0
+		print("["),
+		for idx in range(0, len(self.texList)):
+			i = self.texList[idx]
+			if (k > 0):
+				print(", "),
+			else:
+				k = k + 1
+			print(i),
+		print("]"),
+
 
 class Object3D:
 	def __init__(self, name):
@@ -107,6 +134,16 @@ class Object3D:
 			f.generateJSON2()
 		print("],")
 
+		print("\"textmap\":["),
+		j = 0;	
+		for f in self.faces:
+			if (j > 0):
+				print(", "),
+			else:
+				j = j + 1
+			f.generateJSON3()
+		print("],")
+		
 		j = 0
 		print("\"groupName\":["),
 		for str in self.groups:
@@ -122,12 +159,16 @@ class ModelDescription:
 		self.mtllib = "";
 		self.objects = []
 		self.vertices = []
+		self.texVertices = []
 		self.name = name
 		self.type = "group"
 	
 	def addVertex(self, v):
 		self.vertices.append(v)
 
+	def addTexVertex(self, v):
+		self.texVertices.append(v)
+		
 	def generateJSON(self):
 		print("var {0} = {1}".format(self.name,"{"))
 		print("\"mtllib\":\"{0}\",".format(self.mtllib))
@@ -163,7 +204,9 @@ def makeModelDescription(path, name):
 			if data[0] == "v":
 				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
 				model.addVertex(v)
-		
+			elif data[0] == "vt":
+				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
+				model.addTexVertex(v)
 		for line in lines:
 			line = line.strip()
 			data = line.split()
@@ -176,15 +219,14 @@ def makeModelDescription(path, name):
 				for vi in data[1::]:
 					vi = vi.strip()
 					l = vi
+					j = None
+					k = None
 					if (not vi.isdigit()):
-						if (vi.find("//") >= 0):
-							l = vi.split("//")
-						elif (vi.find("/") >= 0):
-							l = vi.split("/")
+						l = vi.split("/")
 						i = int(l[0]) - 1
-					else:
-						i = int(vi) - 1
-					if cvGroup.addIndexValue(model.vertices, i):
+						if (len(l) > 1 and l[1].isdigit()):
+							j = int(l[1]) - 1
+					if cvGroup.addIndexValue(model, i, j):
 						currentObject.addVertexGroup(cvGroup)
 			elif (data[0] == "o" or data[0] == "g"):
 				currentObject = Object3D(data[1])

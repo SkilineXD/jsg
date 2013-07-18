@@ -1,5 +1,5 @@
 /**
-* This file contains code of JavaScript Graphical Library for WebGL (JSGWebGL).
+* This file contains code of JavaScript Graphics Library for WebGL (JSGWebGL).
 * JSGWebGL is free for non commercial propose.
 * Author: Gilzamir Ferreira Gomes (Todos os direitos reservados)
 * Date: jun/05/2013
@@ -24,27 +24,15 @@ String.prototype.replaceAll = function(de, para){
 
 /* The name jsggl contains objects for graphical manipulation. */
 var jsggl = jsggl || {};
-var JSGGL_ARRAY_TYPE = Float32Array || Array;
-var JSGGL_EPSLON = 0.000001;
 
 jsggl.JsgGl = function(id){
-	this.id = id;
-	this.ambientLight = [0.01,0.01,0.01,1.0];
-	this.materialDiffuse = [0.001,0.001 ,0.001,1.0];
-	this.materialAmbient = [0.001, 0.001, 0.001, 1.0];
-	this.materialSpecular = [0.001, 0.001, 0.001, 1.0];
-	this.lights = new jsgcol.ArrayMap();
-	
+	//BEGIN:configure canvas and context...	
 	this.canvas = document.getElementById(id);
-
 	if (!this.canvas){
 		return undefined;
 	}
-	
 	var names = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
-
 	var ctx = null;
-	
 	for (var i = 0; i < names.length; ++i) {
 		try {
 			ctx = this.canvas.getContext(names[i]);
@@ -62,10 +50,40 @@ jsggl.JsgGl = function(id){
 	if (!this.gl) {
 		return undefined;
 	}
+	//END:configure canvas and context
+	
+	//BEGIN: state attributes
+	this.id = id;
+	this.scenes = new jsgcol.ArrayMap();
+	this.activeScene = null;
+	this.currentScene = null;
+	this.ambientLight = [1.0, 1.0, 1.0, 1.0];
+	this.ambientColor = [0.0,0.0,0.0, 1.0];
+	this.materialColor = [0.001,0.001 ,0.001,1.0];
+	this.specularColor = [0.001, 0.001, 0.001, 1.0];
+	this.shininess = 100.0;
+	this.positionalLightQtd = 0;
+	this.directionalLightQtd = 0;
+	this.pLightColor = [0,0,0,0];
+	this.dLightColor = [0, 0, 0, 0];
+	this.specularLight = [0, 0, 0, 0];
+	this.lightPosition = [0,0,0];
+	this.lightDirection = [0, 0, 0];
+	this.lightPositionDirection = [0, 0, 0];
+	this.updateLightPosition = true;
+	this.diffuseCutOff = 0.1;
+	this.useTexture = false;
+	this.lightMatrix = mat4.identity(mat4.create());
+	this.currentVertexPosition = null;
+	this.currentVertexNormal = null;
+	this.currentTexPosition = null;
+	this.shader = null;
+	this.modelView = mat4.identity(mat4.create());
+	this.projection = mat4.identity(mat4.create());
+	this.modelViewStack = [this.modelView];
+	//BEGIN: state attributes
 
-	this.modelViewStack = [mat4.identity(mat4.create())];
-	this.projectionStack = [mat4.identity(mat4.create())];
-
+	//BEGIN: WEBGL CONTEXT SHORTCUTS 
 	this.COLOR_BUFFER_BIT = this.gl.COLOR_BUFFER_BIT;
 	this.DEPTH_BUFFER_BIT = this.gl.DEPTH_BUFFER_BIT;
 	this.LINE_LOOP = this.gl.LINE_LOOP;	
@@ -75,42 +93,88 @@ jsggl.JsgGl = function(id){
 	this.TRIANGLE_STRIP = this.gl.TRIANGLE_STRIP;
 	this.TRIANGLES = this.gl.TRIANGLES;
 	this.POINTS = this.gl.POINTS;
-
-	this.interval = 50;
+	//END: WEBGL CONTEXT SHORTCUTS
+	this.beforeDraw = function(){};
+	this.afterDraw = function(){};
+	//BEGIN: animation configuration
 	this.initialize = this.initialize || function(){};
 	this.display = this.display || function(){};
 	this.finalize = this.finalize || function(){};
 	this.stopped = false;
 	var self = this;
+	self.animationRate = 30;
+	
+	window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame;
 
-	function mainLoop(time) {
-			if (!time) {
-				time = +new Date();
-			}
-			self.frameTime = time;
+	function onFrame() {
+		var time = +new Date();
+		var elapsedTime = time - self.frameTime;
+		if (elapsedTime < self.animationRate) return; 
+		var steps = Math.floor( elapsedTime / self.animationRate );			
+		if (steps > 1000) steps = 1000;
+		while (!self.stopped && steps > 0){
+			self.display();
+			steps -= 1;
+		}
+		self.frameTime = +new Date();	
+	}
+
+	function mainLoop(time) {	
 			if (!self.stopped) {
 				if (!self.started) {
+					self.frameTime = +new Date();
 					self.started = true;
 					self.initialize();
 				}
-				self.display();
+				onFrame();
 				window.requestAnimationFrame(mainLoop);
 			} else {
 				self.finalize();
 			}
 	};
-	
+
 	this.mainLoop = mainLoop;
+	//BAGIN: animation configuration
 }
 
 jsggl.JsgGl.prototype = {
+	setActiveScene: function(name) {
+		this.currentScene = this.scenes.get(name);
+		this.activeScene = name;
+	},
+
+	addScene: function(scene) {
+		this.scenes.put(scene.name, scene);
+	},
+
+	removeScene: function(scene) {
+		if (this.scenes.hasKey(scene) && scene != this.activeScene){
+			this.scenes.remove(scene);
+			return true;
+		}
+		return false;
+	},
 
 	getModelView: function() {
-		return this.modelViewStack[this.modelViewStack.length - 1];
+		return this.modelView;
 	},	
 
 	getProjection: function() {
-		return this.projectionStack[this.projectionStack.length - 1];
+		return this.projection;
+	},
+
+	resetProjection: function() {
+		this.projection = mat4.identity(mat4.create());
+	},
+
+	pushModelView: function(){
+		this.modelView = mat4.clone(this.modelView);
+		this.modelViewStack.push(this.modelView);
+	},
+
+	popModelView: function(){
+		this.modelViewStack.pop();
+		this.modelView = this.modelViewStack[this.modelViewStack.length - 1];
 	},
 
 	enableDepthTest: function() {
@@ -139,7 +203,6 @@ jsggl.JsgGl.prototype = {
 
 	getShader: function(type, str) {
 		var shader;
-		
 		if (type == "x-shader/x-fragment"){
 			shader = this.gl.createShader(jsg.gl.FRAGMENT_SHADER);
 		} else if (type == "x-shader/x-vertex") {
@@ -152,72 +215,210 @@ jsggl.JsgGl.prototype = {
 		return shader;
 	},
 
-	compileProgram: function(shader) {
-		this.shader = shader;
-		var vertexShader = shader.vertexShader.generateCode();
-		var fragShader = shader.fragShader.generateCode();
-		var prg = this.gl.createProgram();
+	build: function(updateScene) {
+		updateScene = updateScene || true;
+		var scene = this.scenes.get(this.activeScene);
+		if (scene){
+			if (updateScene) {
+				scene.build();
+			}
+			var shader = this.shader;
+			shader.build();
+			var vertexShader = shader.vertexShader.generateCode();
+			//alert(vertexShader);
+			var fragShader = shader.fragShader.generateCode();
+			var prg = this.gl.createProgram();
 
-		var shadervs = this.getShader("x-shader/x-vertex", vertexShader);
-		if (!this.gl.getShaderParameter(shadervs, this.gl.COMPILE_STATUS)) {
-			this.compileProgramStatus =  "Vertex shader: " + this.gl.getShaderInfoLog(shadervs);
-            		return false;
-        	}
+			var shadervs = this.getShader("x-shader/x-vertex", vertexShader);
+			if (!this.gl.getShaderParameter(shadervs, this.gl.COMPILE_STATUS)) {
+				this.compileProgramStatus =  "Vertex shader: " + this.gl.getShaderInfoLog(shadervs);
+		    		return false;
+			}
 
-		var shaderfs = this.getShader("x-shader/x-fragment", fragShader);		
-		if (!this.gl.getShaderParameter(shaderfs, this.gl.COMPILE_STATUS)) {
-			this.compileProgramStatus =  "Fragment shader: " + this.gl.getShaderInfoLog(shaderfs);
-            		return false;
-        	}
+			var shaderfs = this.getShader("x-shader/x-fragment", fragShader);		
+			if (!this.gl.getShaderParameter(shaderfs, this.gl.COMPILE_STATUS)) {
+				this.compileProgramStatus =  "Fragment shader: " + this.gl.getShaderInfoLog(shaderfs);
+		    		return false;
+			}
 		
-		this.gl.attachShader(prg, shadervs);
-		this.gl.attachShader(prg, shaderfs);
-		this.gl.linkProgram(prg);
+			this.gl.attachShader(prg, shadervs);
+			this.gl.attachShader(prg, shaderfs);
+			this.gl.linkProgram(prg);
 		
-		if (!this.gl.getProgramParameter(prg, this.gl.LINK_STATUS)){
-			this.compileProgramStatus = "Program link error.";
-			return false;
+			if (!this.gl.getProgramParameter(prg, this.gl.LINK_STATUS)){
+				this.compileProgramStatus = "Program link error: " + this.gl.getProgramInfoLog(prg);
+				return false;
+			}
+		
+			this.gl.useProgram(prg);
+			this.program = prg;		
+			shader.load();
+			shader.setGlobalValues();
+			this.compileProgramStatus =  this.gl.getShaderInfoLog(shaderfs);
 		}
-		
-		this.gl.useProgram(prg);
+		return true;
+	},
 
-    		prg.aVertexPosition  = this.gl.getAttribLocation(prg, "aVertexPosition");
-    		prg.aVertexNormal    = this.gl.getAttribLocation(prg, "aVertexNormal");
-	
-		prg.uPMatrix = this.gl.getUniformLocation(prg, "uPMatrix");
-		prg.uMVMatrix = this.gl.getUniformLocation(prg, "uMVMatrix");
-		prg.uNMatrix = this.gl.getUniformLocation(prg, "uNMatrix");
-		prg.uLightAmbient = this.gl.getUniformLocation(prg, "uLightAmbient");
-		prg.uMaterialDiffuse = this.gl.getUniformLocation(prg, "uMaterialDiffuse");
-		prg.uMaterialSpecular = this.gl.getUniformLocation(prg, "uMaterialSpecular");
-		prg.uMaterialAmbient = this.gl.getUniformLocation(prg, "uMaterialAmbient");
-		
-		var keys = this.lights.getKeys();
 
-		for (var i = 0; i < keys.length; i++) {
-			var lobj = this.lights.get(keys[i]);
-			var l = [];
-			if (lobj.diffuse) {
-				l.push(lobj.diffuse);
-			}
+	run: function() {
+		if (this.currentScene) {
+			this.currentScene.draw(this);
+		}
+	}
+}
 
-			if (lobj.specular) {
-				l.push(lobj.specular);
-			}
+jsggl.Drawable = function(name, globj){	
+	this.vertices = [];
+	this.indices = [];
+	this.textures = [];
+	this.name = name;
+	this.vboName = "";
+	this.idoName = "";
+	this.showFrontFace = true;
+	this.showBackFace = true;
+	this.showOneTine = true;
+	this.gl = globj.gl;
+	this.jsg = globj;
+	this.vertexBuffer = undefined;
+	this.indexBuffer = undefined;
+	this.normalsBuffer = undefined;
+	this.texBuffer = undefined;
+	this.renderingmode = this.gl.LINES;
+	this.groupNameList = []
+	this.material = undefined;
+}
 
-			for (var k = 0; k < l.length; k++) {
-				for (var j = 0; j < l[k].uniforms.length; j++){
-					prg[l[k].uniforms[j]] = this.gl.getUniformLocation(prg, l[k].uniforms[j]);
+jsggl.Drawable.prototype = {
+	build: function() {
+		if (this.built) return;
+		this.built = true;
+		this.vertexBuffer = [];
+		this.texBuffer = [];
+		for (var i = 0; i < this.vertices.length; i++){
+			var vBuffer = this.gl.createBuffer();
+			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
+			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
+			this.vertexBuffer.push(vBuffer)
+			
+			if (this.textures) {
+				if (this.textures.length > 0 && this.textures[0] && this.textures[0][0] != -2) {
+					var tBuffer = this.gl.createBuffer();
+					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tBuffer); 
+					this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.textures[i]), this.gl.		STATIC_DRAW);
+					this.texBuffer.push(tBuffer);
+				} else {
+					this.texBuffer.push(undefined);
 				}
 			}
 		}
 
-		this.program = prg;
-		this.compileProgramStatus =  this.gl.getShaderInfoLog(shaderfs);
-		this.shader.setGlobalValues(this);
-		return true;
+		this.indexBuffer = [];
+		this.normalsBuffer = [];
+		for (var i = 0; i < this.indices.length; i++) {
+			var iBuffer  = this.gl.createBuffer();
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices[i]), this.gl.STATIC_DRAW);
+			var normals = jsgutils.calcNormals(this.vertices[i], this.indices[i]);
+		
+   			var nBuffer = this.gl.createBuffer();
+			this.indexBuffer.push(iBuffer);
+			this.normalsBuffer.push(nBuffer);
+    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
+    		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
+		}
+
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
 	},
+	
+	setRenderingMode: function(rm) {
+		this.renderingmode = rm;
+	},
+
+	getRenderingMode: function() {
+		return this.renderingmode;
+	},
+
+	draw : function() {
+		var prg = this.jsg.program;
+		this.jsg.beforeDraw();
+		var mvMatrix = this.jsg.getModelView();
+		
+		var nMatrix = mat4.create();
+		
+    	mat4.transpose(nMatrix, mvMatrix);
+		
+		this.jsg.normalMatrix = nMatrix;
+	
+		if (this.material) {
+			var material = this.material;
+			this.jsg.materialColor = material.diffuse;
+		}
+		
+		for (var i = 0; i < this.indexBuffer.length; i++) {
+			var group = this.groupNameList[i]
+					
+			if (!this.material) {
+				var material = this.jsg.materials[group];
+				if (!material) { 
+					material = this.material["None"];
+				}
+				this.jsg.materialColor = material.diffuse;
+				this.jsg.ambientColor = material.ambient;
+				this.jsg.specularColor = material.specular;
+				this.jsg.shininess = material.shininess;
+			}
+			
+			this.jsg.currentVertexPosition = this.vertexBuffer[i];
+			this.jsg.currentVertexNormal = this.normalsBuffer[i];
+			this.jsg.currentTexPosition = this.texBuffer[i];
+			this.jsg.useTextureKa = material.useTextureKa;
+			this.jsg.useTextureKd = material.useTextureKd;
+				
+			if (material.textureka && this.texBuffer[i]) {
+				this.jsg.texSamplerKa = material.textureka.number;
+				var tex = material.textureka;
+				tex.active();
+			}
+			if (material.texturekd && this.texBuffer[i]) {
+				this.jsg.texSamplerKd = material.texturekd.number;
+				var tex = material.texturekd;
+				tex.active();
+			}
+			this.jsg.shader.setLocalValues();				
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);
+			if (this.showOneTime){
+				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+			} else {
+				if (this.showBackFace) {
+					this.gl.cullFace(this.gl.FRONT);
+					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+				}
+				if (this.showFrontFace) {
+					this.gl.cullFace(this.gl.BACK);
+					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+				}
+			}
+		}
+		
+		this.currentVertexPosition = null;
+		this.currentVertexNormal = null;
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+		this.jsg.afterDraw();
+	},
+
+	delete: function(){
+		for (var i = 0; i < this.indexBuffer.length; i++){
+			this.gl.deleteBuffer(this.indedexBuffer[i]);
+			this.gl.deleteBuffer(this.vertexBuffer[i]);
+			if (this.normalsBuffer && this.normalsBuffer[i]){
+				this.gl.deleteBuffer(this.normalsBuffer[i]);
+			}
+		}
+		this.indexBuffer = null;
+		this.vertexBuffer = null;
+		this.normalsBuffer = null;
+	}			
 }
-
-
 

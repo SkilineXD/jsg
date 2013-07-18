@@ -6,6 +6,18 @@ jsgcol.ArrayMap = function(){
 	this.next = [0];
 	this.keyList = [];
 	this.p = 0;
+
+	this.clear = function(){
+		this.keys = {};
+		this.data = [];
+		this.next = [0];
+		this.keyList = [];
+		this.p = 0;
+	}
+
+	this.hasKey = function(key) {
+		return this.keys.hasOwnProperty(key);
+	}
 	
 	this.shiftNext = function() {
 		if (this.p == 0) {
@@ -15,7 +27,6 @@ jsgcol.ArrayMap = function(){
 			this.p--;
 		}
 	}
-
 
 	this.getNext = function(){
 		return this.next[this.p];
@@ -28,7 +39,6 @@ jsgcol.ArrayMap = function(){
 		
 		return -1;
 	}
-
 
 	this.isActive = function(idx){
 		return this.data[idx] != null;
@@ -45,7 +55,6 @@ jsgcol.ArrayMap = function(){
 		}
 		return null;
 	}
-	
 
 	this.size = function() {
 		return this.data.length;
@@ -87,5 +96,4 @@ jsgcol.ArrayMap = function(){
 		return obj;
 	}
 }
-
 

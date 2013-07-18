@@ -1,161 +1,90 @@
-var jsggl = jsggl || {};
 
-
-jsggl.Drawable = function(name, globj){	
-	this.vertices = [];
-	this.indices = [];
+jsggl.Scene = function(name, jsg){
 	this.name = name;
-	this.vboName = "";
-	this.idoName = "";
-	this.gl = globj.gl;
-	this.jsg = globj;
-	this.vertexBuffer = undefined;
-	this.indexBuffer = undefined;
-	this.normalsBuffer = undefined;
-	this.renderingmode = this.gl.LINES;
-	this.groupNameList = []
-	this.material = {};
-}
-
-jsggl.Drawable.prototype = {
-	init: function() {
-		this.vertexBuffer = [];
-		
-		
-		for (var i = 0; i < this.vertices.length; i++){
-			var vBuffer = this.gl.createBuffer();
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
-			this.vertexBuffer.push(vBuffer)
-		}
-	
-
-		this.indexBuffer = [];
-		this.normalsBuffer = [];
-		for (var i = 0; i < this.indices.length; i++) {
-			var iBuffer  = this.gl.createBuffer();
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices[i]), this.gl.STATIC_DRAW);
-			var normals = jsgutils.calcNormals(this.vertices[i], this.indices[i]);
-		
-   			var nBuffer = this.gl.createBuffer();
-			this.indexBuffer.push(iBuffer);
-			this.normalsBuffer.push(nBuffer);
-    			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
-    			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
-		}
-
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
-	},
-	
-	setRenderingMode: function(rm) {
-		this.renderingmode = rm;
-	},
-
-	getRenderingMode: function() {
-		return this.renderingmode;
-	},
-
-	draw : function() {		
-		if (this.jsg.materials){
-			this.material = this.jsg.materials;
-		}
-		var prg = this.jsg.program;
-
-		var pMatrix = this.jsg.getProjection();
-		var mvMatrix = this.jsg.getModelView();
-		
-		var nMatrix = mat4.create();
-		
-    		mat4.transpose(nMatrix, mvMatrix);
-		
-		this.jsg.normalMatrix = nMatrix;
-				
-		for (var i = 0; i < this.indexBuffer.length; i++) {
-			var group = this.groupNameList[i]
-			var material = this.material[group];
-
-			if (!material) material = this.material["None"];
-			
-			this.jsg.materialSpecular = material.specular;
-			this.jsg.materialDiffuse = material.diffuse;
-			this.jsg.materialAmbient = material.ambient;
-			this.jsg.shader.setLocalValues(this.jsg);
-			if (prg.aVertexPosition >= 0){
-				this.gl.enableVertexAttribArray(prg.aVertexPosition);    				
-			    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer[i]);
-			   	this.gl.vertexAttribPointer(prg.aVertexPosition, 3, this.gl.FLOAT, false, 0, 0);
-			}
-
-			if (prg.aVertexNormal >= 0){
-				this.gl.enableVertexAttribArray(prg.aVertexNormal);
-    				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalsBuffer[i]);
-    				this.gl.vertexAttribPointer(prg.aVertexNormal, 3, this.gl.FLOAT, false, 0, 0);
-			}
-
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);				
-    			this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
-		}
-		
-
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-	},
-
-	delete: function(){
-		for (var i = 0; i < this.indexBuffer.length; i++){
-			this.gl.deleteBuffer(this.indedexBuffer[i]);
-			this.gl.deleteBuffer(this.vertexBuffer[i]);
-			if (this.normalsBuffer && this.normalsBuffer[i]){
-				this.gl.deleteBuffer(this.normalsBuffer[i]);
-			}
-		}
-		this.indexBuffer = null;
-		this.vertexBuffer = null;
-		this.normalsBuffer = null;
-	}			
-}
-
-jsggl.Object = function(name) {
-	this.name = name;
-	this.groups = new jsgcol.ArrayMap();
-
-	this.addGroup = function(g){
-		this.groups.put(g.name, g);
-	}
-
-	this.removeGroup = function(name){
-		this.groups.remove(name);
-	}
-
-	this.transformation = mat4.create();
-	mat4.identity(this.transformation);
-	
-	this.draw = function(jsg){
-		var mv = mat4.create();
-		mat4.multiply(mv, jsg.getModelView(), this.transformation);
-		jsg.modelViewStack.push(mv);
-		var keys = this.groups.getKeys();
-		for (var i = 0; i < keys.length; i++) {
-			this.groups.get(keys[i]).draw();
-		}
-		jsg.modelViewStack.pop();
-	}
-}
-
-
-jsggl.Scene = function(name){
-	this.name = name;
+	this.jsg = jsg;
 	this.cameras = {};
-	this.cameras["Default"] = new jsggl.Camera("Default", jsggl.Camera.TRACKING);
+	this.currentCamera = new jsggl.Camera("Default", jsggl.Camera.ORBITING);
+	this.cameras["Default"] = this.currentCamera;
 	this.activeCamera = "Default";
+	this.lights = new jsgcol.ArrayMap();
 	this.objects = new jsgcol.ArrayMap();
 
+	this.build = function() {
+		this.forEachObject(function(obj){
+			obj.build();
+		});
+		this.updateLights();
+	}
+
+	this.getObject = function(name) {
+		return this.objects.get(name);
+	}
+
+	this.addLight = function(l){
+		this.lights.put(l.name, l);
+	}
+
+	this.forEachLight = function(callback) {
+		var keys = this.lights.getKeys();
+		for (var i = 0; i < keys.length; i++) {
+			var obj = this.lights.get(keys[i]);
+			callback(obj);
+		}	
+	}
+	
+	this.forEachObject = function(callback) {
+		var keys = this.objects.getKeys();
+		for (var i = 0; i < keys.length; i++) {
+			var obj = this.objects.get(keys[i]);
+			callback(obj);
+		}
+	}
+
+	this.removeLight = function(name){
+		return this.lights.remove(name);
+	}
+	
 	this.addObject = function(obj) {
 		this.objects.put(obj.name, obj);
 	}
-
+	
+	this.updateLights = function() {
+		var p = [];
+		var d = [];
+		var spec = [];
+		var dspec = [];
+		var pc = [];
+		var dc = [];
+		var pd = [];
+		var dq = 0;
+		var pq = 0;
+		this.forEachLight(
+			function(l) {
+				if (l.type == jsggl.Light.types.POSITIONAL) {
+					p = p.concat(l.position);
+					pc = pc.concat(l.color);
+					pd = pd.concat(l.direction);
+					spec = spec.concat(l.specularColor);
+					pq++;
+				} else {
+					dspec = dspec.concat(l.specularColor);
+					d = d.concat(l.direction);
+					dc = dc.concat(l.color);
+					dq++;
+				}
+			}
+		);
+		this.jsg.positionalLightQtd = pq;
+		this.jsg.directionalLightQtd = dq;
+		this.jsg.lightPosition = p;
+		this.jsg.lightPositionDirection = pd;
+		this.jsg.lightDirection = d;
+		this.jsg.directionalSpecularLight = dspec;
+		this.jsg.specularLight = spec;
+		this.jsg.pLightColor = pc;
+		this.jsg.dLightColor = dc;
+	}
+	
 	this.removeObject = function(name) {
 		this.objects.remove(name);
 	}
@@ -167,21 +96,24 @@ jsggl.Scene = function(name){
 	this.setActiveCamera = function(camName){ 
 		if (this.cameras.hasOwnProperty(camName)){
 			this.activeCamera = camName;
+			this.currentCamera = this.cameras[this.activeCamera];
 			return true;
 		}
 		return false;
 	}
 
-	this.draw = function(jsg){
-		var cam = this.cameras[this.activeCamera];
-		var cm = cam.getMatrix();
-		mat4.multiply(cm, cm, jsg.getModelView());
-		jsg.modelViewStack.push(cm);
+	this.draw = function(){
+		var jsg = this.jsg;
+		var cm = this.currentCamera.getMatrix();
+		jsg.pushModelView();
+		jsg.projection = cam.projection.getMatrix();
+		mat4.multiply(jsg.modelView, cm, jsg.modelView);
 		var keys = this.objects.getKeys();
 		for (var i = 0; i < keys.length; i++) {
-			this.objects.get(keys[i]).draw(jsg);
+			var obj = this.objects.get(keys[i]);
+			obj.draw(jsg);
 		}
-		jsg.modelViewStack.pop();
+		jsg.popModelView();
 	}
 }
 
