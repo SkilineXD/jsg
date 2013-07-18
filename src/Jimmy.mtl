@@ -24,8 +24,8 @@ newmtl 02___Defaultp__p
 	Kd 0.5882 0.5882 0.5882
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Ka F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_04_d.tga
-	map_Kd F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_04_d.tga
+	map_Ka Player_04_d.tga
+	map_Kd Player_04_d.tga
 
 newmtl 02___Defaultoppo
 	Ns 10.0000
@@ -38,8 +38,8 @@ newmtl 02___Defaultoppo
 	Kd 0.5882 0.5882 0.5882
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Ka F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_03_d.tga
-	map_Kd F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_03_d.tga
+	map_Ka Player_03_d.tga
+	map_Kd Player_03_d.tga
 
 newmtl 02___Default
 	Ns 10.0000
@@ -52,8 +52,8 @@ newmtl 02___Default
 	Kd 0.5882 0.5882 0.5882
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Ka F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_02_d.tga
-	map_Kd F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_02_d.tga
+	map_Ka Player_02_d.tga
+	map_Kd Player_02_d.tga
 
 newmtl 01___Default
 	Ns 10.0000
@@ -66,5 +66,5 @@ newmtl 01___Default
 	Kd 0.5882 0.5882 0.5882
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Ka F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_01_d.tga
-	map_Kd F:\Users\tommy\Documents\Ripped video game models\Bully\Jimmy Hopkins\Player_01_d.tga
+	map_Ka Player_01_d.tga
+	map_Kd -t on Player_01_d.tga

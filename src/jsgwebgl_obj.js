@@ -125,7 +125,8 @@ jsggl.Object.loadFromJSON = function(objson, type, ID) {
 			var ob = objson.objectList[i];
 			var obj3d = new jsggl.Drawable(ob.name, jsg);
 			obj3d.indices = ob.indices;
-			obj3d.vertices = ob.vertices;			
+			obj3d.vertices = ob.vertices;
+			obj3d.textures = ob.textmap;
 			obj3d.groupNameList = ob.groupName;				
 			obj3d.setRenderingMode(jsg.TRIANGLES);
 			obj.addGroup(obj3d);

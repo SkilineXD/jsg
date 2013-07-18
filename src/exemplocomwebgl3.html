@@ -35,12 +35,12 @@
 			jsggl.Material.loadFromJSON(jsg, wallmtl);
 			var wall0 = new jsggl.Object.loadFromJSON(wall, "object");
 			wall0.translate([0.0, 1.0, -40.0]);
-			wall0.scale([1.0, 2.0, 2.0]);
+			wall0.scale([8.0, 8.0, 1.0]);
 			wall0.rotate(90 * Math.PI/180, [1.0, 0.0, 0.0]);
 			scene.addObject(wall0);
 			
-			var floor = jsggl.builtin.getFloor(jsg, 50, 50);
-			scene.addObject(floor);
+			//var floor = jsggl.builtin.getFloor(jsg, 50, 50);
+			//scene.addObject(floor);
 			
 			var proj = jsggl.Projection.newPerspective(30 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.1, 1000);
 			//var proj = jsggl.Projection.newOrtographic(-1.0, 1.0, -1.0, 1.0, 0.001, 10000);

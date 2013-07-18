@@ -2,6 +2,38 @@
 #Filename: wavefront2json1.py
 #Author: Gilzamir F. Gomes (gilzamir@gmail.com) at five of march from 2013
 
+class Option:
+	def __init__(self, name):
+		self.name = name
+		self.arguments = []
+	
+	def addArgument(self, arg):
+		self.arguments.add(arg)
+		
+	def generateJSON(self):
+		print(""),
+		
+class TexMap:
+	def __init__(self, name):
+		self.options = []
+		self.name = name
+		self.texpath = ""
+		self.currentOption = None
+	def makeOption(self, optname):
+		opt = Option(optname)
+		self.options.add(opt)
+		self.currentOption = opt
+	def setCurrentOption(self, i):
+		self.currentOption = self.options[i]
+		
+	def generateJSON(self):
+		print("{"),
+		print("\"texpath\":\"{0}\"".format(self.texpath)),
+		if (len(self.options) > 0):
+			print(", "),
+			for op in options:
+				op.generateJSN()
+		print("}"),
 class Material:
 	def __init__(self, name, ambColor, diffColor, specColor, shininess, transparence, opticalDensity):
 		self.name = name
@@ -11,6 +43,9 @@ class Material:
 		self.shininess = shininess
 		self.transparence = transparence
 		self.opticalDensity = opticalDensity
+		self.mapka = None
+		self.mapkd = None
+		
 	def generateJSON(self):
 		print("{"),
 		print("\"name\":\"{0}\",".format(self.name)),
@@ -20,9 +55,15 @@ class Material:
 		print("\"shininess\":{0},".format(self.shininess)),
 		print("\"transparence\":{0},".format(self.transparence)),
 		print("\"opticalDensity\":{0}".format(self.opticalDensity)),
+		if (self.mapkd):
+			print(", "),
+			print("\"mapkd\": "),
+			self.mapkd.generateJSON()
+		if (self.mapka):
+			print(", "),
+			print("\"mapka\": "),
+			self.mapka.generateJSON()
 		print("}"),
-
-
 class ModelDescription:
 	def __init__(self, name):
 		self.materials = []
@@ -74,6 +115,28 @@ def makeModelDescription(path, name):
 				mat.shininess = data[1]
 			elif data[0] == "Ni":
 				mat.opticalDensity = data[1]
+			elif data[0] == "map_Ka":
+				fnameidx = len(data)-1
+				mat.mapka = TexMap(data[0])
+				mat.mapka.texpath = data[fnameidx]
+				i = 1
+				while (i < fnameidx):
+					if (data[i].startswith("-")):
+						mat.mapka.makeOption(data[i])
+					else:
+						mat.mapka.currentOption.addArgument(data[i])
+					i = i + 1
+			elif data[0] == "map_Kd":
+				fnameidx = len(data)-1
+				mat.mapkd = TexMap(data[0])
+				mat.mapkd.texpath = data[fnameidx]
+				i = 1
+				while (i < fnameidx):
+					if (data[i].startswith("-")):
+						mat.mapkd.makeOption(data[i])
+					else:
+						mat.mapkd.currentOption.addArgument(data[i])
+					i = i + 1
 	except e:
 		print(e)
 	finally:

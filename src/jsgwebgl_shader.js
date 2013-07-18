@@ -132,9 +132,11 @@ jsggl.GoraudShader = function(jsg){
 	var uniform4fv = function(jsg, p, value){jsg.gl.uniform4fv(p, value);};	
 	var uniformMatrix4fv = function(jsg, p, value){ jsg.gl.uniformMatrix4fv(p, false, value); };
 	var attr = function(jsg, p, value) {
-			jsg.gl.enableVertexAttribArray(p);
-    		jsg.gl.bindBuffer(jsg.gl.ARRAY_BUFFER, value);
-    		jsg.gl.vertexAttribPointer(p, 3, jsg.gl.FLOAT, false, 0, 0);
+			if (value != undefined && value != null) {
+				jsg.gl.enableVertexAttribArray(p);
+				jsg.gl.bindBuffer(jsg.gl.ARRAY_BUFFER, value);
+				jsg.gl.vertexAttribPointer(p, 3, jsg.gl.FLOAT, false, 0, 0);
+			}
 	};
 		
 	this.globalmap.newStateMap("POSITIONAL_LIGHT_QTD", uniform1i, "uPosLights", 0);
@@ -156,10 +158,15 @@ jsggl.GoraudShader = function(jsg){
 	this.localmap.newStateMap("MODELVIEW_MATRIX", uniformMatrix4fv, "uMVMatrix", mat4.identity(mat4.create()));
 	this.localmap.newStateMap("NORMAL_MATRIX", uniformMatrix4fv, "uNMatrix", mat4.identity(mat4.create()));
 	this.localmap.newStateMap("LIGHT_MATRIX", uniformMatrix4fv, "uLMatrix", mat4.identity(mat4.create()));
+	this.localmap.newStateMap("TEX_POSITION", attr, "aVertexTextureCoords", null, jsggl.ShaderMap.ATTRIBUTE);
 	this.localmap.newStateMap("VERTEX_POSITION", attr, "aVertexPos", null, jsggl.ShaderMap.ATTRIBUTE);
 	this.localmap.newStateMap("VERTEX_NORMAL", attr, "aVertexNormal", null, jsggl.ShaderMap.ATTRIBUTE);
 	this.localmap.newStateMap("AMBIENT_COLOR", uniform4fv, "uAmbientColor", [0.0, 0.0, 0.0, 1.0]);
 	this.localmap.newStateMap("DIFFUSE_CUTOFF", uniform1f, "uCutOff", 0.4);
+	this.localmap.newStateMap("USE_TEXTUREKA", uniform1i, "uUseTextureKa", false);
+	this.localmap.newStateMap("USE_TEXTUREKD", uniform1i, "uUseTextureKd", false);
+	this.localmap.newStateMap("TEX_SAMPLERKA", uniform1i, "uSamplerKa", 0);
+	this.localmap.newStateMap("TEX_SAMPLERKD", uniform1i, "uSamplerKd", 0);
 	
 	this.load = function() {
 		this.localmap.load(this.jsg);
@@ -195,13 +202,17 @@ jsggl.GoraudShader = function(jsg){
 		localmap.setProperty("MODELVIEW_MATRIX", jsg.getModelView());
 		localmap.setProperty("NORMAL_MATRIX", jsg.normalMatrix);
 		localmap.setProperty("LIGHT_MATRIX", jsg.lightMatrix);
+		localmap.setProperty("TEX_POSITION", jsg.currentTexPosition);
 		localmap.setProperty("VERTEX_POSITION", jsg.currentVertexPosition);
 		localmap.setProperty("VERTEX_NORMAL", jsg.currentVertexNormal);
 		localmap.setProperty("SPECULAR_COLOR", jsg.specularColor);
 		localmap.setProperty("SHININESS", jsg.shininess);
 		localmap.setProperty("AMBIENT_COLOR", jsg.ambientColor);
 		localmap.setProperty("DIFFUSE_CUTOFF", jsg.diffuseCutOff);
-		
+		localmap.setProperty("USE_TEXTUREKA", jsg.useTextureKa || false);
+		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd || false);
+		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa || 0);
+		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd || 0);
 	}
 	
 	this.setLocalValues = function() {
@@ -219,11 +230,13 @@ jsggl.GoraudShader = function(jsg){
 		//VERTEX_SHADER
 		this.vertexShader.globalDeclarations.push("attribute vec3 aVertexPos;");
 		this.vertexShader.globalDeclarations.push("attribute vec3 aVertexNormal;");
+		this.vertexShader.globalDeclarations.push("attribute vec2 aVertexTextureCoords;");
 		this.vertexShader.globalDeclarations.push("uniform mat4 uMVMatrix;");
 		this.vertexShader.globalDeclarations.push("uniform mat4 uPMatrix;");
 		this.vertexShader.globalDeclarations.push("uniform mat4 uNMatrix;");
 		this.vertexShader.globalDeclarations.push("uniform int uPosLights;");
 		this.vertexShader.globalDeclarations.push("uniform int uDirLights;");
+		this.vertexShader.globalDeclarations.push("uniform int uUseTexture;");
 		this.vertexShader.globalDeclarations.push("uniform vec4 uAmbientLight;");
 		this.vertexShader.globalDeclarations.push("const int MAX_POS_LIGHTS = " + jsg.positionalLightQtd + ";");
 		this.vertexShader.globalDeclarations.push("const int MAX_DIR_LIGHTS = " + jsg.directionalLightQtd + ";");
@@ -235,6 +248,7 @@ jsggl.GoraudShader = function(jsg){
 		this.vertexShader.globalDeclarations.push("uniform mat4 uLMatrix;");
 		this.vertexShader.globalDeclarations.push("uniform float uCutOff;");
 		this.vertexShader.globalDeclarations.push("varying vec4 vColor;");
+		this.vertexShader.globalDeclarations.push("varying vec2 vTextureCoords;");
 		this.vertexShader.mainLogical.push("vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);");
 		this.vertexShader.mainLogical.push("vec3 eyeVec = -vec3(vertex.xyz);");
 		this.vertexShader.mainLogical.push("vec3 E = normalize(eyeVec);");
@@ -290,15 +304,29 @@ jsggl.GoraudShader = function(jsg){
 		this.vertexShader.mainLogical.push("vColor[3] = uMaterialColor[3];")
 		this.vertexShader.mainLogical.push("gl_Position = uPMatrix * vertex;");
 		this.vertexShader.mainLogical.push("gl_PointSize = 1.0;");
+		this.vertexShader.mainLogical.push("vTextureCoords = aVertexTextureCoords;");
 		
 		//FRAGMENT SHADER
 		this.fragShader.globalDeclarations.push("#ifdef GL_ES");
 		this.fragShader.globalDeclarations.push("precision highp float;");
 		this.fragShader.globalDeclarations.push("#endif");
+		this.fragShader.globalDeclarations.push("uniform int uUseTextureKa;");
+		this.fragShader.globalDeclarations.push("uniform int uUseTextureKd;");
+		this.fragShader.globalDeclarations.push("varying vec2 vTextureCoords;");
+		this.fragShader.globalDeclarations.push("uniform sampler2D uSamplerKa;");
+		this.fragShader.globalDeclarations.push("uniform sampler2D uSamplerKd;");
 		this.fragShader.globalDeclarations.push("varying vec4 vColor;");
-		this.fragShader.mainLogical.push("gl_FragColor = vColor;");
+		this.fragShader.globalDeclarations.push("uniform vec4 uMaterialColor;");
+		this.fragShader.globalDeclarations.push("uniform vec4 uAmbientColor;");
+		this.fragShader.mainLogical.push("vec4 color = vColor;");
+		this.fragShader.mainLogical.push("if (uUseTextureKa == 1) {");
+		this.fragShader.mainLogical.push("color = color * texture2D(uSamplerKa, vTextureCoords);");
+		this.fragShader.mainLogical.push("} else if (uUseTextureKd == 1) {");
+		this.fragShader.mainLogical.push("color = color  * texture2D(uSamplerKd, vTextureCoords);");
+		this.fragShader.mainLogical.push("}"); 
+		this.fragShader.mainLogical.push("gl_FragColor = color;");
 	}
-	
+
 	return this;
 }
 
@@ -311,11 +339,13 @@ jsggl.PhongShader = function(jsg){
 			throw new Error("Max lights limit is " + this.maxLights + "., but " + totalLights + " was found." );
 		}	
 		this.updateGlobalValues();
-		this.vertexShader.globalDeclarations.push("const int MAX_POS_LIGHTS = " + this.jsg.positionalLightQtd + ";");
+		this.vertexShader.globalDeclarations.push("const int MAX_POS_LIGHTS = " + this.jsg.
+		positionalLightQtd + ";");
+		this.vertexShader.globalDeclarations.push("attribute vec2 aVertexTextureCoords;");
 		this.vertexShader.globalDeclarations.push("attribute vec3 aVertexPos;");
 		this.vertexShader.globalDeclarations.push("attribute vec3 aVertexNormal;");
 		this.vertexShader.globalDeclarations.push("uniform bool uUpdateLightPosition;");
-
+		this.vertexShader.globalDeclarations.push("varying vec2 vTextureCoords;");
 		this.vertexShader.globalDeclarations.push("uniform mat4 uMVMatrix;");
 		this.vertexShader.globalDeclarations.push("uniform mat4 uPMatrix;");
 		this.vertexShader.globalDeclarations.push("uniform mat4 uNMatrix;");
@@ -334,10 +364,15 @@ jsggl.PhongShader = function(jsg){
 			this.vertexShader.mainLogical.push("}");
 		}
 		this.vertexShader.mainLogical.push("gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPos, 1.0);");
-
+		this.vertexShader.mainLogical.push("vTextureCoords = aVertexTextureCoords;");
 		this.fragShader.globalDeclarations.push("#ifdef GL_ES");
 		this.fragShader.globalDeclarations.push("precision highp float;");
 		this.fragShader.globalDeclarations.push("#endif");
+		this.fragShader.globalDeclarations.push("uniform int uUseTextureKa;");
+		this.fragShader.globalDeclarations.push("uniform int uUseTextureKd;");
+		this.fragShader.globalDeclarations.push("varying vec2 vTextureCoords;");
+		this.fragShader.globalDeclarations.push("uniform sampler2D uSamplerKa;");
+		this.fragShader.globalDeclarations.push("uniform sampler2D uSamplerKd;");
 		this.fragShader.globalDeclarations.push("const int MAX_POS_LIGHTS = " + this.jsg.positionalLightQtd + ";");
 		this.fragShader.globalDeclarations.push("const int MAX_DIR_LIGHTS = " + this.jsg.directionalLightQtd + ";");
 		this.fragShader.globalDeclarations.push("uniform int uPosLights;");
@@ -349,8 +384,15 @@ jsggl.PhongShader = function(jsg){
 		this.fragShader.globalDeclarations.push("uniform vec4 uAmbientLight;");
 		this.fragShader.globalDeclarations.push("varying vec3 eyeVec;");
 		this.fragShader.globalDeclarations.push("varying vec3 vNormal;");		
+		this.fragShader.mainLogical.push("vec4 ambientMaterial = uAmbientColor;");
+		this.fragShader.mainLogical.push("vec4 diffuseMaterial = uMaterialColor;");
+		this.fragShader.mainLogical.push("if (uUseTextureKa == 1) {");
+		this.fragShader.mainLogical.push("ambientMaterial = ambientMaterial * texture2D(uSamplerKa, vTextureCoords);}");
+		this.fragShader.mainLogical.push("if (uUseTextureKd == 1) {");
+		this.fragShader.mainLogical.push("diffuseMaterial = diffuseMaterial  * texture2D(uSamplerKd, vTextureCoords);");
+		this.fragShader.mainLogical.push("}"); 
 		this.fragShader.mainLogical.push("vec3 E = normalize(eyeVec);");
-		this.fragShader.mainLogical.push("vec4 Ia = uAmbientLight * uAmbientColor;");
+		this.fragShader.mainLogical.push("vec4 Ia = uAmbientLight * ambientMaterial;");
 		this.fragShader.mainLogical.push("vec4 fColor = vec4(0.0, 0.0, 0.0, 1.0);");
 		if (jsg.positionalLightQtd > 0) {
 			this.fragShader.globalDeclarations.push("uniform float uCutOff;");
@@ -367,7 +409,7 @@ jsggl.PhongShader = function(jsg){
 			this.fragShader.mainLogical.push("float specular = pow(max(dot(R,E), 0.0), uShininess);");
 			if (this.USE_EXP_DIFFUSE_CUTOFF) {
 				this.fragShader.mainLogical.push("float f = " + (this.diffuseCutOffExpoent + 0.0001) + "; ");
-				this.fragShader.mainLogical.push("vec4 Id = uMaterialColor * uPLightColor[i] * pow(lt, f * uCutOff);");
+				this.fragShader.mainLogical.push("vec4 Id = diffuseMaterial * uPLightColor[i] * pow(lt, f * uCutOff);");
 			} else {
 				this.fragShader.mainLogical.push("vec4 Id = vec4(0.0, 0.0, 0.0, 1.0);");
 				this.fragShader.mainLogical.push("if (lt > uCutOff) Id = uMaterialColor * uPLightColor[i] * lt;");
@@ -388,7 +430,7 @@ jsggl.PhongShader = function(jsg){
 			this.fragShader.mainLogical.push("float specular = pow(max(dot(R,E), 0.0), uShininess);");
 			if (this.USE_EXP_DIFFUSE_CUTOFF) {
 				this.fragShader.mainLogical.push("float f = " + (this.diffuseCutOffExpoent + 0.0001) + ";");
-				this.fragShader.mainLogical.push("vec4 Id = uMaterialColor * uPLightColor[i] * pow(lt, f * uCutOff);");
+				this.fragShader.mainLogical.push("vec4 Id = diffuseMaterial * uPLightColor[i] * pow(lt, f * uCutOff);");
 			} else {
 				this.fragShader.mainLogical.push("vec4 Id = vec4(0.0, 0.0, 0.0, 1.0);");
 				this.fragShader.mainLogical.push("if (lt > uCutOff) Id = uMaterialColor * uPLightColor[i] * lt;");
