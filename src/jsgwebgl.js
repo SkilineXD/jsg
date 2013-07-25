@@ -54,6 +54,7 @@ jsggl.JsgGl = function(id){
 	
 	//BEGIN: state attributes
 	this.id = id;
+	this.materials = {};
 	this.scenes = new jsgcol.ArrayMap();
 	this.activeScene = null;
 	this.currentScene = null;
@@ -361,7 +362,11 @@ jsggl.Drawable.prototype = {
 			if (!this.material) {
 				var material = this.jsg.materials[group];
 				if (!material) { 
-					material = this.material["None"];
+					material = {};
+					material.diffuse = [1.0, 1.0, 1.0, 1.0];
+					material.ambient = [0.001, 0.001, 0.001, 1.0];
+					material.specular = [0.0, 0.0, 0.0, 1.0];
+					material.shininess = 1.0;
 				}
 				this.jsg.materialColor = material.diffuse;
 				this.jsg.ambientColor = material.ambient;

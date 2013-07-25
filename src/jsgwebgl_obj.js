@@ -48,16 +48,79 @@ jsggl.Object = function(name) {
 	this.showBackFace = true;
 	this.renderGroup = new jsgcol.ArrayMap();
 	this.transforms = mat4.create();
+	this.center = vec3.fromValues(0.0, 0.0, 0.0);
 	mat4.identity(this.transforms);
 
 	this.setPosition = function(pos){
-		this.transforms[13] = pos[0];
-		this.transforms[14] = pos[1];
-		this.transforms[15] = pos[2];
+		var p = this.getPivot();
+		this.translate(pos);
+		this.translate([-p[0], -p[1], -p[2]]);
+	}
+	
+	this.getTransformations = function() {
+		return mat4.clone(this.transforms);
+	}
+	
+	this.getTranslations = function() {
+		return vec3.fromValues(this.transforms[12], this.transforms[13], this.transforms[14]);
+	}
+	
+	this.getLinearTransformations = function() {
+		var t = this.getTransformations();
+		t[12] = 0;
+		t[13] = 0;
+		t[14] = 0;
+		return t;
+	}
+	
+	this.getPivot = function() {
+		var c = this.center;
+		var v = vec3.fromValues(c[0], c[1], c[2]);
+		//return vec4.(vec4.create(), v, this.getTransformations());
+		return vec3.add(vec3.create(), v, this.getTranslations());
+	}
+	
+	this.centerToGeometry = function() {
+		var x = [1000000, -1000000];
+		var y = [1000000, -1000000];
+		var z = [1000000, -1000000];
+		this.renderGroup.forEach(function(g){
+			var vl = g.vertices[0];
+			for (var i = 0; i < vl.length; i = i + 3) {
+				if (x[0] > vl[i]) {
+					x[0] = vl[i];
+				}
+				if (x[1] < vl[i]){
+					x[1] = vl[i];
+				}
+				if (y[0] > vl[i+1]) {
+					y[0] = vl[i+1];
+				} 
+				if (y[1] < vl[i+1]){
+					y[1] = vl[i+1];
+				}
+				if (z[0] > vl[i+2]) {
+					z[0] = vl[i+2];
+				} 
+				if (z[1] < vl[i+2]){
+					z[1] = vl[i+2];
+				}
+			}
+		});
+		this.xmax = x[1];
+		this.xmin = x[0];
+		this.ymax = y[1];
+		this.ymin = y[0];
+		this.zmax = z[1];
+		this.zmin = z[0];
+		
+		this.center[0] = 0.5*(x[1] + x[0]);
+		this.center[1] = 0.5*(y[1] + y[0]);
+		this.center[2] = 0.5*(z[1] + z[0]);
 	}
 	
 	this.getPosition = function() {
-		return [this.transforms[13], this.transforms[14], this.transforms[15]];
+		return [this.transforms[12], this.transforms[13], this.transforms[14]];
 	}
 
 	this.addGroup = function(g){
@@ -99,6 +162,7 @@ jsggl.Object = function(name) {
 		for (var i = 0; i < keys.length; i++) {
 			this.renderGroup.get(keys[i]).build();
 		}
+		this.centerToGeometry();
 	}
 	
 	this.draw = function(jsg){
