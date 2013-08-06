@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="gl-matrix.js"></script>
+	<script type="text/javascript" src="sphere.js"></script>
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="jsg_collections.js"></script>
+	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
+	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="jsgwebgl.js"></script>
+	<script type="text/javascript" src="jsgutils.js"></script>
+	<script type="text/javascript">
+		var jsg, scene, shader, shaders, shininess=100, SPHERE_QTD = 100; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
+		function init() {
+			shaders = {};
+			jsg = new jsggl.JsgGl("scenecanvas");
+			jsg.display = display;
+			jsg.initialize = initialize;
+			jsg.finalize = finalize; 
+
+		
+			shaders["goraud"] = jsggl.GoraudShader;
+			shaders["phong"] = jsggl.PhongShader;
+			shader  = jsggl.GoraudShader;
+			jsg.shader = new shader(jsg);
+			scene = new jsggl.Scene("Default", jsg);
+
+			var randomPosition = function(){
+				return [6 * Math.random() - 3, 6 * Math.random() - 3, 6 * Math.random() - 3];
+			}
+
+			jsggl.Material.loadFromJSON(jsg, Spheremtl);
+			var sphere0 = new jsggl.Object.loadFromJSON(Sphere, "object");
+			sphere0.name = "sphere0";
+			sphere0.scale([0.5, 0.5, 0.5]);
+			scene.addObject(sphere0);
+			for (var j = 1; j < SPHERE_QTD; j++) {			
+				var sphere = sphere0.linkDataCopy("sphere" + j);
+				var pos = randomPosition();
+				sphere.setPosition(pos);
+				sphere.scale([0.5, 0.5, 0.5]);
+				sphere.material = jsggl.Material.newMaterial("sphere", [0.0, 0.0, 0.0, 1.0], [Math.random(), Math.random(), Math.random(), 1.0]);
+				scene.addObject(sphere);
+				sphere
+			}
+			
+			var floor = jsggl.builtin.getFloor(jsg, 50, 50);
+			scene.addObject(floor);
+			
+			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			//var proj = jsggl.Projection.newOrtographic(-1.0, 1.0, -1.0, 1.0, 0.001, 10000);
+
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
+			scene.setActiveCamera("orbiting");
+			
+			cam = scene.getActiveCamera();
+			
+			installLights();			
+
+			jsg.addScene(scene);
+			
+			jsg.setActiveScene(scene.name);
+			configureEvents();
+			if (!jsg.build()){
+				alert("Error: " + jsg.compileProgramStatus);			
+			}			
+			jsg.mainLoop();
+		}
+		
+		function configureEvents() {
+			$("#scenecanvas").mousedown(function(evt){
+				pos = [evt.clientX, evt.clientY];
+			});
+
+			$("#scenecanvas").mouseleave(function(evt){
+				pos = null;
+			});
+
+			$(document).keydown(function(evt){
+
+				switch(evt.which){
+					case 38:
+						z = -1;
+						break;
+					case 40:
+						z = 1;
+						break;
+				}	
+
+				cam.position[2] += z;
+				cam.update();
+			});
+
+			$("#scenecanvas").mouseup(function(evt){
+				pos = null;
+			});
+
+			$("#scenecanvas").mousemove(function(evt){
+				if (pos != null) {
+					var npos = [evt.clientX, evt.clientY, 0.0];
+					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
+					delta[0] = delta[0] * 0.005;
+					delta[1] = delta[1] * 0.005;
+					cam.azimute += -delta[0] * 10;
+					cam.elevation += -delta[1] * 10;
+					cam.update();					
+					pos = npos;
+				}
+			});
+		}
+
+		function initialize() {
+			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
+			jsg.clearDepth(100.0);
+			jsg.enableDepthTest();
+			jsg.depthFunc(jsg.gl.LEQUAL);
+			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
+		}
+		
+		function updateLights(){
+			var x = parseFloat($("#txtX").attr("value")),
+				y = parseFloat($("#txtY").attr("value")),
+				z = parseFloat($("#txtZ").attr("value"));
+			var R = parseFloat($("#txtR").attr("value")),
+				G = parseFloat($("#txtG").attr("value")),
+				B = parseFloat($("#txtB").attr("value"));
+			var pos = [x, y, z];
+			var color = [R, G, B, 1.0];
+			var l = scene.lights.get("A");
+			l.position = pos;
+			l.color = color;
+			scene.updateLights();
+			jsg.shader.setGlobalValues();
+		}
+		
+		function installLights(){
+			scene.lights.clear();
+			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([10.0, 0.0, 0.0], [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			
+			var pos1 = new jsggl.Light("B", jsggl.Light.types.POSITIONAL).build([-10.0, 0.0, 0.0], [1.0, 0.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			
+			var pos2 = new jsggl.Light("C", jsggl.Light.types.POSITIONAL).build([0.0, 0.0, 10.0], [1.0, 0.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1, 1, 0, 1.0]);
+			
+			var pos3 = new jsggl.Light("D", jsggl.Light.types.DIRECTIONAL).build([0.0, 10.0, 0.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			scene.addLight(pos0);			
+			scene.addLight(pos1);
+			scene.addLight(pos2);
+			scene.addLight(pos3);
+			scene.updateLights();
+		}
+		
+		function calcPositions() {
+			for (var j = 0; j < SPHERE_QTD; j++) {			
+				var sphere = scene.getObject("sphere" + j);
+				var pos = sphere.getPosition();
+				pos[0] += Math.random()*20 - 10;
+				pos[1] += Math.random()*10 - 5;
+				sphere.setPosition(pos);
+			}
+		}
+
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			calcPositions();
+			jsg.run();
+		}
+		
+		function finalize() {
+		
+		}
+
+		function setShininess(evt){
+			shininess = evt.value;
+		}	
+
+		function selectShadingMethod(evt){
+			shader = shaders[evt.value];
+			jsg.shader = new shader(jsg);
+			if (!jsg.build()){
+				alert("Error: " + jsg.compileProgramStatus);			
+			}			
+		}
+
+		function selectCameraType(evt){
+			scene.setActiveCamera(evt.value);
+			cam = scene.getActiveCamera();	
+			cam.reset();
+		}
+
+	</script>
+</head>
+<body onload="init();">
+	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
+	<div style="background: rgb(255, 255, 200);">	
+		<div>Shading Method</div>
+		<input type="radio" checked="true"  onchange="selectShadingMethod(this);" value="goraud" name="ShadingModel">Goraud</input>
+		<input type="radio" onchange="selectShadingMethod(this);" value="phong" name="ShadingModel">Phong</input>
+		<div>				
+	</div>
+	</div>
+	<div>Camera Type</div>
+	<div>
+		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
+		<input type="radio"   onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
+	</div>
+	<div><hr />
+		Light Position
+		<div>
+			<label>XYZ: </label>
+			<input id="txtX" type="text" value="10"></input>
+			<input id="txtY" type="text" value="0"></input>
+			<input id="txtZ" type="text" value="0"></input>
+		</div>
+	</div>
+	<div><hr />
+		Light Color
+		<div>
+			<label>RGB: </label>
+			<input id="txtR" type="text" value="0.0"></input>
+			<input id="txtG" type="text" value="0.5"></input>
+			<input id="txtB" type="text" value="0.5"></input>
+		</div>
+	</div>
+	<div><button onclick="updateLights()">Update Light</button></div>
+</body>
+</html>
+
