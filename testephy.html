@@ -1,0 +1,293 @@
+<!--
+This file contains code to demonstrate physics simulation implemented in JSG library.
+Author: Gilzamir F. Gomes.
+Publication Date: 25 de julho de 2013.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="gl-matrix.js"></script>
+	<script type="text/javascript" src="jsg_phy.js"></script>
+	<script type="text/javascript" src="sphere.js"></script>
+	<script type="text/javascript" src="wall.js"></script>
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
+	<script type="text/javascript" src="jsggl_interaction.js"></script>
+	<script type="text/javascript" src="jsg_collections.js"></script>
+	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="jsgwebgl.js"></script>
+	<script type="text/javascript" src="jsgutils.js"></script>
+	<script type="text/javascript">
+		var jsg, scene, shader, objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam, world, sphere, sphere2;
+		function init() {
+			//JSG object point to canvas with ID 'scenecanvas'
+			jsg = new jsggl.JsgGl("scenecanvas");
+
+			//It creates new scene with identifier 'Default'. This scene points to jsg object
+			scene = new jsggl.Scene("Default", jsg);
+			
+			//It creates projection object to camera visualization
+			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			
+			//It creates two new cameras
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
+			scene.setActiveCamera("orbiting"); //It defines active camera
+			cam = scene.getActiveCamera(); //It gets active camera reference to future camera manipulation
+			
+			//It creates new object sphere of JSON geometry description object named Sphere. 
+			sphere = jsggl.Object.loadFromJSON(Sphere, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, Spheremtl); //Load sphere  materials in JSON format
+			
+			//It does center of object sphere to geometry center
+			sphere.centerToGeometry(); 
+			//It adds sphere object to scene...
+			scene.addObject(sphere);
+
+			//It creates new object sphere2 of JSON geometry description object named Sphere.
+			sphere2 = jsggl.Object.loadFromJSON(Sphere, "object", 0);
+			sphere2.name = "Sphere2"; //It defines object name to future reference
+			sphere2.centerToGeometry(); //See above descrition of centerToGeometry method
+			scene.addObject(sphere2); //See above description of addObject Method
+			
+			world = new jsgphy.World(); //It creates jsgphy.World object, a physics simulation wrapper.
+			world.gravity = 9.8; //It defines world gravity acceleration (gravity poits to negative of y axis)
+			world.step = 0.01; //It defines update step of simulation (optional).
+
+			sphere2.phy = new jsgphy.Object("Sphere2", sphere2); //It creates new physic  to object sphere2
+			sphere2.phy.setPosition([7, 4.0, 0.0]); //It defines phyisc position of object sphere2.
+			sphere2.phy.world = world; //It defines that sphere2 object live in world defined by object world.
+			
+			sphere2.phy.setupDefaultSimulationMethod(); //It setups default simulation method (Euler Method)
+			
+			sphere2.phy.bounciness = 0.1; //physic simulation parameter 
+			
+			sphere2.phy.frictionCoeffcient = 0.01; //Object friction coefficient when your surface be in contact with other object surface. 
+			
+			sphere2.phy.gravityForce = -world.gravity * sphere2.phy.mass;
+			
+			//colission handler method defines what to do in colissions events
+			sphere2.phy.collisionHandler = function(obj){
+				if (obj.type == jsgphy.OBJ_TYPE_STATIC) {					
+					this.normalForce = -this.gravityForce;
+					this.updateForceChange(1, -obj.bounciness * this.bounciness, this.position[1]);
+					
+					this.friction = -this.force[0];
+					this.updateForceChange(0, 0.99, this.position[0]);		
+					
+					var  v = this.collisionVertices;
+					var angles = vec3.create(0.0, 0.0, 0.0);
+					for (var i = 0; i < v.length; i++) {
+						var vr = vec3.fromValues(v[i][0], v[i][1], v[i][2]);
+						var p = this.position;
+						var dir = vec3.fromValues(vr[0] - p[0], vr[1] - p[1], vr[2] - p[2]);
+						vec3.normalize(dir, dir);
+						var dotx = vec3.dot(dir, vec3.fromValues(1.0, 0.0, 0.0));
+						var doty = vec3.dot(dir, vec3.fromValues(0.0, 1.0, 0.0));
+						var dotz = vec3.dot(dir, vec3.fromValues(0.0, 0.0, 1.0));
+						this.rotx += dotx;
+						this.roty += doty;
+						this.rotz += dotz;
+						
+						$("#display").html(vec3.str(dir) + " : " + dotx + " : " + doty + " : " + dotz);
+					}
+				}
+			}
+			
+			//no colission handler method defines what to do in no collisions events
+			sphere2.phy.collisionFailHandler = function(obj) {
+				if (obj.type == jsgphy.OBJ_TYPE_STATIC) {
+					this.normalForce = 0.0;
+					this.friction = 0.0;
+				}
+			}
+			
+			//See above descriptions...
+			sphere.phy = new jsgphy.Object("Sphere", sphere);
+			sphere.phy.setPosition([0.0, 4.0, 0.0]);			
+			sphere.phy.world = world;	
+			
+			//Here new object is created 
+			floor = new jsggl.Object.loadFromJSON(Plan, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, Planmtl);
+			
+			scene.addObject(floor); //Here object floor is added to scene
+			floor.centerToGeometry(); //See above comments...
+			
+			floor.phy = new jsgphy.Object("Floor", floor);
+			floor.phy.setPosition([0.0, 0.0, 0.0]); //See above comments...
+			floor.phy.type = jsgphy.OBJ_TYPE_STATIC;  //Here physics object type is defined. Static objects no change your positions. Other object types are: dynamic (jsphy.OBJ_TYPE_DYNAMIC) and ghost (jsphy.OBJ_TYPE_GHOST).
+			floor.phy.frictionCoefficient = 0.9; //See above comments...
+			floor.phy.bounciness=1.0;
+			world.addObject(sphere2.phy);
+			world.addObject(sphere.phy);
+			world.addObject(floor.phy);
+			
+			//after simulation step, method afterSimulateListener of jsgphy.World object is called.
+			world.afterSimulateListener = function() {
+				updateObjectPosition(sphere.phy); //update physic position of sphere object
+				var mr = mat4.create();
+				
+				
+				var p = vec4.fromValues(sphere2.phy.position[0], sphere2.phy.position[1], sphere2.phy.position[2], 1.0);
+
+				mr = mat4.translate(mr, mr, vec4.fromValues(p[0], p[1], p[2], 1.0))				
+				mr = mat4.rotateZ(mr, mr, sphere2.phy.rotx);
+				mr = mat4.rotateY(mr, mr, sphere2.phy.roty);
+				mr = mat4.rotateX(mr, mr, sphere2.phy.rotz);
+				mr = mat4.translate(mr, mr, vec4.fromValues(-p[0], -p[1], -p[2], 1.0))
+				
+				p = vec4.transformMat4(p, p, mr);
+				sphere2.phy.position[0] = p[0];
+				sphere2.phy.position[1] = p[1];
+				sphere2.phy.position[2] = p[2];
+				
+				updateObjectPosition(sphere2.phy); //update physic postion of sphere2 object
+			}
+			
+			installLights(); //It configures lights 
+			jsg.addScene(scene); //It add scene object to JSG system
+			jsg.setActiveScene(scene.name); //It define active scene
+			
+
+			jsg.shader = new jsggl.PhongShader(jsg); //Here is defined shader method
+
+			if (!jsg.build()){ //Here JSG system is built
+				alert("Error: " + jsg.compileProgramStatus); //If configurations error is found...			
+			}			
+			
+			configureEvents(); //Here user interactions is defined...
+			
+			jsg.display = display; //Here simulation loop is defined...
+			jsg.initialize = initialize; //This method is ran before of first simulation loop iteraction...
+			
+			jsg.mainLoop(); //This method start simulation loop iteractions
+		}
+		
+		function configureEvents() {
+			$("#scenecanvas").mousedown(function(evt){
+				pos = [evt.clientX, evt.clientY];
+			});
+
+			$("#scenecanvas").mouseleave(function(evt){
+				pos = null;
+			});
+
+			
+			$(document).keyup(function(evt){
+				//alert(evt.which);
+				switch(evt.which){
+					case 87://W
+						sphere2.phy.userForce[1] = 0.0;
+						sphere2.phy.updateForceChange(1);
+						break;
+					case 83: //S
+						sphere2.phy.userForce[1] = 0.0;
+						sphere2.phy.updateForceChange(1);
+						break;
+					case 68://D
+						sphere2.phy.userForce[0] = 0.0;
+						sphere2.phy.updateForceChange(0);
+						break;
+					case 65://A
+						sphere2.phy.userForce[0] = 0.0;
+						sphere2.phy.updateForceChange(0);
+						break;
+					case 38:
+						z = 1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+					case 40:
+						z = -1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+				}	
+			});
+			
+			$(document).keydown(function(evt){
+				//alert(evt.which);
+				switch(evt.which){
+					case 87://W
+						sphere2.phy.userForce[1] += 0.1;
+						break;
+					case 83: //S
+						sphere2.phy.userForce[1] -= 0.1;
+						break;
+					case 68://D
+						sphere2.phy.userForce[0] += 0.1;
+						break;
+					case 65://A
+						sphere2.phy.userForce[0] -= 0.1;
+						break;
+					case 38:
+						z = 1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+					case 40:
+						z = -1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+				}	
+			});
+
+			$("#scenecanvas").mouseup(function(evt){
+				pos = null;
+			});
+
+			$("#scenecanvas").mousemove(function(evt){
+				if (pos != null) {
+					var npos = [evt.clientX, evt.clientY, 0.0];
+					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
+					delta[0] = delta[0] * 0.005;
+					delta[1] = delta[1] * 0.005;
+					cam.azimute += -delta[0] * 10;
+					cam.elevation += -delta[1] * 10;
+					cam.update();					
+					pos = npos;
+				}
+			});
+		}
+
+		function initialize() {
+			jsg.clearColor(0.00, 0.00, 0.00, 1.0);
+			jsg.clearDepth(100.0);
+			jsg.enableDepthTest();
+			jsg.depthFunc(jsg.gl.LEQUAL);
+			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
+		}
+
+		function updateObjectPosition(obj){
+			if (obj.nochange) return;
+			var target = scene.getObject(obj.name);
+			target.setPosition(obj.position);
+		}
+		
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			world.run();
+			jsg.run();
+		}
+
+		function installLights(){
+			scene.lights.clear();
+			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([0.0, 50.0, 0.0], [1.0, 0.0, 0.0, 1.0], [0.5, 0.5, 0.5, 1.0]);
+			scene.addLight(pos0);			
+			scene.updateLights();
+		}
+	</script>
+</head>
+<body onload="init();">
+	<canvas id="scenecanvas" width="800" height="600" style="border: 1px dotted"></canvas>
+	<div id="display"></div>
+</body>
+</html>
+
