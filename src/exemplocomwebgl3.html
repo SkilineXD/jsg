@@ -28,13 +28,13 @@
 		
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
-			shader  = jsggl.GoraudShader;
+			shader  = jsggl.PhongShader;
 			jsg.shader = new shader(jsg);
 			scene = new jsggl.Scene("Default", jsg);
 			
-			jsggl.Material.loadFromJSON(jsg, wallmtl);
-			var wall0 = new jsggl.Object.loadFromJSON(wall, "object");
-			wall0.translate([0.0, 1.0, -40.0]);
+			jsggl.Material.loadFromJSON(jsg, Planmtl);
+			var wall0 = new jsggl.Object.loadFromJSON(Plan, "object");
+			wall0.translate([0.0, 1.0, -30.0]);
 			wall0.scale([8.0, 8.0, 1.0]);
 			wall0.rotate(90 * Math.PI/180, [1.0, 0.0, 0.0]);
 			scene.addObject(wall0);
@@ -182,8 +182,8 @@
 	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
 	<div style="background: rgb(255, 255, 200);">	
 		<div>Shading Method</div>
-		<input type="radio" checked="true"  onchange="selectShadingMethod(this);" value="goraud" name="ShadingModel">Goraud</input>
-		<input type="radio" onchange="selectShadingMethod(this);" value="phong" name="ShadingModel">Phong</input>
+		<input type="radio"   onchange="selectShadingMethod(this);" value="goraud" name="ShadingModel">Goraud</input>
+		<input type="radio" checked="true" onchange="selectShadingMethod(this);" value="phong" name="ShadingModel">Phong</input>
 		<div>				
 	</div>
 	</div>
@@ -192,25 +192,6 @@
 		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
 		<input type="radio"   onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
 	</div>
-	<div><hr />
-		Light Position
-		<div>
-			<label>XYZ: </label>
-			<input id="txtX" type="text" value="10"></input>
-			<input id="txtY" type="text" value="0"></input>
-			<input id="txtZ" type="text" value="0"></input>
-		</div>
-	</div>
-	<div><hr />
-		Light Color
-		<div>
-			<label>RGB: </label>
-			<input id="txtR" type="text" value="0.0"></input>
-			<input id="txtG" type="text" value="0.5"></input>
-			<input id="txtB" type="text" value="0.5"></input>
-		</div>
-	</div>
-	<div><button onclick="updateLights()">Update Light</button></div>
 </body>
 </html>
 
