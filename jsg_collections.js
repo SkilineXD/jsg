@@ -44,6 +44,13 @@ jsgcol.ArrayMap = function(){
 		return this.data[idx] != null;
 	}	
 
+	this.forEach = function(callback){
+		var keys = this.getKeys();
+		for (k in keys){
+			callback(this.data[k]);
+		}
+	}
+	
 	this.getKeys = function(){
 		return this.keyList;
 	}

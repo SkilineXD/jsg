@@ -1,4 +1,4 @@
-var cubo = {
+var Cubo = {
 "mtllib":"cubo.mtl",
 "type":"object",
 "objectList":[ {
@@ -9,6 +9,6 @@ var cubo = {
 "groupName":[ "Material" ]} ]
 };
 
-var cubomtl = {
+var Cubomtl = {
 "materialList":[ { "name":"Material", "ambient":[0.001, 0.001, 0.001, 1.0], "diffuse":[1.0, 0.5, 0.5, 0.7], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":100.078431, "transparence":1.000000, "opticalDensity":1.000000 } ]
 };
