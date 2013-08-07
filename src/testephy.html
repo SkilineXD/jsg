@@ -10,6 +10,7 @@ Publication Date: 25 de julho de 2013.
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="jsg_phy.js"></script>
 	<script type="text/javascript" src="sphere.js"></script>
+	<script type="text/javascript" src="wall.js"></script>
 	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
 	<script type="text/javascript" src="jsggl_interaction.js"></script>
@@ -36,7 +37,7 @@ Publication Date: 25 de julho de 2013.
 			//It creates two new cameras
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
 			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
-			scene.setActiveCamera("tracking"); //It defines active camera
+			scene.setActiveCamera("orbiting"); //It defines active camera
 			cam = scene.getActiveCamera(); //It gets active camera reference to future camera manipulation
 			
 			//It creates new object sphere of JSON geometry description object named Sphere. 
@@ -56,24 +57,45 @@ Publication Date: 25 de julho de 2013.
 			
 			world = new jsgphy.World(); //It creates jsgphy.World object, a physics simulation wrapper.
 			world.gravity = 9.8; //It defines world gravity acceleration (gravity poits to negative of y axis)
-			world.step = 0.05; //It defines update step of simulation (optional).
+			world.step = 0.01; //It defines update step of simulation (optional).
 
 			sphere2.phy = new jsgphy.Object("Sphere2", sphere2); //It creates new physic  to object sphere2
-			sphere2.phy.setPosition([4.0, 3.0, 0.0]); //It defines phyisc position of object sphere2.
+			sphere2.phy.setPosition([7, 4.0, 0.0]); //It defines phyisc position of object sphere2.
 			sphere2.phy.world = world; //It defines that sphere2 object live in world defined by object world.
 			
-			sphere2.phy.bounciness = 0.9; //physic simulation parameter 
 			sphere2.phy.setupDefaultSimulationMethod(); //It setups default simulation method (Euler Method)
-			sphere2.frictionCoeffcient = 0.9; //Object friction coefficient when your surface be in contact with other object surface. 
+			
+			sphere2.phy.bounciness = 0.1; //physic simulation parameter 
+			
+			sphere2.phy.frictionCoeffcient = 0.01; //Object friction coefficient when your surface be in contact with other object surface. 
+			
+			sphere2.phy.gravityForce = -world.gravity * sphere2.phy.mass;
 			
 			//colission handler method defines what to do in colissions events
 			sphere2.phy.collisionHandler = function(obj){
-				if (obj.type == jsgphy.OBJ_TYPE_STATIC) {
+				if (obj.type == jsgphy.OBJ_TYPE_STATIC) {					
 					this.normalForce = -this.gravityForce;
-					this.updateForceChange(1, -obj.bounciness * this.bounciness, this.minHeight);
+					this.updateForceChange(1, -obj.bounciness * this.bounciness, this.position[1]);
 					
 					this.friction = -this.force[0];
-					this.updateForceChange(0, 0.99, this.position[0]);
+					this.updateForceChange(0, 0.99, this.position[0]);		
+					
+					var  v = this.collisionVertices;
+					var angles = vec3.create(0.0, 0.0, 0.0);
+					for (var i = 0; i < v.length; i++) {
+						var vr = vec3.fromValues(v[i][0], v[i][1], v[i][2]);
+						var p = this.position;
+						var dir = vec3.fromValues(vr[0] - p[0], vr[1] - p[1], vr[2] - p[2]);
+						vec3.normalize(dir, dir);
+						var dotx = vec3.dot(dir, vec3.fromValues(1.0, 0.0, 0.0));
+						var doty = vec3.dot(dir, vec3.fromValues(0.0, 1.0, 0.0));
+						var dotz = vec3.dot(dir, vec3.fromValues(0.0, 0.0, 1.0));
+						this.rotx += dotx;
+						this.roty += doty;
+						this.rotz += dotz;
+						
+						$("#display").html(vec3.str(dir) + " : " + dotx + " : " + doty + " : " + dotz);
+					}
 				}
 			}
 			
@@ -87,31 +109,13 @@ Publication Date: 25 de julho de 2013.
 			
 			//See above descriptions...
 			sphere.phy = new jsgphy.Object("Sphere", sphere);
-			sphere.phy.setPosition([0.0, 5.0, 0.0]);			
-			sphere.phy.world = world;
-	
-			//Here object geometry is manually defined.  
-			var floorGeom = new jsggl.Drawable("Floor", jsg); //Here geometry wrapper object is created
-			floorGeom.indices = [[0, 1, 2, 2, 3, 0]];
-			var k = 5;
-			//Here vertices coordinates are defined... 
-			floorGeom.vertices = [[-0.5 * k, 0.0, -0.5 * k, 0.5 * k, 0.0, -0.5*k, 0.5 * k, 0.0, 0.5*k, -0.5 * k, 0.0, 0.5*k]];
-		
-			//Here vertices groups are named
-			floorGeom.groupNameList = ["FloorMaterial"];				
-		
-			//Here vertices groups materials are defineds
-			jsg.materials["FloorMaterial"] = {
-				"diffuse":  [1.0, 1.0, 1.0, 1.0],
-				"ambient":  [0.0, 0.0, 0.0, 1.0],
-				"specular": [1.0, 1.0, 1.0, 1.0],
-				"shininess": 1.0
-			};
+			sphere.phy.setPosition([0.0, 4.0, 0.0]);			
+			sphere.phy.world = world;	
 			
 			//Here new object is created 
-			floor = new jsggl.Object("Floor");
-			floor.addGroup(floorGeom); //Here vertices group of manually created geometry is added to new object 'floor' 
-			floorGeom.setRenderingMode(jsg.TRIANGLES); //Here rendering mode is defined
+			floor = new jsggl.Object.loadFromJSON(Plan, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, Planmtl);
+			
 			scene.addObject(floor); //Here object floor is added to scene
 			floor.centerToGeometry(); //See above comments...
 			
@@ -119,7 +123,7 @@ Publication Date: 25 de julho de 2013.
 			floor.phy.setPosition([0.0, 0.0, 0.0]); //See above comments...
 			floor.phy.type = jsgphy.OBJ_TYPE_STATIC;  //Here physics object type is defined. Static objects no change your positions. Other object types are: dynamic (jsphy.OBJ_TYPE_DYNAMIC) and ghost (jsphy.OBJ_TYPE_GHOST).
 			floor.phy.frictionCoefficient = 0.9; //See above comments...
-	
+			floor.phy.bounciness=1.0;
 			world.addObject(sphere2.phy);
 			world.addObject(sphere.phy);
 			world.addObject(floor.phy);
@@ -127,6 +131,22 @@ Publication Date: 25 de julho de 2013.
 			//after simulation step, method afterSimulateListener of jsgphy.World object is called.
 			world.afterSimulateListener = function() {
 				updateObjectPosition(sphere.phy); //update physic position of sphere object
+				var mr = mat4.create();
+				
+				
+				var p = vec4.fromValues(sphere2.phy.position[0], sphere2.phy.position[1], sphere2.phy.position[2], 1.0);
+
+				mr = mat4.translate(mr, mr, vec4.fromValues(p[0], p[1], p[2], 1.0))				
+				mr = mat4.rotateZ(mr, mr, sphere2.phy.rotx);
+				mr = mat4.rotateY(mr, mr, sphere2.phy.roty);
+				mr = mat4.rotateX(mr, mr, sphere2.phy.rotz);
+				mr = mat4.translate(mr, mr, vec4.fromValues(-p[0], -p[1], -p[2], 1.0))
+				
+				p = vec4.transformMat4(p, p, mr);
+				sphere2.phy.position[0] = p[0];
+				sphere2.phy.position[1] = p[1];
+				sphere2.phy.position[2] = p[2];
+				
 				updateObjectPosition(sphere2.phy); //update physic postion of sphere2 object
 			}
 			

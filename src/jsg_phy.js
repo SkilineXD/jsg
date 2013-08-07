@@ -21,6 +21,9 @@ jsgphy.Object = function(name, target){
 		this.afterObjectSimulateListener = function(){};
 		this.frictionCoefficient = 0.2;
 		this.bounciness = 0.5;
+		this.rotx = 0.0;
+		this.roty = 0.0;
+		this.rotz = 0.0;
 		this.minHeight = (this.target.ymax - this.target.ymin)/2.0;
 		this.initialPosition = vec3.fromValues(0.0, 0.0, 0.0);
 		this.finalPosition = vec3.fromValues(0.0, 0.0, 0.0);
@@ -72,7 +75,7 @@ jsgphy.Object = function(name, target){
 			}
 	
 			self.userForce = vec3.fromValues(0.0, 0.0, 0.0); //horizontal force
-			self.gravityForce =  -1.0; //gravity force
+			self.gravityForce =  -self.mass * world.gravity; //gravity force
 			self.normalForce = 0.0;
 			self.collisionForce = vec3.fromValues(0.0, 0.0, 0.0);
 			self.friction = 0.0;
@@ -113,7 +116,7 @@ jsgphy.Object = function(name, target){
 	
 	this.updatePosition = function() {
 		if (this.update){
-			updateObjectPosition(this);
+				updateObjectPosition(this);
 		} else {
 			this.update = true; 
 		}
@@ -134,10 +137,34 @@ jsgphy.Object = function(name, target){
 	this.collisionHandler = function() {};
 	this.collisionFailHandler = function(){};
 	
+	
+	this.floatEquals = function(){
+	
+	}
+	
 	this.collides = function(target) {
 		var b1 = this.collisionObjectMaker();
 		var b2 = target.collisionObjectMaker();
-		return this.collisionTest(b1, b2);
+		this.collisionVertices = [];
+		if  (this.collisionTest(b1, b2)){
+			var c = [[b1.minx, b1.miny, b1.minz],  [b1.minx, b1.miny, b1.maxz], [b1.minx, b1.maxy, b1.minz], [b1.minx, b1.maxy, b1.maxz], [b1.maxx, b1.miny, b1.minz], [b1.maxx, b1.miny, b1.maxz] , [b1.maxx, b1.maxy, b1.minz], [b1.maxx, b1.maxy, b1.maxz]];
+			
+			var dx = b2.maxx - b2.minx;
+			var dy = b2.maxy - b2.miny;
+			var dz = b2.maxz - b2.minz;
+
+			for (var i = 0; i < c.length; i++){
+				if ( (c[i][0] >= b2.minx && c[i][0] <= b2.maxx) &&
+					 (c[i][1] >= b2.miny && c[i][1] <= b2.maxy) &&
+					 (c[i][2] >= b2.minz && c[i][2] <= b2.maxz)) {
+						this.collisionVertices.push(c[i]);
+					 }
+			}
+			
+			return true;
+		}
+		this.collisionVertices = null;
+		return false;
 	}
 
 	this.setVelocity = function(v) {
@@ -160,8 +187,6 @@ jsgphy.World = function(){
 			this.gravity = -9.81;
 			this.time = 0;
 			this.step = 0.05;
-			this.kineticFrictionCoef = 0.5; //Under wood 
-			this.staticFrictionCoef =  0.3; //Motion under woord
 			this.beforeSimulateListener = function(){};
 			this.afterSimulateListener = function(){};
 		}
@@ -227,7 +252,7 @@ jsgphy.gravityForce = function(m1, m2, d){
 jsgphy.COLLISION_BOUNDINGBOX = function(b1, b2) {
 	return !(b1.maxx < b2.minx || b1.minx > b2.maxx ||
 	    b1.maxy < b2.miny || b1.miny > b2.maxy ||
-		b1.maxz < b2.minz || b1.minz > b2.maxz);  
+		b1.maxz < b2.minz || b1.minz > b2.maxz);
 }
 
 jsgphy.makeSimpleBoundingBoxObject = function(ref, sizex, sizey, sizez){

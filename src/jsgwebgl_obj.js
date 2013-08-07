@@ -51,6 +51,10 @@ jsggl.Object = function(name) {
 	this.center = vec3.fromValues(0.0, 0.0, 0.0);
 	mat4.identity(this.transforms);
 
+	this.getGroup = function(name) {
+		return this.renderGroup.get(name);
+	}
+	
 	this.setPosition = function(pos){
 		var p = this.getPivot();
 		this.translate(pos);
