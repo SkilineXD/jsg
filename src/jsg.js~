@@ -20,7 +20,7 @@ function createJSGObject(cvid) {
 		}
 
 		jsg.setBackground = function(r, g, b) {
-			jsg.background = "rgb(" + r + ", " + g + ", " + b + ")";
+			jsg.background = "rgb(" + r + ", " + g + ", " + b + ")");
 		}
 
 		jsg.flush = function(){

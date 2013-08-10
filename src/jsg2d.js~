@@ -58,7 +58,7 @@ function createJSG2DObject(jsg) {
 		var ctx = jsg2d.context, jsg = jsg2d.jsg;
 		
 		var r = Math.abs(Math.max(jsg.widthToScr(radio), jsg.heightToScr(radio)));
-		
+		alert(jsg.yToScr(cy));
 		ctx.arc(jsg.xToScr(cx), jsg.yToScr(cy), r, startAngle, endAngle, ccw);
 	}
 

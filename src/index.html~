@@ -160,7 +160,7 @@ Publication Date: 25 de julho de 2013.
 					<div class="artigos"> 
 						<h2>JavaScript Graphics</h2>
 						<figure><img src="logo.png"> </figure>
-						<p style="text-align:justify">JavaScript Graphics (JSG) &eacute; uma API (<i>Application Programming Interface</i>) para o desenvolvimento de gr&aacute;ficos tridimensionais (3D) em JavaScript e HTML5 com WebGL JSG abstrai a complexidade de desenvolvimento de aplica&ccedil;&otilde;es que usam gr&aacute;ficos 3D com WebGL por meio de abstra&ccedil;&otilde;es bem estabelecidas.
+						<p align="justify">JavaScript Graphics (JSG) &eacute; uma API (<i>Application Programming Interface</i>) para o desenvolvimento de gr&aacute;ficos tridimensionais (3D) em JavaScript e HTML5 com WebGL JSG abstrai a complexidade de desenvolvimento de aplica&ccedil;&otilde;es que usam gr&aacute;ficos 3D com WebGL por meio de abstra&ccedil;&otilde;es bem estabelecidas.
 					</div> 
 				</div> 
 			</article> 
