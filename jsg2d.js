@@ -52,7 +52,6 @@ function createJSG2DObject(jsg) {
 		var ctx = jsg2d.context, jsg = jsg2d.jsg;
 		ctx.moveTo(jsg.xToScr(x1), jsg.yToScr(y1));
 		ctx.lineTo(jsg.xToScr(x2), jsg.yToScr(y2));
-		ctx.stroke();
 	}
 
 	jsg2d.fillArc = function(cx, cy, radio, startAngle, endAngle, ccw) {
@@ -61,14 +60,12 @@ function createJSG2DObject(jsg) {
 		var r = Math.abs(Math.max(jsg.widthToScr(radio), jsg.heightToScr(radio)));
 		
 		ctx.arc(jsg.xToScr(cx), jsg.yToScr(cy), r, startAngle, endAngle, ccw);
-		ctx.fill();
 	}
 
 	jsg2d.drawArc = function(cx, cy, radio, startAngle, endAngle, ccw) {
 		var ctx = jsg2d.context, jsg = jsg2d.jsg;
 		var r = Math.max(jsg.widthToScr(radio), jsg.heightToScr(radio));
 		ctx.arc(jsg.xToScr(cx), jsg.yToScr(cy), r, startAngle, endAngle, ccw);
-		ctx.stroke();
 	}
 
 	jsg2d.fillCircle = function(cx, cy, radio){
@@ -85,22 +82,18 @@ function createJSG2DObject(jsg) {
 		
 		ctx.bezierCurveTo(jsg.xToScr(cp1x), jsg.yToScr(cp1y), jsg.xToScr(cp2x), 
 			jsg.yToScr(cp2y), jsg.xToScr(x), jsg.yToScr(y) );
-		
-		ctx.stroke();
 	}
 
 	jsg2d.fillRect = function(x, y, w, h) {
 		var ctx = jsg2d.context, jsg = jsg2d.jsg;
 		var jsg = jsg2d.jsg;
 		ctx.fillRect(jsg.xToScr(x), jsg.yToScr(y), jsg.widthToScr(w), jsg.heightToScr(h));
-		ctx.fill();
 	}
 
 	jsg2d.drawRect = function(x, y, w, h) {
 		var ctx = jsg2d.context, jsg = jsg2d.jsg;
 		var jsg = jsg2d.jsg;
 		ctx.rect(jsg.xToScr(x), jsg.yToScr(y), jsg.widthToScr(w), jsg.heightToScr(h));
-		ctx.stroke();
 	}
 
 	jsg2d.wireRect = function(x1, y1, x2, y2) {
@@ -185,7 +178,7 @@ function createJSG2DObject(jsg) {
 	}
 
 	jsg2d.clear = function(){
-		jsg2d.clearRect(0, 0, jsg2d.jsg.width, jsg2d.jsg.height);
+		jsg2d.context.clearRect(0, 0, jsg2d.jsg.width, jsg2d.jsg.height);
 	}
 
 	jsg2d.font = function(style) {

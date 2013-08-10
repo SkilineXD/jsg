@@ -8,28 +8,39 @@ function createJSGObject(cvid) {
 		}
 
 		jsg.clearColor = function(waitFlushCommand){
-			jsg.frontBuffer = jsg.jsg2d.createImageData(jsg.jsg2d.getImageData());
-			if (!waitFlushCommand) jsg.flush();
+			if (!waitFlushCommand) {
+				jsg2d.save();
+				jsg2d.context.fillStyle = jsg2d.context.style = jsg.background;
+				jsg2d.context.fillRect(0,0, jsg.canvas.width, jsg.canvas.height);
+				jsg2d.restore();
+			} else {
+				jsg.frontBuffer = jsg.jsg2d.createImageData(jsg.jsg2d.getImageData());
+				jsg.flush();
+			}
+		}
+
+		jsg.setBackground = function(r, g, b) {
+			jsg.background = "rgb(" + r + ", " + g + ", " + b + ")";
 		}
 
 		jsg.flush = function(){
 			jsg.jsg2d.putImageData(jsg.frontBuffer);
 		}
 		
-		jsg.setCoordSystem = function(right, top){
-			
+		jsg.setDefaultCoordSystem = function(){			
 			jsg.MAXX = jsg.canvas.width - 1;
 			jsg.MAXY = jsg.canvas.height - 1;
 			
-			jsg.right = jsg.MAXX, jsg.left = 0, jsg.top = 0, jsg.bottom = jsg.MAXY;
+			jsg.right = jsg.MAXX, jsg.left = 0, jsg.top = 0.00, jsg.bottom = jsg.MAXY;
 						
 			
-			jsg.pixelWidth = jsg.RIGHT/jsg.MAXX;
-			jsg.pixelHeight = jsg.TOP/jsg.MAXY;
+			jsg.pixelWidth = (jsg.right-jsg.left)/jsg.MAXX;
+			jsg.pixelHeight = Math.abs(jsg.top-jsg.bottom)/jsg.MAXY;
 			
 			jsg.pointWidth = 1/jsg.pixelWidth;
 			jsg.pointHeight = -1/jsg.pixelHeight;
 			
+
 			jsg.drawBorders = function() {
 				var ctx = jsg.getContext2d();
 				ctx.beginPath();
@@ -55,8 +66,7 @@ function createJSGObject(cvid) {
 			}
 		}
 
-		jsg.setDeviceCoordSystem = function(right, top){
-	
+		jsg.setDeviceCoordSystem = function(){
 			jsg.MAXX = jsg.canvas.width - 1;
 			jsg.MAXY = jsg.canvas.height - 1;
 	
@@ -184,7 +194,7 @@ function createJSGObject(cvid) {
 		
 		if (!window.requestAnimationFrame){ //if browser not support requestAnimationFrame feature
 			window.requestAnimationFrame = function(target){
-				window.setTimeout(target, this.interval);
+				window.setInterval(target, this.interval);
 			};
 		}
 		
@@ -225,7 +235,7 @@ function createJSGObject(cvid) {
 		jsg.interval = 60/1000;
 		jsg.stopped = false;
 		jsg.background = "rgb(255, 255, 255)";
-		jsg.setDeviceCoordSystem();
+		jsg.setDefaultCoordSystem();
 		return jsg;
 	} else {
 		return null;
