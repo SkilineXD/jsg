@@ -181,6 +181,7 @@
 			jsg2d.begin();
 				jsg2d.fillCircle(reg[i][0], reg[i][1], 10);
 			jsg2d.end();
+			jsg2d.fill(); //BUG FIX
 		}
 
 		if (now - time > 500) {
