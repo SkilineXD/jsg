@@ -226,7 +226,7 @@ jsggl.JsgGl.prototype = {
 			var shader = this.shader;
 			shader.build();
 			var vertexShader = shader.vertexShader.generateCode();
-			//alert(vertexShader);
+			alert(vertexShader);
 			var fragShader = shader.fragShader.generateCode();
 			var prg = this.gl.createProgram();
 

@@ -18,14 +18,13 @@
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
 		var jsg, scene, shader, shaders, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
-		
+
 		function init() {
 			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
-
 		
 			shaders["goraud"] = jsggl.GoraudShader;
 			shaders["phong"] = jsggl.PhongShader;
@@ -38,17 +37,10 @@
 			var cube = new jsggl.Object.loadFromJSON(cubomagico, "object");
 			cube.showOneTime = false;
 			scene.addObject(cube);		
-
-			
-			//jsggl.Material.loadFromJSON(jsg, Spheremtl);
-			//var sphere = new jsggl.Object.loadFromJSON(Sphere, "object");
-			//scene.addObject(sphere);
 		
 			var floor = jsggl.builtin.getFloor(jsg, 50, 50);
-			//scene.addObject(floor);
 			
 			var proj = jsggl.Projection.newPerspective(30 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.1, 1000);
-			//var proj = jsggl.Projection.newOrtographic(-1.0, 1.0, -1.0, 1.0, 0.001, 10000);
 
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
 			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
