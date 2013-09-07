@@ -1,15 +1,15 @@
+const int MAX_POS_LIGHTS = $JSG_POSITIONAL_LIGTH_QTD;
+const int MAX_DIR_LIGHTS = $JSG_DIRECTIONAL_LIGTH_QTD;
 attribute vec3 aVertexPos;
 attribute vec3 aVertexNormal;
 attribute vec2 aVertexTextureCoords;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform mat4 uNMatrix;
-uniform int uPosLights;
+uniform int uPosLights; 
 uniform int uDirLights;
 uniform int uUseTexture;
 uniform vec4 uAmbientLight;
-const int MAX_POS_LIGHTS = 3;
-const int MAX_DIR_LIGHTS = 0;
 uniform float uShininess;
 uniform vec4 uSpecularColor;
 uniform vec4 uMaterialColor;
@@ -17,24 +17,19 @@ uniform vec4 uAmbientColor;
 uniform bool uUpdateLightPosition;
 uniform mat4 uLMatrix;
 uniform float uCutOff;
-varying vec4 vColor;
-varying vec2 vTextureCoords;
 uniform vec3 uLightPosition[MAX_POS_LIGHTS];
 uniform vec4 uLightSpecular[MAX_POS_LIGHTS];
 uniform	vec4 uPLightColor[MAX_POS_LIGHTS];
 uniform vec3 uLightPositionDir[MAX_POS_LIGHTS];
-uniform int shaderType; 
+uniform int shaderType;         
+uniform vec3 uLightDirection[MAX_DIR_LIGHTS];
+uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];
+uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];
+varying vec4 vColor;
+varying vec2 vTextureCoords;
 varying vec3 eyeVec;
 varying vec3 vNormal;
 varying vec3 lightdir[MAX_POS_LIGHTS];
-
-void main(void) {
-    if (shaderType == 1){
-        goroud();
-    } else {
-        phong();
-    }
-}
 
 void phong(void){
     vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
@@ -47,7 +42,6 @@ void phong(void){
     gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPos, 1.0);
     vTextureCoords = aVertexTextureCoords;
 }
-
 
 void goroud(void){
     vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
@@ -69,9 +63,49 @@ void goroud(void){
         vec4 Is = uSpecularColor * uLightSpecular[i] * specular;
         vColor += Id + Is;
     }
+
+    vec3 N = normalize(vec3(uNMatrix * vec4(aVertexNormal, 1.0)));
+    for(int i = 0; i < MAX_DIR_LIGHTS; i++){
+        vec3 L = normalize(uLightDirection[i]);
+        vec3 R = reflect(L, N);
+        float lt = dot(N, -L);
+        float specular = pow(max(dot(R,E), 0.0), uShininess);
+        float f = 40.0001; 
+        vec4 Id = uMaterialColor * uPLightColor[i] * pow(lt, f * uCutOff);
+        vec4 Is = uSpecularColor * uDLightSpecular[i] * specular;
+        vColor += Id + Is;
+    }
+    
     vColor += Ia;
     vColor[3] = uMaterialColor[3];
     gl_Position = uPMatrix * vertex;
     gl_PointSize = 1.0;
     vTextureCoords = aVertexTextureCoords;
+}
+
+
+void shadowMapping(void){
+    vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
+    vColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_Position = uPMatrix * vertex;
+    gl_PointSize = 1.0;
+}
+
+void flatMode(void){
+    vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
+    vColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_Position = uPMatrix * vertex;
+    gl_PointSize = 1.0;
+}
+
+void main(void) {
+    if (shaderType == 1){
+        goroud();
+    } else if (shaderType == 2) {
+        phong();
+    } else if (shaderType == 3) {
+        shadowMapping();
+    } else {
+        flatMode();
+    }
 }

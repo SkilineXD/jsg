@@ -78,6 +78,7 @@ jsggl.JsgGl = function(id){
 	this.currentVertexPosition = null;
 	this.currentVertexNormal = null;
 	this.currentTexPosition = null;
+    this.shaderType = 1;
 	this.shader = null;
 	this.modelView = mat4.identity(mat4.create());
 	this.projection = mat4.identity(mat4.create());
@@ -226,14 +227,12 @@ jsggl.JsgGl.prototype = {
 			var shader = this.shader;
 			shader.build();
 			
-            //var vertexShader = shader.vertexShader.generateCode();
-			//var fragShader = shader.fragShader.generateCode();
-            
-            var vertexShader = document.getElementById("shadervs").innerHTML;
-            var fragShader = document.getElementById("shaderfs").innerHTML;
+			var vertexShader = shader.vertexShader.generateCode();
+			var fragShader = shader.fragShader.generateCode();
             
             var prg = this.gl.createProgram();
-
+            
+            
 			var shadervs = this.getShader("x-shader/x-vertex", vertexShader);
 			if (!this.gl.getShaderParameter(shadervs, this.gl.COMPILE_STATUS)) {
 				this.compileProgramStatus =  "Vertex shader: " + this.gl.getShaderInfoLog(shadervs);
@@ -291,6 +290,12 @@ jsggl.Drawable = function(name, globj){
 	this.renderingmode = this.gl.LINES;
 	this.groupNameList = []
 	this.material = undefined;
+    this.textureRendering = function(){
+        this.build = function(){};
+        this.bind = function(){};
+        this.unbind = function(){};
+    };
+    this.shaderType = 1;
 }
 
 jsggl.Drawable.prototype = {
@@ -345,13 +350,12 @@ jsggl.Drawable.prototype = {
 	},
 
 	draw : function() {
-		var prg = this.jsg.program;
+        var prg = this.jsg.program;
 		this.jsg.beforeDraw();
 		var mvMatrix = this.jsg.getModelView();
-		
+		var stbkp = this.jsg.shaderType;
 		var nMatrix = mat4.create();
-		
-    	mat4.transpose(nMatrix, mvMatrix);
+		mat4.transpose(nMatrix, mvMatrix);
 		
 		this.jsg.normalMatrix = nMatrix;
 	
@@ -377,13 +381,17 @@ jsggl.Drawable.prototype = {
 				this.jsg.specularColor = material.specular;
 				this.jsg.shininess = material.shininess;
 			}
-			
+		    this.jsg.shaderType = material.shaderType;	
 			this.jsg.currentVertexPosition = this.vertexBuffer[i];
 			this.jsg.currentVertexNormal = this.normalsBuffer[i];
 			this.jsg.currentTexPosition = this.texBuffer[i];
 			this.jsg.useTextureKa = material.useTextureKa;
 			this.jsg.useTextureKd = material.useTextureKd;
-				
+            
+            if (this.shaderType == 3) {
+                this.textureRendering.bind();   
+            }
+            
 			if (material.textureka && this.texBuffer[i]) {
 				this.jsg.texSamplerKa = material.textureka.number;
 				var tex = material.textureka;
@@ -408,8 +416,12 @@ jsggl.Drawable.prototype = {
 					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 				}
 			}
+            
+            if (this.shaderType == 3) {
+                this.textureRendering.unbind();
+            }
+            this.jsg.shaderType = stbkp;
 		}
-		
 		this.currentVertexPosition = null;
 		this.currentVertexNormal = null;
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);

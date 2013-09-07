@@ -165,11 +165,11 @@ var cubomagico = {
 "groupName":[ "redface" , "whiteface" , "blueface" , "blackface" , "yellowface" , "greenface" , "orange" ]} ]
 };
 var cubomagicomtl = {
-"materialList":[ { "name":"blackface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.000000, 0.000000, 0.000000, 0.5], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } , 
-{ "name":"blueface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.000000, 0.000000, 0.800000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } , 
-{ "name":"greenface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.000000, 0.800000, 0.000000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } , 
-{ "name":"orange", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.100000, 0.027952, 0.000000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } , 
-{ "name":"redface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.640000, 0.008476, 0.016625, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } , 
-{ "name":"whiteface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.800000, 0.800000, 0.800000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } , 
-{ "name":"yellowface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.800000, 0.800000, 0.000000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } ]
+"materialList":[ { "name":"blackface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.000000, 0.000000, 0.000000, 0.5], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 1} , 
+{ "name":"blueface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.000000, 0.000000, 0.800000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 1} , 
+{ "name":"greenface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.000000, 0.800000, 0.000000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 1 } , 
+{ "name":"orange", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.100000, 0.027952, 0.000000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 3 } , 
+{ "name":"redface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.640000, 0.008476, 0.016625, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 2 } , 
+{ "name":"whiteface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.800000, 0.800000, 0.800000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 1 } , 
+{ "name":"yellowface", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.800000, 0.800000, 0.000000, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 1 } ]
 };
