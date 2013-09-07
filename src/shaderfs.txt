@@ -1,0 +1,74 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform int uUseTextureKa;
+uniform int uUseTextureKd;
+varying vec2 vTextureCoords;
+uniform sampler2D uSamplerKa;
+uniform sampler2D uSamplerKd;
+varying vec4 vColor;
+uniform vec4 uMaterialColor;
+uniform vec4 uAmbientColor;
+const int MAX_POS_LIGHTS = 3;
+const int MAX_DIR_LIGHTS = 0;
+uniform int uPosLights;
+uniform int uDirLights;
+uniform float uShininess;
+uniform vec4 uSpecularColor;
+uniform vec4 uAmbientLight;
+varying vec3 eyeVec;
+varying vec3 vNormal;
+uniform float uCutOff;
+uniform vec3 uLightPosition[MAX_POS_LIGHTS];
+uniform	vec4 uPLightColor[MAX_POS_LIGHTS];
+uniform vec4 uLightSpecular[MAX_POS_LIGHTS];
+uniform vec3 uLightPositionDir[MAX_POS_LIGHTS];
+varying vec3 lightdir[MAX_POS_LIGHTS];
+uniform int shaderType;
+
+void main(void) {
+    if (shaderType == 1) {
+        goroud();
+    } else {
+        phong();
+    }
+}
+
+void phong(void){
+    vec4 ambientMaterial = uAmbientColor;
+    vec4 diffuseMaterial = uMaterialColor;
+    if (uUseTextureKa == 1) {
+        ambientMaterial = ambientMaterial * texture2D(uSamplerKa, vTextureCoords);
+    }    
+    if (uUseTextureKd == 1) {
+        diffuseMaterial = diffuseMaterial  * texture2D(uSamplerKd, vTextureCoords);
+    }
+    vec3 E = normalize(eyeVec);
+    vec4 Ia = uAmbientLight * ambientMaterial;
+    vec4 fColor = vec4(0.0, 0.0, 0.0, 1.0);
+    for(int i = 0; i < MAX_POS_LIGHTS; i++){
+        vec3 N = normalize(vNormal-uLightPositionDir[i]);
+        vec3 L = normalize(lightdir[i]);
+        vec3 R = reflect(L, N);
+        float lt = dot(N, -L);
+        float specular = pow(max(dot(R,E), 0.0), uShininess);
+        float f = 40.0001; 
+        vec4 Id = diffuseMaterial * uPLightColor[i] * pow(lt, f * uCutOff);
+        vec4 Is = uSpecularColor * uLightSpecular[i] * specular;
+        fColor +=  Id + Is;
+    }
+    fColor += Ia;
+    fColor[3] = uMaterialColor[3];
+    gl_FragColor = fColor;
+}
+
+void goroud(void){
+    vec4 color = vColor;
+    if (uUseTextureKa == 1) {
+        color = color * texture2D(uSamplerKa, vTextureCoords);
+    } else if (uUseTextureKd == 1) {
+        color = color  * texture2D(uSamplerKd, vTextureCoords); 
+    }
+    gl_FragColor = color;
+}

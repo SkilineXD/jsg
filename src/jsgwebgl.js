@@ -225,10 +225,14 @@ jsggl.JsgGl.prototype = {
 			}
 			var shader = this.shader;
 			shader.build();
-			var vertexShader = shader.vertexShader.generateCode();
-			alert(vertexShader);
-			var fragShader = shader.fragShader.generateCode();
-			var prg = this.gl.createProgram();
+			
+            //var vertexShader = shader.vertexShader.generateCode();
+			//var fragShader = shader.fragShader.generateCode();
+            
+            var vertexShader = document.getElementById("shadervs").innerHTML;
+            var fragShader = document.getElementById("shaderfs").innerHTML;
+            
+            var prg = this.gl.createProgram();
 
 			var shadervs = this.getShader("x-shader/x-vertex", vertexShader);
 			if (!this.gl.getShaderParameter(shadervs, this.gl.COMPILE_STATUS)) {

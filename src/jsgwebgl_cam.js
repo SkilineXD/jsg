@@ -8,24 +8,22 @@ jsggl.Projection = function(type){
 		this.near = 0.1;
 		this.far = 1000;
 		this.aspectRatio = 1.0;
+        this.getMatrix = function() {
+            return mat4.perspective(mat4.create(), this.FOV, this.aspectRatio, this.near, this.far);
+        }
 	} else if (type == jsggl.Projection.type.ORTOGRAPHIC){
 		this.left = -1.0;
 		this.right = 1.0;
-		this.top = 1.0;
 		this.bottom = -1.0;
+        this.top = 1.0;
 		this.near = 0.01;
 		this.far = 2.0;
+        this.getMatrix = function() {
+            return mat4.ortho(mat4.create(), this.left, this.right, this.bottom, this.top, this.near, this.far);   
+        }
 	} else {
 		throw new Error("Invalid projection type");
 	}	
-
-	this.getMatrix = function() {
-		if (this.type == jsggl.Projection.type.PERSPECTIVE){
-			return mat4.perspective(mat4.create(), this.FOV, this.aspectRatio, this.near, this.far);
-		} else if (this.type == jsggl.Projection.type.ORTOGRAPHIC) {
-			return mat4.ortho(mat4.create(), this.left, this.right, this.bottom, this.top, this.near, this.far);
-		}
-	}
 }
 
 jsggl.Projection.newPerspective = function(fov, aspectRatio, near, far) {

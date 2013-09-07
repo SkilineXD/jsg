@@ -167,6 +167,7 @@ jsggl.GoraudShader = function(jsg){
 	this.localmap.newStateMap("USE_TEXTUREKD", uniform1i, "uUseTextureKd", false);
 	this.localmap.newStateMap("TEX_SAMPLERKA", uniform1i, "uSamplerKa", 0);
 	this.localmap.newStateMap("TEX_SAMPLERKD", uniform1i, "uSamplerKd", 0);
+    this.localmap.newStateMap("SHADER_TYPE", uniform1i, "shaderType", 1);
 	
 	this.load = function() {
 		this.localmap.load(this.jsg);
@@ -213,6 +214,7 @@ jsggl.GoraudShader = function(jsg){
 		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd || false);
 		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa || 0);
 		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd || 0);
+        localmap.setProperty("SHADER_TYPE", jsg.shaderType || 1);
 	}
 	
 	this.setLocalValues = function() {
