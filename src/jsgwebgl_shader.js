@@ -191,7 +191,7 @@ jsggl.ShaderCode = function(jsg){
 		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd || false);
 		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa || 0);
 		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd || 0);
-        localmap.setProperty("SHADER_TYPE", jsg.shaderType || 1);
+        localmap.setProperty("SHADER_TYPE", jsg.shaderType);
 	}
 	
 	this.setLocalValues = function() {
