@@ -5,23 +5,6 @@
 * Date: jun/05/2013
 */
 
-/* Add replaceAll method in String objects. 
-* parameter de : source string.
-* parameter para: target string.
-* returns new string with replacement of parameter 'de' by parameter 'para'.
-* Sample:
-* var str = "My las name is {lastname}. Meu sobrenome é {lastname}...".replaceAll("{lastname}", "Silva");
-*/
-String.prototype.replaceAll = function(de, para){
-    var str = this;
-    var pos = str.indexOf(de);
-    while (pos > -1){
-		str = str.replace(de, para);
-		pos = str.indexOf(de);
-	}
-    return (str);
-}
-
 /* The name jsggl contains objects for graphical manipulation. */
 var jsggl = jsggl || {};
 
@@ -388,7 +371,7 @@ jsggl.Drawable.prototype = {
 			this.jsg.useTextureKd = material.useTextureKd;
             
             if (this.jsg.shaderType == 3) {
-                this.textureRendering.bind();   
+                this.textureRendering.bind();
             }
             
 			if (material.textureka && this.texBuffer[i]) {
