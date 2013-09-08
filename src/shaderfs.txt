@@ -3,8 +3,11 @@ precision highp float;
 precision highp int;
 #endif
 
-const int MAX_POS_LIGHTS = $JSG_POSITIONAL_LIGTH_QTD;
-const int MAX_DIR_LIGHTS = $JSG_DIRECTIONAL_LIGTH_QTD;
+$IF_POSITIVE_POS_LIGHT_QTD
+#define MAX_POS_LIGHTS $JSG_POSITIONAL_LIGTH_QTD
+
+$IF_POSITIVE_DIR_LIGHT_QTD
+#define MAX_DIR_LIGHTS  $JSG_DIRECTIONAL_LIGTH_QTD
 
 uniform int uUseTextureKa;
 uniform int uUseTextureKd;
@@ -18,6 +21,7 @@ uniform float uShininess;
 uniform vec4 uSpecularColor;
 uniform vec4 uAmbientLight;
 uniform float uCutOff;
+#ifdef MAX_POS_LIGHTS
 uniform vec3 uLightPosition[MAX_POS_LIGHTS];
 uniform	vec4 uPLightColor[MAX_POS_LIGHTS];
 uniform vec4 uLightSpecular[MAX_POS_LIGHTS];
@@ -28,9 +32,13 @@ varying vec3 vNormal;
 varying vec3 lightdir[MAX_POS_LIGHTS];
 varying vec4 vColor;
 varying vec2 vTextureCoords;
+#endif
+
+#ifdef MAX_DIR_LIGHTS
 uniform vec3 uLightDirection[MAX_DIR_LIGHTS];
 uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];
 uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];
+#endif
 
 void phong(void){
     vec4 ambientMaterial = uAmbientColor;
@@ -44,7 +52,7 @@ void phong(void){
     vec3 E = normalize(eyeVec);
     vec4 Ia = uAmbientLight * ambientMaterial;
     vec4 fColor = vec4(0.0, 0.0, 0.0, 1.0);
-    
+    #ifdef MAX_POS_LIGHTS
     for(int i = 0; i < MAX_POS_LIGHTS; i++){
         vec3 N = normalize(vNormal-uLightPositionDir[i]);
         vec3 L = normalize(lightdir[i]);
@@ -56,7 +64,9 @@ void phong(void){
         vec4 Is = uSpecularColor * uLightSpecular[i] * specular;
         fColor +=  Id + Is;
     }
+	#endif
 
+	#ifdef MAX_DIR_LIGHTS
     vec3 N = normalize(vNormal);
     for(int i = 0; i < MAX_DIR_LIGHTS; i++){
         vec3 L = normalize(uLightDirection[i]);
@@ -68,6 +78,7 @@ void phong(void){
         vec4 Is = uSpecularColor * uDLightSpecular[i] * specular;
         fColor += Id + Is;
     }
+	#endif
     fColor += Ia;
     fColor[3] = uMaterialColor[3];
     gl_FragColor = fColor;

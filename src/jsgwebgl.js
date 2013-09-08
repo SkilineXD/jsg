@@ -229,7 +229,6 @@ jsggl.JsgGl.prototype = {
 			
 			var vertexShader = shader.vertexShader.generateCode();
 			var fragShader = shader.fragShader.generateCode();
-            
             var prg = this.gl.createProgram();
             
             
@@ -381,14 +380,14 @@ jsggl.Drawable.prototype = {
 				this.jsg.specularColor = material.specular;
 				this.jsg.shininess = material.shininess;
 			}
-		    this.jsg.shaderType = material.shaderType;	
+		    this.jsg.shaderType = material.shaderType || 0;	
 			this.jsg.currentVertexPosition = this.vertexBuffer[i];
 			this.jsg.currentVertexNormal = this.normalsBuffer[i];
 			this.jsg.currentTexPosition = this.texBuffer[i];
 			this.jsg.useTextureKa = material.useTextureKa;
 			this.jsg.useTextureKd = material.useTextureKd;
             
-            if (this.shaderType == 3) {
+            if (this.jsg.shaderType == 3) {
                 this.textureRendering.bind();   
             }
             

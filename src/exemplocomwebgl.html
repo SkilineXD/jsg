@@ -23,7 +23,7 @@ Publication Date: 10 de julho de 2013.
 	<script type="text/javascript" src="jsgwebgl.js"></script>
 	<script type="text/javascript" src="jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, scene, shader, shaders, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
+		var jsg, scene, shader, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		function init() {
 			
 			jsg = new jsggl.JsgGl("scenecanvas");
@@ -68,10 +68,7 @@ Publication Date: 10 de julho de 2013.
 			//END:CONFIGURE SCENE
 			
 			//BEGIN: SETUP SHADER
-			shaders = {};
-			shaders["goraud"] = jsggl.GoraudShader;
-			shaders["phong"] = jsggl.PhongShader;
-			shader  = jsggl.GoraudShader;			
+			shader  = jsggl.ShaderCode;			
 			jsg.shader = new shader(jsg);
 			//END: SETUP SHADER
 			
@@ -192,14 +189,6 @@ Publication Date: 10 de julho de 2013.
 			jsg.shader.setGlobalValues();
 		}
 
-		function selectShadingMethod(evt){
-			shader = shaders[evt.value];
-			jsg.shader = new shader(jsg);
-			if (!jsg.build()){
-				alert("Error: " + jsg.compileProgramStatus);			
-			}			
-		}
-
 		function selectCameraType(evt){
 			scene.setActiveCamera(evt.value);
 			cam = scene.getActiveCamera();	
@@ -213,13 +202,6 @@ Publication Date: 10 de julho de 2013.
 		Utilize as setas para mudar a posição da câmera. Para girar a cena, com o botão esquerdo pressionado, movimente o mouse.
 	</div>
 	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
-	<div style="background: rgb(255, 255, 200);">	
-		<div>Shading Method</div>
-		<input type="radio" checked="true"  onchange="selectShadingMethod(this);" value="goraud" name="ShadingModel">Goraud</input>
-		<input type="radio" onchange="selectShadingMethod(this);" value="phong" name="ShadingModel">Phong</input>
-		<div>				
-	</div>
-	</div>
 	<div>Camera Type</div>
 	<div>
 		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>

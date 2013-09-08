@@ -9,5 +9,5 @@ var Plan = {
 "groupName":[ "Material" ]} ]
 };
 var Planmtl = {
-"materialList":[ { "name":"Material", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[1.0000, 1.0000, 1.0000, 1.0], "specular":[0.00000, 0.00000, 0.000000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000 } ]
+"materialList":[ { "name":"Material", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[1.0000, 1.0000, 1.0000, 1.0], "specular":[0.00000, 0.00000, 0.000000, 1.0], "shininess":96.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 2} ]
 };

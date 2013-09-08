@@ -204,8 +204,8 @@ jsggl.ShaderCode = function(jsg){
 		if (totalLights > this.maxLights) {
 			throw new Error("Light quantity limit is " + this.maxLights + ", but " + totalLights + " lights was found." );
 		}
-		this.vertexShader.text.push("const int MAX_POS_LIGHTS = "+ jsg.positionalLightQtd + ";");
-		this.vertexShader.text.push("const int MAX_DIR_LIGHTS = " + jsg.directionalLightQtd + ";");
+		if (jsg.positionalLightQtd > 0) 		this.vertexShader.text.push("#define MAX_POS_LIGHTS "+ jsg.positionalLightQtd + "");
+		if (jsg.directionalLightQtd > 0) 		this.vertexShader.text.push("#define MAX_DIR_LIGHTS  " + jsg.directionalLightQtd + "");
 		this.vertexShader.text.push("attribute vec3 aVertexPos;");
 		this.vertexShader.text.push("attribute vec3 aVertexNormal;");
 		this.vertexShader.text.push("attribute vec2 aVertexTextureCoords;");
@@ -223,14 +223,18 @@ jsggl.ShaderCode = function(jsg){
 		this.vertexShader.text.push("uniform bool uUpdateLightPosition;");
 		this.vertexShader.text.push("uniform mat4 uLMatrix;");
 		this.vertexShader.text.push("uniform float uCutOff;");
+		this.vertexShader.text.push("#ifdef MAX_POS_LIGHTS");
 		this.vertexShader.text.push("uniform vec3 uLightPosition[MAX_POS_LIGHTS];");
 		this.vertexShader.text.push("uniform vec4 uLightSpecular[MAX_POS_LIGHTS];");
 		this.vertexShader.text.push("uniform	vec4 uPLightColor[MAX_POS_LIGHTS];");
 		this.vertexShader.text.push("uniform vec3 uLightPositionDir[MAX_POS_LIGHTS];");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("uniform int shaderType;");
+		this.vertexShader.text.push("#ifdef MAX_DIR_LIGHTS");
 		this.vertexShader.text.push("uniform vec3 uLightDirection[MAX_DIR_LIGHTS];");
 		this.vertexShader.text.push("uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];");
 		this.vertexShader.text.push("uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("varying vec4 vColor;");
 		this.vertexShader.text.push("varying vec2 vTextureCoords;");
 		this.vertexShader.text.push("varying vec3 eyeVec;");
@@ -240,10 +244,12 @@ jsggl.ShaderCode = function(jsg){
 		this.vertexShader.text.push("vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);");
 		this.vertexShader.text.push("eyeVec = -vertex.xyz;");
 		this.vertexShader.text.push("vNormal = vec3(uNMatrix * vec4(aVertexNormal, 1.0));");
+		this.vertexShader.text.push("#ifdef MAX_POS_LIGHTS");
 		this.vertexShader.text.push("for(int i = 0; i < MAX_POS_LIGHTS; i++){");
 		this.vertexShader.text.push("vec4 pos = uLMatrix * vec4(uLightPosition[i], 1.0);");
 		this.vertexShader.text.push("lightdir[i] = vertex.xyz - pos.xyz;");
 		this.vertexShader.text.push("}");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPos, 1.0);");
 		this.vertexShader.text.push("vTextureCoords = aVertexTextureCoords;");
 		this.vertexShader.text.push("}");
@@ -253,6 +259,7 @@ jsggl.ShaderCode = function(jsg){
 		this.vertexShader.text.push("vec3 E = normalize(eyeVec);");
 		this.vertexShader.text.push("vec4 Ia = uAmbientLight * uAmbientColor;");
 		this.vertexShader.text.push("vColor = vec4(0.0, 0.0, 0.0, 1.0);");
+		this.vertexShader.text.push("#ifdef MAX_POS_LIGHTS");
 		this.vertexShader.text.push("for(int i = 0; i < MAX_POS_LIGHTS; i++){");
 		this.vertexShader.text.push("vec3 N = normalize(vec3(uNMatrix * vec4(aVertexNormal, 1.0))-uLightPositionDir[i]);");
 		this.vertexShader.text.push("vec4 pos = uLMatrix * vec4(uLightPosition[i], 1.0);");
@@ -266,6 +273,8 @@ jsggl.ShaderCode = function(jsg){
 		this.vertexShader.text.push("vec4 Is = uSpecularColor * uLightSpecular[i] * specular;");
 		this.vertexShader.text.push("vColor += Id + Is;");
 		this.vertexShader.text.push("}");
+		this.vertexShader.text.push("#endif");
+		this.vertexShader.text.push("#ifdef MAX_DIR_LIGHTS");
 		this.vertexShader.text.push("vec3 N = normalize(vec3(uNMatrix * vec4(aVertexNormal, 1.0)));");
 		this.vertexShader.text.push("for(int i = 0; i < MAX_DIR_LIGHTS; i++){");
 		this.vertexShader.text.push("vec3 L = normalize(uLightDirection[i]);");
@@ -277,6 +286,7 @@ jsggl.ShaderCode = function(jsg){
 		this.vertexShader.text.push("vec4 Is = uSpecularColor * uDLightSpecular[i] * specular;");
 		this.vertexShader.text.push("vColor += Id + Is;");
 		this.vertexShader.text.push("}");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("vColor += Ia;");
 		this.vertexShader.text.push("vColor[3] = uMaterialColor[3];");
 		this.vertexShader.text.push("gl_Position = uPMatrix * vertex;");
@@ -310,8 +320,8 @@ jsggl.ShaderCode = function(jsg){
 		this.fragShader.text.push("precision highp float;");
 		this.fragShader.text.push("precision highp int;");
 		this.fragShader.text.push("#endif");
-		this.fragShader.text.push("const int MAX_POS_LIGHTS = "+ jsg.positionalLightQtd + ";");
-		this.fragShader.text.push("const int MAX_DIR_LIGHTS = " + jsg.directionalLightQtd + ";");
+		if (jsg.positionalLightQtd > 0) 		this.fragShader.text.push("#define MAX_POS_LIGHTS "+ jsg.positionalLightQtd + "");
+		if (jsg.directionalLightQtd > 0) 		this.fragShader.text.push("#define MAX_DIR_LIGHTS  " + jsg.directionalLightQtd + "");
 		this.fragShader.text.push("uniform int uUseTextureKa;");
 		this.fragShader.text.push("uniform int uUseTextureKd;");
 		this.fragShader.text.push("uniform sampler2D uSamplerKa;");
@@ -324,6 +334,7 @@ jsggl.ShaderCode = function(jsg){
 		this.fragShader.text.push("uniform vec4 uSpecularColor;");
 		this.fragShader.text.push("uniform vec4 uAmbientLight;");
 		this.fragShader.text.push("uniform float uCutOff;");
+		this.fragShader.text.push("#ifdef MAX_POS_LIGHTS");
 		this.fragShader.text.push("uniform vec3 uLightPosition[MAX_POS_LIGHTS];");
 		this.fragShader.text.push("uniform	vec4 uPLightColor[MAX_POS_LIGHTS];");
 		this.fragShader.text.push("uniform vec4 uLightSpecular[MAX_POS_LIGHTS];");
@@ -334,9 +345,12 @@ jsggl.ShaderCode = function(jsg){
 		this.fragShader.text.push("varying vec3 lightdir[MAX_POS_LIGHTS];");
 		this.fragShader.text.push("varying vec4 vColor;");
 		this.fragShader.text.push("varying vec2 vTextureCoords;");
+		this.fragShader.text.push("#endif");
+		this.fragShader.text.push("#ifdef MAX_DIR_LIGHTS");
 		this.fragShader.text.push("uniform vec3 uLightDirection[MAX_DIR_LIGHTS];");
 		this.fragShader.text.push("uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];");
 		this.fragShader.text.push("uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];");
+		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("void phong(void){");
 		this.fragShader.text.push("vec4 ambientMaterial = uAmbientColor;");
 		this.fragShader.text.push("vec4 diffuseMaterial = uMaterialColor;");
@@ -349,6 +363,7 @@ jsggl.ShaderCode = function(jsg){
 		this.fragShader.text.push("vec3 E = normalize(eyeVec);");
 		this.fragShader.text.push("vec4 Ia = uAmbientLight * ambientMaterial;");
 		this.fragShader.text.push("vec4 fColor = vec4(0.0, 0.0, 0.0, 1.0);");
+		this.fragShader.text.push("#ifdef MAX_POS_LIGHTS");
 		this.fragShader.text.push("for(int i = 0; i < MAX_POS_LIGHTS; i++){");
 		this.fragShader.text.push("vec3 N = normalize(vNormal-uLightPositionDir[i]);");
 		this.fragShader.text.push("vec3 L = normalize(lightdir[i]);");
@@ -360,6 +375,8 @@ jsggl.ShaderCode = function(jsg){
 		this.fragShader.text.push("vec4 Is = uSpecularColor * uLightSpecular[i] * specular;");
 		this.fragShader.text.push("fColor +=  Id + Is;");
 		this.fragShader.text.push("}");
+		this.fragShader.text.push("#endif");
+		this.fragShader.text.push("#ifdef MAX_DIR_LIGHTS");
 		this.fragShader.text.push("vec3 N = normalize(vNormal);");
 		this.fragShader.text.push("for(int i = 0; i < MAX_DIR_LIGHTS; i++){");
 		this.fragShader.text.push("vec3 L = normalize(uLightDirection[i]);");
@@ -371,6 +388,7 @@ jsggl.ShaderCode = function(jsg){
 		this.fragShader.text.push("vec4 Is = uSpecularColor * uDLightSpecular[i] * specular;");
 		this.fragShader.text.push("fColor += Id + Is;");
 		this.fragShader.text.push("}");
+		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("fColor += Ia;");
 		this.fragShader.text.push("fColor[3] = uMaterialColor[3];");
 		this.fragShader.text.push("gl_FragColor = fColor;");

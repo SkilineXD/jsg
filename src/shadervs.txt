@@ -1,5 +1,10 @@
-const int MAX_POS_LIGHTS = $JSG_POSITIONAL_LIGTH_QTD;
-const int MAX_DIR_LIGHTS = $JSG_DIRECTIONAL_LIGTH_QTD;
+
+$IF_POSITIVE_POS_LIGHT_QTD
+#define MAX_POS_LIGHTS $JSG_POSITIONAL_LIGTH_QTD
+
+$IF_POSITIVE_DIR_LIGHT_QTD
+#define MAX_DIR_LIGHTS  $JSG_DIRECTIONAL_LIGTH_QTD
+
 attribute vec3 aVertexPos;
 attribute vec3 aVertexNormal;
 attribute vec2 aVertexTextureCoords;
@@ -17,14 +22,18 @@ uniform vec4 uAmbientColor;
 uniform bool uUpdateLightPosition;
 uniform mat4 uLMatrix;
 uniform float uCutOff;
+#ifdef MAX_POS_LIGHTS
 uniform vec3 uLightPosition[MAX_POS_LIGHTS];
 uniform vec4 uLightSpecular[MAX_POS_LIGHTS];
 uniform	vec4 uPLightColor[MAX_POS_LIGHTS];
 uniform vec3 uLightPositionDir[MAX_POS_LIGHTS];
+#endif
 uniform int shaderType;         
+#ifdef MAX_DIR_LIGHTS
 uniform vec3 uLightDirection[MAX_DIR_LIGHTS];
 uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];
 uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];
+#endif
 varying vec4 vColor;
 varying vec2 vTextureCoords;
 varying vec3 eyeVec;
@@ -35,10 +44,12 @@ void phong(void){
     vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
     eyeVec = -vertex.xyz;
     vNormal = vec3(uNMatrix * vec4(aVertexNormal, 1.0));
+	#ifdef MAX_POS_LIGHTS
     for(int i = 0; i < MAX_POS_LIGHTS; i++){
         vec4 pos = uLMatrix * vec4(uLightPosition[i], 1.0);
         lightdir[i] = vertex.xyz - pos.xyz;
     }
+	#endif
     gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPos, 1.0);
     vTextureCoords = aVertexTextureCoords;
 }
@@ -49,7 +60,7 @@ void goroud(void){
     vec3 E = normalize(eyeVec);
     vec4 Ia = uAmbientLight * uAmbientColor;
     vColor = vec4(0.0, 0.0, 0.0, 1.0);
-    
+    #ifdef MAX_POS_LIGHTS
     for(int i = 0; i < MAX_POS_LIGHTS; i++){
         vec3 N = normalize(vec3(uNMatrix * vec4(aVertexNormal, 1.0))-uLightPositionDir[i]);
         vec4 pos = uLMatrix * vec4(uLightPosition[i], 1.0);
@@ -63,7 +74,9 @@ void goroud(void){
         vec4 Is = uSpecularColor * uLightSpecular[i] * specular;
         vColor += Id + Is;
     }
+	#endif
 
+	#ifdef MAX_DIR_LIGHTS
     vec3 N = normalize(vec3(uNMatrix * vec4(aVertexNormal, 1.0)));
     for(int i = 0; i < MAX_DIR_LIGHTS; i++){
         vec3 L = normalize(uLightDirection[i]);
@@ -75,7 +88,7 @@ void goroud(void){
         vec4 Is = uSpecularColor * uDLightSpecular[i] * specular;
         vColor += Id + Is;
     }
-    
+    #endif
     vColor += Ia;
     vColor[3] = uMaterialColor[3];
     gl_Position = uPMatrix * vertex;

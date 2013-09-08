@@ -9,6 +9,6 @@ var Sphere = {
 "groupName":[ "Material" ]} ]
 };
 var Spheremtl = {
-"materialList":[ { "name":"Material", "ambient":[0.001, 0.001, 0.001, 1.0], "diffuse":[1.0, 1.0, 1.0, 1.0], "specular":[1.0, 1.0, 1.0, 1.0], "shininess":1, "transparence":1, "opticalDensity":0 } ]
+"materialList":[ { "name":"Material", "ambient":[0.001, 0.001, 0.001, 1.0], "diffuse":[1.0, 1.0, 1.0, 1.0], "specular":[1.0, 1.0, 1.0, 1.0], "shininess":1, "transparence":1, "opticalDensity":0, "shaderType":2 } ]
 };
 

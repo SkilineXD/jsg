@@ -6,6 +6,7 @@
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="sphere.js"></script>
 	<script type="text/javascript" src="cubomagico.js"></script>
+	<script type="text/javascript" src="sphere.js"></script>
 	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript" src="jsg_collections.js"></script>
 	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
@@ -32,6 +33,11 @@
 
 	
 			jsggl.Material.loadFromJSON(jsg, cubomagicomtl);
+			jsggl.Material.loadFromJSON(jsg, Spheremtl);
+			
+			var sphere = new jsggl.Object.loadFromJSON(Sphere, "object");
+			scene.addObject(sphere);
+			
 			var cube = new jsggl.Object.loadFromJSON(cubomagico, "object");
 			cube.showOneTime = false;
 			scene.addObject(cube);		
@@ -132,7 +138,7 @@
 		
 		function installLights(){
 			scene.lights.clear();
-			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.0, 2.0, -41.0], [1.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0]);
+			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.0, 2.0, -41.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0], [0.0, 1.0, 0.0]);
 			scene.addLight(red);
 			var green = new jsggl.Light("Green", jsggl.Light.types.POSITIONAL).build([-1.0, 0.0, -41.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [-1.0, -1.0, 0.0]);
 			scene.addLight(green);
