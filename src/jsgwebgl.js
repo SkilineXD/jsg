@@ -359,19 +359,20 @@ jsggl.Drawable.prototype = {
 					material.ambient = [0.001, 0.001, 0.001, 1.0];
 					material.specular = [0.0, 0.0, 0.0, 1.0];
 					material.shininess = 1.0;
+					material.shaderType = 1;
 				}
 				this.jsg.materialColor = material.diffuse;
 				this.jsg.ambientColor = material.ambient;
 				this.jsg.specularColor = material.specular;
 				this.jsg.shininess = material.shininess;
 			} 
-			if (this.shadowEnabled) {
+			if (this.shadowEnabled && this.jsg.shaderType != 3) { //3 = make depth map
 				if (material.shaderType != undefined) {
-					this.jsg.shaderType = material.shaderType + 2;
+					this.jsg.shaderType =  material.shaderType + 3; //
 				} else {
-					this.jsg.shaderType = 3;
+					this.jsg.shaderType = 4; //gouroud shading method with shadow enabled. 
 				}
-			}
+			} 
 			this.jsg.currentVertexPosition = this.vertexBuffer[i];
 			this.jsg.currentVertexNormal = this.normalsBuffer[i];
 			this.jsg.currentTexPosition = this.texBuffer[i];
