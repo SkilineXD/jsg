@@ -1,34 +1,6 @@
 var jsggl = jsggl || {};
 
-jsggl.ShaderFunction = function(name, returnType, paramNames, paramTypes) {
-	this.name = name;
-	this.returnType = returnType;
-	this.paramsName = paramNames;
-	this.paramsType = paramTypes;
-	this.localDeclarations = [];	
-	this.mainLogical = [];
-
-	this.generateCode = function() {
-		var code = this.returnType + "  " + this.name + "(";
-		for (var i = 0; i < this.paramsName.length; i++) {
-			code += this.paramTypes[i] + " " + paramsName[i];
-			if (i < this.paramsName.length-1) code += ", ";
-		}
-		code += "){\n";
-		for (var i = 0; i < this.localDeclarations.length;  i++) {
-			code += this.localDeclarations[i] + "\n";
-		}
-
-		for (var i = 0; i < this.mainLogical.length;  i++) {
-			code += this.mainLogical[i] + "\n";
-		}
-
-		code += "}\n";
-		return code;
-	}
-}
-
-jsggl.Shader = function(header, footer){
+jsggl.ShaderCode = function(header, footer){
 	this.text = [];
 	this.generateCode = function(){
 		var code = "";
@@ -93,10 +65,10 @@ jsggl.ShaderMap = function(){
 jsggl.ShaderMap.ATTRIBUTE = 0;
 jsggl.ShaderMap.UNIFORM = 1;
 
-jsggl.ShaderCode = function(jsg){
+jsggl.Shader = function(jsg){
 	this.jsg = jsg;
-	this.vertexShader = new jsggl.Shader();
-	this.fragShader = new jsggl.Shader();
+	this.vertexShader = new jsggl.ShaderCode();
+	this.fragShader = new jsggl.ShaderCode();
 	this.localmap = new jsggl.ShaderMap();
 	this.globalmap = new jsggl.ShaderMap();
 	this.USE_EXP_DIFFUSE_CUTOFF = true;
@@ -560,7 +532,7 @@ jsggl.ShaderCode = function(jsg){
 		this.fragShader.text.push("flatMode();");
 		this.fragShader.text.push("}");
 		this.fragShader.text.push("}");
-        this.updateGlobalValues();
+        	this.updateGlobalValues();
 	}
 	return this;
 }

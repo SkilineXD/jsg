@@ -10,5 +10,5 @@ var Cubo = {
 };
 
 var Cubomtl = {
-"materialList":[ { "name":"MaterialCubo", "ambient":[0.001, 0.001, 0.001, 1.0], "diffuse":[1.0, 0.0,0.0, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":100.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 2 } ]
+"materialList":[ { "name":"MaterialCubo", "ambient":[0.001, 0.001, 0.001, 1.0], "diffuse":[1.0, 0.0,0.0, 1.0], "specular":[0.500000, 0.500000, 0.500000, 1.0], "shininess":100.078431, "transparence":1.000000, "opticalDensity":1.000000, "shaderType": 2} ]
 };

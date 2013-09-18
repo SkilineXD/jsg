@@ -22,14 +22,12 @@
 		var cam;
 
 		function init() {
-			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
 		
-			shader  = jsggl.ShaderCode;
-			jsg.shader = new shader(jsg);
+			jsg.shader = new jsggl.Shader(jsg);
 			scene = new jsggl.Scene("De	fault", jsg);
 
 			jsggl.Material.loadFromJSON(jsg, Cubomtl);
@@ -42,6 +40,8 @@
 			
 			var plan = jsggl.Object.loadFromJSON(Plan, "object");
 			plan.scale([1.2, 0.09, 1.2]);
+			plan.shadowEnabled = true;
+			cube.shadowEnabled = true;
 			scene.addObject(plan);
 			
 			scene.shadowEnabled = true;
