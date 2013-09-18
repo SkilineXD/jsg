@@ -198,12 +198,12 @@ jsggl.Shader = function(jsg){
 		localmap.setProperty("SHININESS", jsg.shininess);
 		localmap.setProperty("AMBIENT_COLOR", jsg.ambientColor);
 		localmap.setProperty("DIFFUSE_CUTOFF", jsg.diffuseCutOff);
-		localmap.setProperty("USE_TEXTUREKA", jsg.useTextureKa || false);
-		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd || false);
+		localmap.setProperty("USE_TEXTUREKA", jsg.useTextureKa || 0);
+		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd || 0);
 		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa || 0);
 		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd || 0);
         localmap.setProperty("SHADER_TYPE", jsg.shaderType);
-		localmap.setProperty("LIGHT_PROJ_MATRIX", jsg.shadowMatrices);
+		localmap.setProperty("LIGHT_PROJ_MATRIX", jsg.shadowMatrices || mat4.create());
 		localmap.setProperty("DEPTH_SAMPLER0", 0);
 		localmap.setProperty("DEPTH_SAMPLER1", 1);
 		localmap.setProperty("DEPTH_SAMPLER2", 2);
