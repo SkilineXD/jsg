@@ -103,11 +103,15 @@ jsggl.ShaderCode = function(jsg){
 	this.diffuseCutOffExpoent = 40.0;
 	this.maxLights = 4;
 
-	var uniform1i = function(jsg, p, value){ jsg.gl.uniform1i(p, value); };
-	var uniform1f = function(jsg, p, value){ jsg.gl.uniform1f(p, value); }
+	var uniform1i = function(jsg, p, value) { jsg.gl.uniform1i(p, value); };
+	var uniform1f = function(jsg, p, value) { jsg.gl.uniform1f(p, value); }
+	var uniform2iv = function(jsg, p, value){ jsg.gl.uniform2i(p, value); }
+	var uniform3iv = function(jsg, p, value){ jsg.gl.uniform3iv(p, value); }
+	var uniform3i = function(jsg, p, value){ jsg.gl.uniform3i(p, value); }
+	var uniform2fv = function(jsg, p, value){ jsg.gl.uniform2fv(p, value); }
 	var uniform3fv = function(jsg, p, value){ jsg.gl.uniform3fv(p, value); };
-	var uniform4fv = function(jsg, p, value){jsg.gl.uniform4fv(p, value);};	
-	var uniformMatrix4fv = function(jsg, p, value){ jsg.gl.uniformMatrix4fv(p, false, value); };
+	var uniform4fv = function(jsg, p, value){ jsg.gl.uniform4fv(p, value); };	
+	var uniformMatrix4fv = function(jsg, p, value){jsg.gl.uniformMatrix4fv(p, false, value); };
 	var attr = function(jsg, p, value) {
 			if (value != undefined && value != null) {
 				jsg.gl.enableVertexAttribArray(p);
@@ -115,7 +119,7 @@ jsggl.ShaderCode = function(jsg){
 				jsg.gl.vertexAttribPointer(p, 3, jsg.gl.FLOAT, false, 0, 0);
 			}
 	};
-		
+
 	this.globalmap.newStateMap("POSITIONAL_LIGHT_QTD", uniform1i, "uPosLights", 0);
 	this.globalmap.newStateMap("DIRECTIONAL_LIGHT_QTD", uniform1i, "uDirLights", 0);
 	this.globalmap.newStateMap("POS_LIGHT_COLOR", uniform4fv, "uPLightColor", []);
@@ -127,14 +131,16 @@ jsggl.ShaderCode = function(jsg){
 	this.globalmap.newStateMap("AMBIENT_LIGHT", uniform4fv, "uAmbientLight");
 	this.globalmap.newStateMap("UPDATE_LIGHT_POSITION", uniform1i, "uUpdateLightPosition", true);
 	this.globalmap.newStateMap("LIGHT_POSITION_DIR", uniform3fv, "uLightPositionDir");
-	
+	this.globalmap.newStateMap("SHADOW_BIAS_MATRIX", uniformMatrix4fv, "shadowBiasMatrix");
+
 	this.localmap.newStateMap("MATERIAL_COLOR", uniform4fv, "uMaterialColor", [0.0, 0.0, 0.0, 1.0]);
 	this.localmap.newStateMap("SPECULAR_COLOR", uniform4fv, "uSpecularColor", [0.0, 0.0, 0.0, 1.0]);
 	this.localmap.newStateMap("SHININESS", uniform1f, "uShininess", 100.0);
-	this.localmap.newStateMap("PROJECTION_MATRIX", uniformMatrix4fv, "uPMatrix", mat4.identity(mat4.create()));
-	this.localmap.newStateMap("MODELVIEW_MATRIX", uniformMatrix4fv, "uMVMatrix", mat4.identity(mat4.create()));
-	this.localmap.newStateMap("NORMAL_MATRIX", uniformMatrix4fv, "uNMatrix", mat4.identity(mat4.create()));
-	this.localmap.newStateMap("LIGHT_MATRIX", uniformMatrix4fv, "uLMatrix", mat4.identity(mat4.create()));
+	this.localmap.newStateMap("PROJECTION_MATRIX", uniformMatrix4fv, "uPMatrix", mat4.create());
+	this.localmap.newStateMap("MODELVIEW_MATRIX", uniformMatrix4fv, "uMVMatrix", mat4.create());
+	this.localmap.newStateMap("NORMAL_MATRIX", uniformMatrix4fv, "uNMatrix", mat4.create());
+	this.localmap.newStateMap("LIGHT_MATRIX", uniformMatrix4fv, "uLMatrix", mat4.create());
+	this.localmap.newStateMap("LIGHT_PROJ_MATRIX", uniformMatrix4fv, "uWLPMatrix", mat4.create());
 	this.localmap.newStateMap("TEX_POSITION", attr, "aVertexTextureCoords", null, jsggl.ShaderMap.ATTRIBUTE);
 	this.localmap.newStateMap("VERTEX_POSITION", attr, "aVertexPos", null, jsggl.ShaderMap.ATTRIBUTE);
 	this.localmap.newStateMap("VERTEX_NORMAL", attr, "aVertexNormal", null, jsggl.ShaderMap.ATTRIBUTE);
@@ -146,12 +152,23 @@ jsggl.ShaderCode = function(jsg){
 	this.localmap.newStateMap("TEX_SAMPLERKD", uniform1i, "uSamplerKd", 0);
     this.localmap.newStateMap("SHADER_TYPE", uniform1i, "shaderType", 1);
 	
+	this.localmap.newStateMap("DEPTH_SAMPLER0", uniform1i, "uDepthSampler0");
+	this.localmap.newStateMap("DEPTH_SAMPLER1", uniform1i, "uDepthSampler1");
+	this.localmap.newStateMap("DEPTH_SAMPLER2", uniform1i, "uDepthSampler2");	
+	this.localmap.newStateMap("ACTIVE_SHADOW", uniform1i, "uActiveShadow", -1);
+	this.localmap.newStateMap("SHADOW_COUNT", uniform1i, "uShadowCount", 0);
+
 	this.load = function() {
 		this.localmap.load(this.jsg);
 		this.globalmap.load(this.jsg);
 	}
 	
 	this.updateGlobalValues = function() {
+		var shadowBiasMatrix = mat4.create();
+		mat4.identity(shadowBiasMatrix);
+		mat4.scale(shadowBiasMatrix, shadowBiasMatrix, [0.5, 0.5, 0.5]);
+		mat4.translate(shadowBiasMatrix, shadowBiasMatrix, [1.0, 1.0, 1.0, 1.0]);
+	
 		var jsg = this.jsg;
 		var globalmap = this.globalmap;
 		globalmap.setProperty("POSITIONAL_LIGHT_QTD", jsg.positionalLightQtd);
@@ -165,6 +182,7 @@ jsggl.ShaderCode = function(jsg){
 		globalmap.setProperty("DIR_SPECULAR_LIGHT", jsg.directionalSpecularLight);
 		globalmap.setProperty("AMBIENT_LIGHT", jsg.ambientLight);
 		globalmap.setProperty("UPDATE_LIGHT_POSITION", jsg.updateLightPosition);
+		globalmap.setProperty("SHADOW_BIAS_MATRIX", shadowBiasMatrix);
 	}
 	
 	this.setGlobalValues = function(){
@@ -172,14 +190,35 @@ jsggl.ShaderCode = function(jsg){
 		this.globalmap.setValues(jsg);
 	}
 	
+	function clone(m) {
+		var res = new Float32Array(m.length);
+		for (var i  = 0; i < m.length; i++) {
+			res[i] = m[i];
+		}
+		return res;
+	}
+	
+	function concatMat4(m1, m2) {
+		if (m2 == null) return clone(m1);
+		var res = new Float32Array(m1.length + m2.length);
+		var idx = 0;
+		for (var i = 0; i < m2.length; i++) {
+			res[idx++] = m2[i];
+		}
+		for (var i = 0; i < m1.length; i++) {
+			res[idx++] = m1[i];
+		}
+		return res;
+	}
+	
 	this.updateLocalValues = function() {
 		var jsg = this.jsg;
 		var localmap = this.localmap;
+		
 		localmap.setProperty("MATERIAL_COLOR", jsg.materialColor);
 		localmap.setProperty("PROJECTION_MATRIX", jsg.getProjection());
 		localmap.setProperty("MODELVIEW_MATRIX", jsg.getModelView());
-		localmap.setProperty("NORMAL_MATRIX", jsg.normalMatrix);
-		localmap.setProperty("LIGHT_MATRIX", jsg.lightMatrix);
+		localmap.setProperty("NORMAL_MATRIX", jsg.normalMatrix);;
 		localmap.setProperty("TEX_POSITION", jsg.currentTexPosition);
 		localmap.setProperty("VERTEX_POSITION", jsg.currentVertexPosition);
 		localmap.setProperty("VERTEX_NORMAL", jsg.currentVertexNormal);
@@ -192,6 +231,12 @@ jsggl.ShaderCode = function(jsg){
 		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa || 0);
 		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd || 0);
         localmap.setProperty("SHADER_TYPE", jsg.shaderType);
+		localmap.setProperty("LIGHT_PROJ_MATRIX", jsg.shadowMatrices);
+		localmap.setProperty("DEPTH_SAMPLER0", 0);
+		localmap.setProperty("DEPTH_SAMPLER1", 1);
+		localmap.setProperty("DEPTH_SAMPLER2", 2);
+		localmap.setProperty("ACTIVE_SHADOW", jsg.activeShadow);
+		localmap.setProperty("SHADOW_COUNT", jsg.shadowCount);
 	}
 	
 	this.setLocalValues = function() {
@@ -202,7 +247,7 @@ jsggl.ShaderCode = function(jsg){
 	this.build = function() {
 		var totalLights = jsg.positionalLightQtd + jsg.directionalLightQtd;
 		if (totalLights > this.maxLights) {
-			throw new Error("Light quantity limit is " + this.maxLights + ", but " + totalLights + " lights was found." );
+			throw new Error("Light quantity limit is " + this.maxLights + ", but " + totalLights + " lights was found.");
 		}
 		//LOAD_SHADERS, 2
         this.updateGlobalValues();

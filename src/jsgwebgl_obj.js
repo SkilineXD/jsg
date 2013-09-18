@@ -179,6 +179,7 @@ jsggl.Object = function(name) {
 			g.showBackFace = this.showBackFace;
 			g.showOneTime = this.showOneTime;			
 			g.material = this.material;
+			g.shadowEnabled = this.shadowEnabled;
 			g.draw();
 		}
 		jsg.popModelView();

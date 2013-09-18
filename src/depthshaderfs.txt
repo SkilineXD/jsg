@@ -1,0 +1,7 @@
+precision highp float;
+varying vec2 vZW;
+
+void main(void) {
+    float result = vZW.x / vZW.y;
+    gl_FragColor = vec4(result, result, result, result);
+}

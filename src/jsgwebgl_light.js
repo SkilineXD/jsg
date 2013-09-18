@@ -4,6 +4,7 @@ var jsggl = jsggl || {};
 jsggl.Light = function(name, type){
 	this.name = name;
 	this.type = type;
+	this.shadowEnabled = false;
 	
 	this.build = function(arg1, color, specularColor, positionDirection) {
 		if (this.type == jsggl.Light.types.POSITIONAL) {

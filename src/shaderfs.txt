@@ -9,6 +9,8 @@ $IF_POSITIVE_POS_LIGHT_QTD
 $IF_POSITIVE_DIR_LIGHT_QTD
 #define MAX_DIR_LIGHTS  $JSG_DIRECTIONAL_LIGTH_QTD
 
+#define MAX_SHADOWS  2
+
 uniform int uUseTextureKa;
 uniform int uUseTextureKd;
 uniform sampler2D uSamplerKa;
@@ -26,13 +28,14 @@ uniform vec3 uLightPosition[MAX_POS_LIGHTS];
 uniform	vec4 uPLightColor[MAX_POS_LIGHTS];
 uniform vec4 uLightSpecular[MAX_POS_LIGHTS];
 uniform vec3 uLightPositionDir[MAX_POS_LIGHTS];
+varying vec3 lightdir[MAX_POS_LIGHTS];
+#endif
+
 uniform int shaderType;
 varying vec3 eyeVec;
 varying vec3 vNormal;
-varying vec3 lightdir[MAX_POS_LIGHTS];
 varying vec4 vColor;
 varying vec2 vTextureCoords;
-#endif
 
 #ifdef MAX_DIR_LIGHTS
 uniform vec3 uLightDirection[MAX_DIR_LIGHTS];
@@ -40,7 +43,15 @@ uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];
 uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];
 #endif
 
-void phong(void){
+uniform sampler2D uDepthSampler0;
+uniform sampler2D uDepthSampler1;
+uniform sampler2D uDepthSampler2;
+
+varying highp vec4 shadowPosition[MAX_SHADOWS];
+uniform int uActiveShadow;
+uniform int uShadowCount;
+
+vec4 phong(void){
     vec4 ambientMaterial = uAmbientColor;
     vec4 diffuseMaterial = uMaterialColor;
     if (uUseTextureKa == 1) {
@@ -74,41 +85,118 @@ void phong(void){
         float lt = dot(N, -L);
         float specular = pow(max(dot(R,E), 0.0), uShininess);
         float f = 40.0001;
-        vec4 Id = diffuseMaterial * uPLightColor[i] * pow(lt, f * uCutOff);
+        vec4 Id = diffuseMaterial * uDLightColor[i] * pow(lt, f * uCutOff);
         vec4 Is = uSpecularColor * uDLightSpecular[i] * specular;
         fColor += Id + Is;
     }
 	#endif
     fColor += Ia;
     fColor[3] = uMaterialColor[3];
-    gl_FragColor = fColor;
+    return fColor;
 }
 
-void goroud(void){
+vec4 goroud(void){
     vec4 color = vColor;
     if (uUseTextureKa == 1) {
         color = color * texture2D(uSamplerKa, vTextureCoords);
     } else if (uUseTextureKd == 1) {
         color = color  * texture2D(uSamplerKd, vTextureCoords); 
     }
-    gl_FragColor = color;
+    return color;
 }
 
-void shadowMapping(void){
-    gl_FragColor = vColor;
+void flatMode(void) {
+    gl_FragColor = uMaterialColor;
 }
 
-void flatMode() {
-    gl_FragColor = vColor;
+highp vec4 pack_depth( const in highp float depth ) {
+	const highp vec4 bit_shift = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
+	const highp vec4 bit_mask  = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );
+	highp vec4 res = fract( depth * bit_shift );
+	res -= res.xxyz * bit_mask;
+	return res;
+}
+
+highp vec4 pack_depth2 (highp float depth)
+{
+	const highp vec4 bias = vec4(1.0 / 255.0,
+				1.0 / 255.0,
+				1.0 / 255.0,
+				0.0);
+
+	highp float r = depth;
+	highp float g = fract(r * 255.0);
+	highp float b = fract(g * 255.0);
+	highp float a = fract(b * 255.0);
+	highp vec4 colour = vec4(r, g, b, a);
+	
+	return colour - (colour.yzww * bias);
+}
+
+
+highp float unpack_depth( const in highp vec4 rgba_depth ) {
+	const highp vec4 bit_shift = vec4( 1.0 / ( 256.0 * 256.0 * 256.0 ), 1.0 / ( 256.0 * 256.0 ), 1.0 / 256.0, 1.0 );
+	highp float depth = dot( rgba_depth, bit_shift );
+	return depth;
+}
+
+highp float unpack_depth2 (highp vec4 colour)
+{
+	const highp vec4 bitShifts = vec4(
+		1.0,
+		1.0 / 255.0,
+		1.0 / (255.0 * 255.0),
+		1.0 / (255.0 * 255.0 * 255.0)
+	);
+	return dot(colour, bitShifts);
+}
+
+void depthMap(void) {
+	gl_FragColor = pack_depth2( gl_FragCoord.z );
+}
+
+vec4 shadowMapping(vec4 color) {
+	highp float visibility = 1.0;
+	for (int i = 0; i < MAX_SHADOWS; i++) {
+		if (i >= uShadowCount) break;
+		//BEGIN:shadowmap code  
+		highp float bias = 0.0000000000000000000000001;
+		highp vec3 shadowCoordZDivide = shadowPosition[i].xyz/shadowPosition[i].w;
+
+		highp vec4 rgba_depth;
+		if (i==0){
+			rgba_depth = texture2D(uDepthSampler0, shadowCoordZDivide.xy );
+		} else if (i == 1) {
+			rgba_depth = texture2D(uDepthSampler1, shadowCoordZDivide.xy );
+		} else if (i == 2) {
+			rgba_depth = texture2D(uDepthSampler2, shadowCoordZDivide.xy);
+		}
+		//highp float depth = unpack_depth( rgba_depth );
+		highp float depth = unpack_depth2( rgba_depth );
+		
+		if(shadowPosition[i].w > 0.1)
+		{
+			if( (shadowCoordZDivide.z) > (depth - bias) )
+			{
+				visibility *= 0.5;
+			}
+		}
+		//END:shadowmap code
+	}
+	return vec4(color.rgb * visibility, color.a);
 }
 
 void main(void) {
     if (shaderType == 1) {
-        goroud();
+        gl_FragColor = goroud();
     } else if (shaderType == 2) {
-        phong();
-    } else if (shaderType == 3) {
-        shadowMapping();
+        gl_FragColor = phong();
+	} else if (shaderType == 3) {
+		depthMap();
+	} else if (shaderType == 4) {
+		gl_FragColor = shadowMapping(goroud());
+	} else if (shaderType == 5) {
+		gl_FragColor = shadowMapping(phong());
     } else {
         flatMode();
     }

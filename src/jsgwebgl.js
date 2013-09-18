@@ -195,6 +195,7 @@ jsggl.JsgGl.prototype = {
 		} else {
 			return null;
 		}
+		
 		this.gl.shaderSource(shader, str);
 		this.gl.compileShader(shader);
 		return shader;
@@ -277,7 +278,8 @@ jsggl.Drawable = function(name, globj){
         this.bind = function(){};
         this.unbind = function(){};
     };
-    this.shaderType = 1;
+    this.shadowEnabled = false;
+	var self = this;
 }
 
 jsggl.Drawable.prototype = {
@@ -296,7 +298,7 @@ jsggl.Drawable.prototype = {
 				if (this.textures.length > 0 && this.textures[0] && this.textures[0][0] != -2) {
 					var tBuffer = this.gl.createBuffer();
 					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tBuffer); 
-					this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.textures[i]), this.gl.		STATIC_DRAW);
+					this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.textures[i]), this.gl.STATIC_DRAW);
 					this.texBuffer.push(tBuffer);
 				} else {
 					this.texBuffer.push(undefined);
@@ -362,17 +364,19 @@ jsggl.Drawable.prototype = {
 				this.jsg.ambientColor = material.ambient;
 				this.jsg.specularColor = material.specular;
 				this.jsg.shininess = material.shininess;
+			} 
+			if (this.shadowEnabled) {
+				if (material.shaderType != undefined) {
+					this.jsg.shaderType = material.shaderType + 2;
+				} else {
+					this.jsg.shaderType = 3;
+				}
 			}
-		    this.jsg.shaderType = material.shaderType || 0;	
 			this.jsg.currentVertexPosition = this.vertexBuffer[i];
 			this.jsg.currentVertexNormal = this.normalsBuffer[i];
 			this.jsg.currentTexPosition = this.texBuffer[i];
 			this.jsg.useTextureKa = material.useTextureKa;
 			this.jsg.useTextureKd = material.useTextureKd;
-            
-            if (this.jsg.shaderType == 3) {
-                this.textureRendering.bind();
-            }
             
 			if (material.textureka && this.texBuffer[i]) {
 				this.jsg.texSamplerKa = material.textureka.number;
@@ -386,6 +390,17 @@ jsggl.Drawable.prototype = {
 			}
 			this.jsg.shader.setLocalValues();				
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);
+			this.simpleDraw(i);
+            this.jsg.shaderType = stbkp;
+		}
+		this.currentVertexPosition = null;
+		this.currentVertexNormal = null;
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+		this.jsg.afterDraw();
+	},
+
+	simpleDraw: function(i) {
 			if (this.showOneTime){
 				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 			} else {
@@ -398,19 +413,8 @@ jsggl.Drawable.prototype = {
 					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
 				}
 			}
-            
-            if (this.shaderType == 3) {
-                this.textureRendering.unbind();
-            }
-            this.jsg.shaderType = stbkp;
-		}
-		this.currentVertexPosition = null;
-		this.currentVertexNormal = null;
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-		this.jsg.afterDraw();
 	},
-
+	
 	delete: function(){
 		for (var i = 0; i < this.indexBuffer.length; i++){
 			this.gl.deleteBuffer(this.indedexBuffer[i]);
