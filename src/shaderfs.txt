@@ -9,7 +9,8 @@ $IF_POSITIVE_POS_LIGHT_QTD
 $IF_POSITIVE_DIR_LIGHT_QTD
 #define MAX_DIR_LIGHTS  $JSG_DIRECTIONAL_LIGTH_QTD
 
-#define MAX_SHADOWS  2
+$IF_SHADOWMAP_ON
+#define MAX_SHADOWS  $JSG_MAX_SHADOWS
 
 uniform int uUseTextureKa;
 uniform int uUseTextureKd;
@@ -43,13 +44,14 @@ uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];
 uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];
 #endif
 
+#ifdef MAX_SHADOWS
 uniform sampler2D uDepthSampler0;
 uniform sampler2D uDepthSampler1;
 uniform sampler2D uDepthSampler2;
-
 varying highp vec4 shadowPosition[MAX_SHADOWS];
 uniform int uActiveShadow;
 uniform int uShadowCount;
+#endif
 
 vec4 phong(void){
     vec4 ambientMaterial = uAmbientColor;
@@ -109,6 +111,8 @@ void flatMode(void) {
     gl_FragColor = uMaterialColor;
 }
 
+
+#ifdef MAX_SHADOWS
 highp vec4 pack_depth( const in highp float depth ) {
 	const highp vec4 bit_shift = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
 	const highp vec4 bit_mask  = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );
@@ -152,7 +156,9 @@ highp float unpack_depth2 (highp vec4 colour)
 }
 
 void depthMap(void) {
-	gl_FragColor = pack_depth2( gl_FragCoord.z );
+	if (uShadowEnabled) {
+		gl_FragColor  = pack_depth2( gl_FragCoord.z );
+	}
 }
 
 vec4 shadowMapping(vec4 color) {
@@ -185,6 +191,7 @@ vec4 shadowMapping(vec4 color) {
 	}
 	return vec4(color.rgb * visibility, color.a);
 }
+#endif
 
 void main(void) {
     if (shaderType == 1) {
@@ -201,3 +208,4 @@ void main(void) {
         flatMode();
     }
 }
+

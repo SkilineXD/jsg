@@ -74,6 +74,7 @@ jsggl.Shader = function(jsg){
 	this.USE_EXP_DIFFUSE_CUTOFF = true;
 	this.diffuseCutOffExpoent = 40.0;
 	this.maxLights = 4;
+	this.maxShadows = 2;
 
 	var uniform1i = function(jsg, p, value) { jsg.gl.uniform1i(p, value); };
 	var uniform1f = function(jsg, p, value) { jsg.gl.uniform1f(p, value); }
@@ -221,8 +222,12 @@ jsggl.Shader = function(jsg){
 		if (totalLights > this.maxLights) {
 			throw new Error("Light quantity limit is " + this.maxLights + ", but " + totalLights + " lights was found.");
 		}
+		if (jsg.shadowCount > this.maxShadows) {
+			throw new Error("Shadow light quantity limit is " + this.maxShadows + ",  but " + jsg.shadowCount + " shadow light quantity was found.");
+		}
 		//LOAD_SHADERS, 2
         	this.updateGlobalValues();
 	}
 	return this;
 }
+

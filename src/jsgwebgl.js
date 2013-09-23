@@ -279,6 +279,7 @@ jsggl.Drawable = function(name, globj){
         this.unbind = function(){};
     };
     this.shadowEnabled = false;
+	this.receiveShadow = false;
 	var self = this;
 }
 
@@ -366,12 +367,14 @@ jsggl.Drawable.prototype = {
 				this.jsg.specularColor = material.specular;
 				this.jsg.shininess = material.shininess;
 			} 
-			if (this.shadowEnabled && this.jsg.shaderType != 3) { //3 = make depth map
-				if (material.shaderType != undefined) {
-					this.jsg.shaderType =  material.shaderType + 3; //
-				} else {
-					this.jsg.shaderType = 4; //gouroud shading method with shadow enabled. 
-				}
+
+
+			if (this.jsg.shaderType != 3){
+				this.jsg.shaderType = material.shaderType || -1;
+			}
+
+			if ( (this.shadowEnabled || this.receiveShadow) && this.jsg.shaderType != 3) { //3 = make depth map
+				this.jsg.shaderType =  material.shaderType + 3; //gouroud or phong shading
 			} 
 			this.jsg.currentVertexPosition = this.vertexBuffer[i];
 			this.jsg.currentVertexNormal = this.normalsBuffer[i];

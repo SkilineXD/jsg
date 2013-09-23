@@ -33,17 +33,20 @@
 			jsggl.Material.loadFromJSON(jsg, Cubomtl);
 			jsggl.Material.loadFromJSON(jsg, Planmtl);
 
-			var cube = jsggl.Object.loadFromJSON(Cubo, "object");
-			cube.scale([0.5, 0.5, 0.5]);
-			scene.addObject(cube);		
-			cube.setPosition([0.0, 2.0, 0.0]);
-			
 			var plan = jsggl.Object.loadFromJSON(Plan, "object");
 			plan.scale([1.2, 0.09, 1.2]);
 			plan.shadowEnabled = true;
-			cube.shadowEnabled = true;
+			plan.receiveShadow = true;
 			scene.addObject(plan);
-			
+	
+			var cube = jsggl.Object.loadFromJSON(Cubo, "object");
+			cube.scale([0.5, 0.5, 0.5]);
+			cube.shadowEnabled = true;
+			cube.receiveShadow = false;
+			cube.setPosition([0.0, 2.0, 0.0]);			
+			scene.addObject(cube);	
+
+
 			scene.shadowEnabled = true;
 
 			var proj = jsggl.Projection.newPerspective(45,(jsg.canvas.width)/jsg.canvas.height, 0.01, 1000);
@@ -140,12 +143,12 @@
 		
 		function installLights(){
 			scene.lights.clear();
-			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.001, 5.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
-			var red2 = new jsggl.Light("Red2", jsggl.Light.types.POSITIONAL).build([4, 5.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
-			red.shadowEnabled = false;
-			red2.shadowEnabled = true;
+			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.001, 100.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			var red2 = new jsggl.Light("Red2", jsggl.Light.types.POSITIONAL).build([-9, 10.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			red.shadowEnabled = true;
+			//red2.shadowEnabled = false;
 			scene.addLight(red);
-			scene.addLight(red2);
+			//scene.addLight(red2);
 			scene.updateLights();
 			jsg.beforeDraw = function() {
 				//jsg.lightMatrix = jsg.modelView;

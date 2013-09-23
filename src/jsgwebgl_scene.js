@@ -154,21 +154,21 @@ jsggl.Scene = function(name, jsg){
 		jsg.projection = this.currentCamera.projection.getMatrix();
 		mat4.multiply(jsg.modelView, cm, jsg.modelView);
 		var keys = this.objects.getKeys();
-		for (var i = 0; i < keys.length; i++) {
+		for (var i = 0; i < keys.length; i++) {	 
 			var obj = this.objects.get(keys[i]);
-			var bkp = obj.shadowEnabled;
-			this.jsg.shadowMatrices = new Float32Array(this.shadows.length * 16);
-			if (this.shadowEnabled) {
+			if (jsg.shaderType == 3 || jsg.shaderType == 4) {
+				this.jsg.shadowMatrices = new Float32Array(this.shadows.length * 16);
 				if (this.jsg.shadowMatrices){
 					var j;
 					for (j = 0; j < this.shadows.length; j++){
 						this.jsg.shadowMatrices.set(mat4.multiply(mat4.create(), this.shadows[j].matrix, obj.transforms), j*16);
 					}
 				}
-			} 
-			obj.shadowEnabled = this.shadowEnabled
-			obj.draw(jsg);
-			obj.shadowEnabled = bkp;
+				
+				obj.draw(jsg);
+			} else {
+				obj.draw(jsg);
+			}
 		}
 		jsg.popModelView();
 	}

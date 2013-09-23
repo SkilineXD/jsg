@@ -74,6 +74,7 @@ jsggl.Shader = function(jsg){
 	this.USE_EXP_DIFFUSE_CUTOFF = true;
 	this.diffuseCutOffExpoent = 40.0;
 	this.maxLights = 4;
+	this.maxShadows = 2;
 
 	var uniform1i = function(jsg, p, value) { jsg.gl.uniform1i(p, value); };
 	var uniform1f = function(jsg, p, value) { jsg.gl.uniform1f(p, value); }
@@ -221,9 +222,12 @@ jsggl.Shader = function(jsg){
 		if (totalLights > this.maxLights) {
 			throw new Error("Light quantity limit is " + this.maxLights + ", but " + totalLights + " lights was found.");
 		}
-		this.vertexShader.text.push("#define MAX_SHADOWS  2");
+		if (jsg.shadowCount > this.maxShadows) {
+			throw new Error("Shadow light quantity limit is " + this.maxShadows + ",  but " + jsg.shadowCount + " shadow light quantity was found.");
+		}
 		if (jsg.positionalLightQtd > 0) 		this.vertexShader.text.push("#define MAX_POS_LIGHTS "+ jsg.positionalLightQtd + "");
 		if (jsg.directionalLightQtd > 0) 		this.vertexShader.text.push("#define MAX_DIR_LIGHTS  " + jsg.directionalLightQtd + "");
+		if (jsg.shadowCount > 0) 		this.vertexShader.text.push("#define MAX_SHADOWS  " + jsg.shadowCount + "");
 		this.vertexShader.text.push("attribute vec3 aVertexPos;");
 		this.vertexShader.text.push("attribute vec3 aVertexNormal;");
 		this.vertexShader.text.push("attribute vec2 aVertexTextureCoords;");
@@ -258,11 +262,13 @@ jsggl.Shader = function(jsg){
 		this.vertexShader.text.push("varying vec2 vTextureCoords;");
 		this.vertexShader.text.push("varying vec3 eyeVec;");
 		this.vertexShader.text.push("varying vec3 vNormal;");
+		this.vertexShader.text.push("#ifdef MAX_SHADOWS");
 		this.vertexShader.text.push("uniform mat4 uWLPMatrix[MAX_SHADOWS];");
 		this.vertexShader.text.push("varying vec4 shadowPosition[MAX_SHADOWS];");
 		this.vertexShader.text.push("uniform mat4 shadowBiasMatrix;");
 		this.vertexShader.text.push("uniform int uActiveShadow;");
 		this.vertexShader.text.push("uniform int uShadowCount;");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("void phong(void){");
 		this.vertexShader.text.push("vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);");
 		this.vertexShader.text.push("eyeVec = -vertex.xyz;");
@@ -323,6 +329,7 @@ jsggl.Shader = function(jsg){
 		this.vertexShader.text.push("gl_Position = uPMatrix * vertex;");
 		this.vertexShader.text.push("gl_PointSize = 1.0;");
 		this.vertexShader.text.push("}");
+		this.vertexShader.text.push("#ifdef MAX_SHADOWS");
 		this.vertexShader.text.push("void depthMap(void) {");
 		this.vertexShader.text.push("for (int i = 0; i < MAX_SHADOWS; i++) {");
 		this.vertexShader.text.push("if (i == uActiveShadow) {");
@@ -340,6 +347,7 @@ jsggl.Shader = function(jsg){
 		this.vertexShader.text.push("shadowPosition[i] = shadowBiasMatrix * uWLPMatrix[i] * vec4(vertexShifted, 1.0);");
 		this.vertexShader.text.push("}");
 		this.vertexShader.text.push("}");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("void main(void) {");
 		this.vertexShader.text.push("if (shaderType == 1) {");
 		this.vertexShader.text.push("goroud();");
@@ -363,7 +371,7 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("#endif");
 		if (jsg.positionalLightQtd > 0) 		this.fragShader.text.push("#define MAX_POS_LIGHTS "+ jsg.positionalLightQtd + "");
 		if (jsg.directionalLightQtd > 0) 		this.fragShader.text.push("#define MAX_DIR_LIGHTS  " + jsg.directionalLightQtd + "");
-		this.fragShader.text.push("#define MAX_SHADOWS  2");
+		if (jsg.shadowCount > 0) 		this.fragShader.text.push("#define MAX_SHADOWS  " + jsg.shadowCount + "");
 		this.fragShader.text.push("uniform int uUseTextureKa;");
 		this.fragShader.text.push("uniform int uUseTextureKd;");
 		this.fragShader.text.push("uniform sampler2D uSamplerKa;");
@@ -393,12 +401,14 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];");
 		this.fragShader.text.push("uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];");
 		this.fragShader.text.push("#endif");
+		this.fragShader.text.push("#ifdef MAX_SHADOWS");
 		this.fragShader.text.push("uniform sampler2D uDepthSampler0;");
 		this.fragShader.text.push("uniform sampler2D uDepthSampler1;");
 		this.fragShader.text.push("uniform sampler2D uDepthSampler2;");
 		this.fragShader.text.push("varying highp vec4 shadowPosition[MAX_SHADOWS];");
 		this.fragShader.text.push("uniform int uActiveShadow;");
 		this.fragShader.text.push("uniform int uShadowCount;");
+		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("vec4 phong(void){");
 		this.fragShader.text.push("vec4 ambientMaterial = uAmbientColor;");
 		this.fragShader.text.push("vec4 diffuseMaterial = uMaterialColor;");
@@ -453,6 +463,7 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("void flatMode(void) {");
 		this.fragShader.text.push("gl_FragColor = uMaterialColor;");
 		this.fragShader.text.push("}");
+		this.fragShader.text.push("#ifdef MAX_SHADOWS");
 		this.fragShader.text.push("highp vec4 pack_depth( const in highp float depth ) {");
 		this.fragShader.text.push("const highp vec4 bit_shift = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );");
 		this.fragShader.text.push("const highp vec4 bit_mask  = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );");
@@ -519,6 +530,7 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("}");
 		this.fragShader.text.push("return vec4(color.rgb * visibility, color.a);");
 		this.fragShader.text.push("}");
+		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("void main(void) {");
 		this.fragShader.text.push("if (shaderType == 1) {");
 		this.fragShader.text.push("gl_FragColor = goroud();");
@@ -538,3 +550,4 @@ jsggl.Shader = function(jsg){
 	}
 	return this;
 }
+

@@ -46,6 +46,8 @@ jsggl.Object = function(name) {
 	this.showOneTime = true;
 	this.showFrontFace = true;
 	this.showBackFace = true;
+	this.shadowEnabled = false;
+	this.receiveShadow = false;
 	this.renderGroup = new jsgcol.ArrayMap();
 	this.transforms = mat4.create();
 	this.center = vec3.fromValues(0.0, 0.0, 0.0);
@@ -124,7 +126,7 @@ jsggl.Object = function(name) {
 	}
 	
 	this.getPosition = function() {
-		return [this.transforms[12], this.transforms[13], this.transforms[14]];
+		return vec3.fromValues(this.transforms[12], this.transforms[13], this.transforms[14]);
 	}
 
 	this.addGroup = function(g){
@@ -179,8 +181,12 @@ jsggl.Object = function(name) {
 			g.showBackFace = this.showBackFace;
 			g.showOneTime = this.showOneTime;			
 			g.material = this.material;
+			var bkp = [g.shadowEnabled, g.receiveShadow];
 			g.shadowEnabled = this.shadowEnabled;
+			g.receiveShadow = this.receiveShadow;
 			g.draw();
+			g.shadowEnabled = bkp[0];
+			g.receiveShadow = bkp[1];
 		}
 		jsg.popModelView();
 	}
@@ -213,3 +219,4 @@ jsggl.Object.loadFromJSON = function(objson, type, ID) {
 		return obj;
 	}
 }
+

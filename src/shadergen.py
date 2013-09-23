@@ -2,6 +2,25 @@
 import string
 import sys
 
+
+def parseLine(line, shaderType, tabs):
+	line = line.strip()
+	oline = line + ""
+	tpl = string.Template(line)
+	line  = tpl.substitute({"JSG_POSITIONAL_LIGTH_QTD":"\"+ jsg.positionalLightQtd + \"",
+					 "JSG_DIRECTIONAL_LIGTH_QTD" : "\" + jsg.directionalLightQtd + \"",
+					 "JSG_MAX_SHADOWS" : "\" + jsg.shadowCount + \"",
+					 "IF_POSITIVE_POS_LIGHT_QTD" : "if (jsg.positionalLightQtd > 0)",
+					 "IF_POSITIVE_DIR_LIGHT_QTD" : "if (jsg.directionalLightQtd > 0)",
+					 "IF_SHADOWMAP_ON" : "if (jsg.shadowCount > 0)",
+					 });				
+	if (oline.find("$IF_POSITIVE_DIR_LIGHT_QTD") != -1 or oline.find("$IF_POSITIVE_POS_LIGHT_QTD") != -1 or oline.find("$IF_SHADOWMAP_ON") != -1): 
+		return tabs + line + " ";
+	elif (len(line) > 0):
+		return tabs + "this.{0}.text.push(\"{1}\");\n".format(shaderType, line)
+	else:
+		return False
+
 def generateShaders(ss, vsp, fsp):
 		sst = open(ss, 'r')
 		vspt = open(vsp, 'r');
@@ -18,30 +37,14 @@ def generateShaders(ss, vsp, fsp):
 				for line in vspt:
 					line = line.strip()
 					oline = line + ""
-					tpl = string.Template(line)
-					line  = tpl.substitute({"JSG_POSITIONAL_LIGTH_QTD":"\"+ jsg.positionalLightQtd + \"",
-									 "JSG_DIRECTIONAL_LIGTH_QTD" : "\" + jsg.directionalLightQtd + \"",
-									 "IF_POSITIVE_POS_LIGHT_QTD" : "if (jsg.positionalLightQtd > 0)",
-									 "IF_POSITIVE_DIR_LIGHT_QTD" : "if (jsg.directionalLightQtd > 0)",
-									 });				
-					if (oline.find("$IF_POSITIVE_DIR_LIGHT_QTD") != -1 or oline.find("$IF_POSITIVE_POS_LIGHT_QTD") != -1):
-						out.write(tabStr + line + " ");
-					elif (len(line) > 0):
-						out.write(tabStr + "this.vertexShader.text.push(\"{0}\");\n".format(line))
-				
+					l  = parseLine(line, "vertexShader", tabStr)
+					if (l):
+						out.write(l)
 				for line in fspt:
 					line = line.strip()
-					oline = line + ""
-					tpl = string.Template(line)
-					line  = tpl.substitute({"JSG_POSITIONAL_LIGTH_QTD":"\"+ jsg.positionalLightQtd + \"",
-									 "JSG_DIRECTIONAL_LIGTH_QTD" : "\" + jsg.directionalLightQtd + \"",
-									 "IF_POSITIVE_POS_LIGHT_QTD" : "if (jsg.positionalLightQtd > 0)",
-									 "IF_POSITIVE_DIR_LIGHT_QTD" : "if (jsg.directionalLightQtd > 0)",
-									 });				
-					if (oline.find("$IF_POSITIVE_DIR_LIGHT_QTD") != -1 or oline.find("$IF_POSITIVE_POS_LIGHT_QTD") != -1):
-						out.write(tabStr + line + " ");
-					elif (len(line) > 0):
-						out.write(tabStr + "this.fragShader.text.push(\"{0}\");\n".format(line))
+					l = parseLine(line, "fragShader", tabStr)
+					if (l):
+						out.write(l);
 			else:
 				out.write(sline);
 		out.close();
