@@ -25,7 +25,7 @@ uniform vec4 uAmbientColor;
 uniform bool uUpdateLightPosition;
 uniform mat4 uLMatrix;
 uniform float uCutOff;
-#ifdef MAX_POS_LIGHTS;
+#ifdef MAX_POS_LIGHTS
 uniform vec3 uLightPosition[MAX_POS_LIGHTS];
 uniform vec4 uLightSpecular[MAX_POS_LIGHTS];
 uniform	vec4 uPLightColor[MAX_POS_LIGHTS];
@@ -141,13 +141,19 @@ void main(void) {
     } else if (shaderType == 2) {
         phong();
 	} else if (shaderType == 3) {
+		#ifdef MAX_SHADOWS
 		depthMap();
+		#endif	
 	} else if (shaderType == 4) {
 		goroud();
+		#ifdef MAX_SHADOWS
 		shadowMapping();
+		#endif
 	} else if (shaderType == 5) {
+		#ifdef MAX_SHADOWS
 		phong();
 		shadowMapping();
+		#endif
     } else {
         flatMode();
     }

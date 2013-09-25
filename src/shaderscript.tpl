@@ -125,11 +125,12 @@ jsggl.Shader = function(jsg){
 	this.localmap.newStateMap("TEX_SAMPLERKD", uniform1i, "uSamplerKd", 0);
     this.localmap.newStateMap("SHADER_TYPE", uniform1i, "shaderType", 1);
 	
-	this.localmap.newStateMap("DEPTH_SAMPLER0", uniform1i, "uDepthSampler0");
-	this.localmap.newStateMap("DEPTH_SAMPLER1", uniform1i, "uDepthSampler1");
-	this.localmap.newStateMap("DEPTH_SAMPLER2", uniform1i, "uDepthSampler2");	
+	this.localmap.newStateMap("DEPTH_SAMPLER0", uniform1i, "uDepthSampler0", 0);
+	this.localmap.newStateMap("DEPTH_SAMPLER1", uniform1i, "uDepthSampler1", 0);
+	this.localmap.newStateMap("DEPTH_SAMPLER2", uniform1i, "uDepthSampler2", 0);	
 	this.localmap.newStateMap("ACTIVE_SHADOW", uniform1i, "uActiveShadow", -1);
 	this.localmap.newStateMap("SHADOW_COUNT", uniform1i, "uShadowCount", 0);
+	this.localmap.newStateMap("SHADOW_ENABLED", uniform1i, "uShadowEnabled", 0);
 
 	this.load = function() {
 		this.localmap.load(this.jsg);
@@ -138,9 +139,9 @@ jsggl.Shader = function(jsg){
 	
 	this.updateGlobalValues = function() {
 		var shadowBiasMatrix = mat4.create();
-		mat4.identity(shadowBiasMatrix);
-		mat4.scale(shadowBiasMatrix, shadowBiasMatrix, [0.5, 0.5, 0.5]);
-		mat4.translate(shadowBiasMatrix, shadowBiasMatrix, [1.0, 1.0, 1.0, 1.0]);
+		shadowBiasMatrix=mat4.identity(shadowBiasMatrix);
+		shadowBiasMatrix=mat4.scale(shadowBiasMatrix, shadowBiasMatrix, [0.5, 0.5, 0.5]);
+		shadowBiasMatrix=mat4.translate(shadowBiasMatrix, shadowBiasMatrix, [1.0, 1.0, 1.0, 1.0]);
 	
 		var jsg = this.jsg;
 		var globalmap = this.globalmap;
@@ -199,17 +200,24 @@ jsggl.Shader = function(jsg){
 		localmap.setProperty("SHININESS", jsg.shininess);
 		localmap.setProperty("AMBIENT_COLOR", jsg.ambientColor);
 		localmap.setProperty("DIFFUSE_CUTOFF", jsg.diffuseCutOff);
-		localmap.setProperty("USE_TEXTUREKA", jsg.useTextureKa || 0);
-		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd || 0);
-		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa || 0);
-		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd || 0);
+		localmap.setProperty("USE_TEXTUREKA", jsg.useTextureKa);
+		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd);
+		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa);
+		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd);
         localmap.setProperty("SHADER_TYPE", jsg.shaderType);
 		localmap.setProperty("LIGHT_PROJ_MATRIX", jsg.shadowMatrices || mat4.create());
-		localmap.setProperty("DEPTH_SAMPLER0", 0);
-		localmap.setProperty("DEPTH_SAMPLER1", 1);
-		localmap.setProperty("DEPTH_SAMPLER2", 2);
+		if (jsg.depthSampler[0] >= 0) {
+			localmap.setProperty("DEPTH_SAMPLER0", jsg.depthSampler[0]);
+		}
+		if (jsg.depthSampler[1] >= 0) {
+			localmap.setProperty("DEPTH_SAMPLER1", jsg.depthSampler[1]);
+		}
+		if (jsg.depthSampler[2] >= 0) {
+			localmap.setProperty("DEPTH_SAMPLER2", jsg.depthSampler[2]);
+		}
 		localmap.setProperty("ACTIVE_SHADOW", jsg.activeShadow);
 		localmap.setProperty("SHADOW_COUNT", jsg.shadowCount);
+		localmap.setProperty("SHADOW_ENABLED", jsg.shadowEnabled);
 	}
 	
 	this.setLocalValues = function() {

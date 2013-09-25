@@ -79,12 +79,12 @@ jsggl.Scene = function(name, jsg){
 				}
 				if (l.shadowEnabled) {
 					shadows.push(l);
-					l.texture = l.texture || new jsggl.TextureRendering(this.jsg, this.jsg.canvas.width, this.jsg.canvas.height).build();
+					l.texture = l.texture || (new jsggl.TextureRendering(this.jsg, this.jsg.canvas.width, this.jsg.canvas.height).build());
 					var pos = l.position;
 					l.shadowIdx = sidx;
 					this.jsg.sdLightPos = vec3.fromValues(pos[0], pos[1], pos[2]);
-					this.jsg.sdLightViewMatrix = mat4.lookAt(mat4.create(), this.jsg.sdLightPos, vec3.fromValues(0, 1.0, 0), vec3.fromValues(0, 1, 0));
-					this.jsg.sdLightProjectionMatrix = currentCamera.projection.getMatrix();
+					this.jsg.sdLightViewMatrix = l.modelViewMatrix;
+					this.jsg.sdLightProjectionMatrix = l.projection.getMatrix();
 					this.jsg.sdLightProjView = mat4.multiply(mat4.create(), this.jsg.sdLightProjectionMatrix, this.jsg.sdLightViewMatrix);
 					l.matrix = this.jsg.sdLightProjView;
 					sidx++;
@@ -124,25 +124,25 @@ jsggl.Scene = function(name, jsg){
 	this.draw = function() {
 		var jsg = this.jsg;
 		var shadows = this.shadows;
-		var bs = jsg.shaderType;
+		var bst = jsg.shaderType;
 		if (this.shadowEnabled) {
-			var bs =  this.jsg.shaderType;	
 			for (var i = 0; i < shadows.length; i++) {
 				var l = shadows[i];
-				l.texture.bind(i);
-				this.jsg.shaderType = 3;
-				this.jsg.activeShadow = i;
+				jsg.depthSampler[i] = l.texture.index;
+				l.texture.bind();
+				jsg.shaderType = 3;
+				jsg.activeShadow = i;
 				this.simpleDraw();
 				l.texture.unbind();
-				l.texture.activeTexture(i);
+				l.texture.activeTexture();
 			}
-			this.jsg.activeShadow = -1;
-			this.jsg.shaderType = 4; //SHADOW MAPPING
+			jsg.activeShadow = -1;
+			jsg.shaderType = 4; //SHADOW MAPPING
 			this.simpleDraw();
 		} else {
 			this.simpleDraw();
 		}
-		this.jsg.shaderType = bs;
+		jsg.shaderType = bst;
 	}
 	
 	this.simpleDraw = function(){
@@ -154,23 +154,27 @@ jsggl.Scene = function(name, jsg){
 		jsg.projection = this.currentCamera.projection.getMatrix();
 		mat4.multiply(jsg.modelView, cm, jsg.modelView);
 		var keys = this.objects.getKeys();
-		for (var i = 0; i < keys.length; i++) {	 
+		var bse = jsg.shadowEnabled;
+		for (var i = 0; i < keys.length; i++) {
 			var obj = this.objects.get(keys[i]);
+			jsg.shadowEnabled = obj.shadowEnabled;
 			if (jsg.shaderType == 3 || jsg.shaderType == 4) {
 				this.jsg.shadowMatrices = new Float32Array(this.shadows.length * 16);
 				if (this.jsg.shadowMatrices){
 					var j;
 					for (j = 0; j < this.shadows.length; j++){
-						this.jsg.shadowMatrices.set(mat4.multiply(mat4.create(), this.shadows[j].matrix, obj.transforms), j*16);
+						jsg.shadowMatrices.set(mat4.multiply(mat4.create(), this.shadows[j].matrix, obj.transforms), j*16);
 					}
-				}
-				
+				}		
 				obj.draw(jsg);
+				jsg.gl.depthFunc(jsg.gl.LEQUAL);
 			} else {
 				obj.draw(jsg);
 			}
 		}
+		jsg.previewShadowStatus = 0;
 		jsg.popModelView();
+		this.jsg.shadowEnabled = bse;
 	}
 }
 

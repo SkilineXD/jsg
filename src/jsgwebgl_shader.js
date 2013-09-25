@@ -125,11 +125,12 @@ jsggl.Shader = function(jsg){
 	this.localmap.newStateMap("TEX_SAMPLERKD", uniform1i, "uSamplerKd", 0);
     this.localmap.newStateMap("SHADER_TYPE", uniform1i, "shaderType", 1);
 	
-	this.localmap.newStateMap("DEPTH_SAMPLER0", uniform1i, "uDepthSampler0");
-	this.localmap.newStateMap("DEPTH_SAMPLER1", uniform1i, "uDepthSampler1");
-	this.localmap.newStateMap("DEPTH_SAMPLER2", uniform1i, "uDepthSampler2");	
+	this.localmap.newStateMap("DEPTH_SAMPLER0", uniform1i, "uDepthSampler0", 0);
+	this.localmap.newStateMap("DEPTH_SAMPLER1", uniform1i, "uDepthSampler1", 0);
+	this.localmap.newStateMap("DEPTH_SAMPLER2", uniform1i, "uDepthSampler2", 0);	
 	this.localmap.newStateMap("ACTIVE_SHADOW", uniform1i, "uActiveShadow", -1);
 	this.localmap.newStateMap("SHADOW_COUNT", uniform1i, "uShadowCount", 0);
+	this.localmap.newStateMap("SHADOW_ENABLED", uniform1i, "uShadowEnabled", 0);
 
 	this.load = function() {
 		this.localmap.load(this.jsg);
@@ -138,9 +139,9 @@ jsggl.Shader = function(jsg){
 	
 	this.updateGlobalValues = function() {
 		var shadowBiasMatrix = mat4.create();
-		mat4.identity(shadowBiasMatrix);
-		mat4.scale(shadowBiasMatrix, shadowBiasMatrix, [0.5, 0.5, 0.5]);
-		mat4.translate(shadowBiasMatrix, shadowBiasMatrix, [1.0, 1.0, 1.0, 1.0]);
+		shadowBiasMatrix=mat4.identity(shadowBiasMatrix);
+		shadowBiasMatrix=mat4.scale(shadowBiasMatrix, shadowBiasMatrix, [0.5, 0.5, 0.5]);
+		shadowBiasMatrix=mat4.translate(shadowBiasMatrix, shadowBiasMatrix, [1.0, 1.0, 1.0, 1.0]);
 	
 		var jsg = this.jsg;
 		var globalmap = this.globalmap;
@@ -199,17 +200,24 @@ jsggl.Shader = function(jsg){
 		localmap.setProperty("SHININESS", jsg.shininess);
 		localmap.setProperty("AMBIENT_COLOR", jsg.ambientColor);
 		localmap.setProperty("DIFFUSE_CUTOFF", jsg.diffuseCutOff);
-		localmap.setProperty("USE_TEXTUREKA", jsg.useTextureKa || 0);
-		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd || 0);
-		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa || 0);
-		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd || 0);
+		localmap.setProperty("USE_TEXTUREKA", jsg.useTextureKa);
+		localmap.setProperty("USE_TEXTUREKD", jsg.useTextureKd);
+		localmap.setProperty("TEX_SAMPLERKA", jsg.texSamplerKa);
+		localmap.setProperty("TEX_SAMPLERKD", jsg.texSamplerKd);
         localmap.setProperty("SHADER_TYPE", jsg.shaderType);
 		localmap.setProperty("LIGHT_PROJ_MATRIX", jsg.shadowMatrices || mat4.create());
-		localmap.setProperty("DEPTH_SAMPLER0", 0);
-		localmap.setProperty("DEPTH_SAMPLER1", 1);
-		localmap.setProperty("DEPTH_SAMPLER2", 2);
+		if (jsg.depthSampler[0] >= 0) {
+			localmap.setProperty("DEPTH_SAMPLER0", jsg.depthSampler[0]);
+		}
+		if (jsg.depthSampler[1] >= 0) {
+			localmap.setProperty("DEPTH_SAMPLER1", jsg.depthSampler[1]);
+		}
+		if (jsg.depthSampler[2] >= 0) {
+			localmap.setProperty("DEPTH_SAMPLER2", jsg.depthSampler[2]);
+		}
 		localmap.setProperty("ACTIVE_SHADOW", jsg.activeShadow);
 		localmap.setProperty("SHADOW_COUNT", jsg.shadowCount);
+		localmap.setProperty("SHADOW_ENABLED", jsg.shadowEnabled);
 	}
 	
 	this.setLocalValues = function() {
@@ -245,7 +253,7 @@ jsggl.Shader = function(jsg){
 		this.vertexShader.text.push("uniform bool uUpdateLightPosition;");
 		this.vertexShader.text.push("uniform mat4 uLMatrix;");
 		this.vertexShader.text.push("uniform float uCutOff;");
-		this.vertexShader.text.push("#ifdef MAX_POS_LIGHTS;");
+		this.vertexShader.text.push("#ifdef MAX_POS_LIGHTS");
 		this.vertexShader.text.push("uniform vec3 uLightPosition[MAX_POS_LIGHTS];");
 		this.vertexShader.text.push("uniform vec4 uLightSpecular[MAX_POS_LIGHTS];");
 		this.vertexShader.text.push("uniform	vec4 uPLightColor[MAX_POS_LIGHTS];");
@@ -354,13 +362,19 @@ jsggl.Shader = function(jsg){
 		this.vertexShader.text.push("} else if (shaderType == 2) {");
 		this.vertexShader.text.push("phong();");
 		this.vertexShader.text.push("} else if (shaderType == 3) {");
+		this.vertexShader.text.push("#ifdef MAX_SHADOWS");
 		this.vertexShader.text.push("depthMap();");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("} else if (shaderType == 4) {");
 		this.vertexShader.text.push("goroud();");
+		this.vertexShader.text.push("#ifdef MAX_SHADOWS");
 		this.vertexShader.text.push("shadowMapping();");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("} else if (shaderType == 5) {");
+		this.vertexShader.text.push("#ifdef MAX_SHADOWS");
 		this.vertexShader.text.push("phong();");
 		this.vertexShader.text.push("shadowMapping();");
+		this.vertexShader.text.push("#endif");
 		this.vertexShader.text.push("} else {");
 		this.vertexShader.text.push("flatMode();");
 		this.vertexShader.text.push("}");
@@ -369,6 +383,8 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("precision highp float;");
 		this.fragShader.text.push("precision highp int;");
 		this.fragShader.text.push("#endif");
+		this.fragShader.text.push("#define TRUE 1");
+		this.fragShader.text.push("#define FALSE 0");
 		if (jsg.positionalLightQtd > 0) 		this.fragShader.text.push("#define MAX_POS_LIGHTS "+ jsg.positionalLightQtd + "");
 		if (jsg.directionalLightQtd > 0) 		this.fragShader.text.push("#define MAX_DIR_LIGHTS  " + jsg.directionalLightQtd + "");
 		if (jsg.shadowCount > 0) 		this.fragShader.text.push("#define MAX_SHADOWS  " + jsg.shadowCount + "");
@@ -408,6 +424,7 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("varying highp vec4 shadowPosition[MAX_SHADOWS];");
 		this.fragShader.text.push("uniform int uActiveShadow;");
 		this.fragShader.text.push("uniform int uShadowCount;");
+		this.fragShader.text.push("uniform int uShadowEnabled;");
 		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("vec4 phong(void){");
 		this.fragShader.text.push("vec4 ambientMaterial = uAmbientColor;");
@@ -500,7 +517,11 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("return dot(colour, bitShifts);");
 		this.fragShader.text.push("}");
 		this.fragShader.text.push("void depthMap(void) {");
-		this.fragShader.text.push("gl_FragColor = pack_depth2( gl_FragCoord.z );");
+		this.fragShader.text.push("if (uShadowEnabled == TRUE) {");
+		this.fragShader.text.push("gl_FragColor  = pack_depth2( gl_FragCoord.z );");
+		this.fragShader.text.push("} else  {");
+		this.fragShader.text.push("gl_FragColor = pack_depth2( 1.0 );");
+		this.fragShader.text.push("}");
 		this.fragShader.text.push("}");
 		this.fragShader.text.push("vec4 shadowMapping(vec4 color) {");
 		this.fragShader.text.push("highp float visibility = 1.0;");
@@ -537,11 +558,17 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("} else if (shaderType == 2) {");
 		this.fragShader.text.push("gl_FragColor = phong();");
 		this.fragShader.text.push("} else if (shaderType == 3) {");
+		this.fragShader.text.push("#ifdef MAX_SHADOWS");
 		this.fragShader.text.push("depthMap();");
+		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("} else if (shaderType == 4) {");
+		this.fragShader.text.push("#ifdef MAX_SHADOWS");
 		this.fragShader.text.push("gl_FragColor = shadowMapping(goroud());");
+		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("} else if (shaderType == 5) {");
+		this.fragShader.text.push("#ifdef MAX_SHADOWS");
 		this.fragShader.text.push("gl_FragColor = shadowMapping(phong());");
+		this.fragShader.text.push("#endif");
 		this.fragShader.text.push("} else {");
 		this.fragShader.text.push("flatMode();");
 		this.fragShader.text.push("}");

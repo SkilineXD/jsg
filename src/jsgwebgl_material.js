@@ -19,10 +19,8 @@ jsggl.Material.loadFromJSON = function(jsg, obj){
 	jsg.textures = jsg.textures || {};
 	for (i = 0; i < obj.materialList.length; i++) {
 		var mtl = obj.materialList[i];
-		var n = 0;
 		if (mtl.mapka){
-			mtl.textureka = new jsggl.Texture(jsg, mtl.mapka.texpath, n);
-			n=n+1;
+			mtl.textureka = new jsggl.Texture(jsg, mtl.mapka.texpath);
 			mtl.textureka.build();
 			mtl.useTextureKa = true;
 		} else {
@@ -30,7 +28,7 @@ jsggl.Material.loadFromJSON = function(jsg, obj){
 		}
 		
 		if (mtl.mapkd){
-			mtl.texturekd = new jsggl.Texture(jsg, mtl.mapkd.texpath, n);
+			mtl.texturekd = new jsggl.Texture(jsg, mtl.mapkd.texpath);
 			mtl.texturekd.build();
 			mtl.useTextureKd = true;
 		} else {
@@ -41,15 +39,14 @@ jsggl.Material.loadFromJSON = function(jsg, obj){
 	}
 }
 
-jsggl.Texture = function(jsg, texpath, number) {
+jsggl.Texture = function(jsg, texpath) {
 	this.texpath =  texpath;
 	this.jsg = jsg;
 	var self = this;
-	self.number = number;
-	self.TEXTURE = [jsg.gl.TEXTURE0, jsg.gl.TEXTURE1];
-	
+
 	this.build = function(){
 			var jsg = self.jsg;
+			self.number = jsg.currentTexture++;
 			jsg.gl.pixelStorei(jsg.gl.UNPACK_FLIP_Y_WEBGL, true);
 			self.texture = jsg.gl.createTexture();
 			self.image = new Image();
@@ -59,6 +56,8 @@ jsggl.Texture = function(jsg, texpath, number) {
 				jsg.gl.texImage2D(jsg.gl.TEXTURE_2D, 0, jsg.gl.RGBA, jsg.gl.RGBA, jsg.gl.UNSIGNED_BYTE, self.image);
 				jsg.gl.texParameteri(jsg.gl.TEXTURE_2D, jsg.gl.TEXTURE_MAG_FILTER, jsg.gl.NEAREST);
 				jsg.gl.texParameteri(jsg.gl.TEXTURE_2D, jsg.gl.TEXTURE_MIN_FILTER, jsg.gl.NEAREST);
+				jsg.gl.texParameteri(jsg.gl.TEXTURE_2D, jsg.gl.TEXTURE_WRAP_S, jsg.gl.CLAMP_TO_EDGE);
+				jsg.gl.texParameteri(jsg.gl.TEXTURE_2D, jsg.gl.TEXTURE_WRAP_T, jsg.gl.CLAMP_TO_EDGE);
 				jsg.gl.bindTexture(jsg.gl.TEXTURE_2D, null);
 			}
 			self.image.src = self.texpath;
@@ -66,7 +65,7 @@ jsggl.Texture = function(jsg, texpath, number) {
 
 	this.active = function() {
 		var jsg = this.jsg;
-		jsg.gl.activeTexture(self.TEXTURE[self.number]);
+		jsg.gl.activeTexture(jsg.gl.TEXTURE0+self.number);
 		jsg.gl.bindTexture(jsg.gl.TEXTURE_2D, self.texture);
 	}
 

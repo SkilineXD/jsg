@@ -66,6 +66,9 @@ jsggl.JsgGl = function(id){
 	this.modelView = mat4.identity(mat4.create());
 	this.projection = mat4.identity(mat4.create());
 	this.modelViewStack = [this.modelView];
+	this.shadowEnabled = true;
+	this.currentTexture = 0;
+	this.depthSampler = [-1, -1, -1];
 	//BEGIN: state attributes
 
 	//BEGIN: WEBGL CONTEXT SHORTCUTS 
@@ -373,7 +376,7 @@ jsggl.Drawable.prototype = {
 				this.jsg.shaderType = material.shaderType || -1;
 			}
 
-			if ( (this.shadowEnabled || this.receiveShadow) && this.jsg.shaderType != 3) { //3 = make depth map
+			if ( (this.receiveShadow) && this.jsg.shaderType != 3) { //3 = make depth map
 				this.jsg.shaderType =  material.shaderType + 3; //gouroud or phong shading
 			} 
 			this.jsg.currentVertexPosition = this.vertexBuffer[i];

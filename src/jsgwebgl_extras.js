@@ -17,21 +17,23 @@ jsggl.TextureRendering = function (jsg, w, h){
         this.framebuffer = gl.createFramebuffer();
         this.texture = gl.createTexture();
         this.renderbuffer = gl.createRenderbuffer();
+		this.index = jsg.currentTexture++;
 		return this;
     }
     
-    this.bind = function(t){
+    this.bind = function(){
         this.framebuffer.width = this.width;
         this.framebuffer.height = this.height;
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);       
-        
-		this.activeTexture(t);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+		this.activeTexture(gl.TEXTURE0 + this.index);
+		
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.framebuffer.width, this.framebuffer.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        gl.generateMipmap(gl.TEXTURE_2D);
+		gl.generateMipmap(gl.TEXTURE_2D);
  
         gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderbuffer);
         gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.framebuffer.width, this.framebuffer.height);
@@ -40,12 +42,8 @@ jsggl.TextureRendering = function (jsg, w, h){
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.renderbuffer);
     }
  
-	this.activeTexture = function(t) {
-		switch(t) {
-			case 0: gl.activeTexture(gl.TEXTURE0); break;
-			case 1: gl.activeTexture(gl.TEXTURE1); break;
-			case 2: gl.activeTexture(gl.TEXTURE2); break;
-		}
+	this.activeTexture = function() {
+		gl.activeTexture(gl.TEXTURE0 + this.index);
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
 	}
  
@@ -58,6 +56,5 @@ jsggl.TextureRendering = function (jsg, w, h){
 	this.delete = function(){
 		gl.deleteTexture(this.texture);
 	}
-	
 }
 
