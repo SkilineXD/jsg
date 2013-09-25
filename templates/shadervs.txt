@@ -1,0 +1,160 @@
+$IF_POSITIVE_POS_LIGHT_QTD
+#define MAX_POS_LIGHTS $JSG_POSITIONAL_LIGTH_QTD
+
+$IF_POSITIVE_DIR_LIGHT_QTD
+#define MAX_DIR_LIGHTS  $JSG_DIRECTIONAL_LIGTH_QTD
+
+$IF_SHADOWMAP_ON
+#define MAX_SHADOWS  $JSG_MAX_SHADOWS
+
+
+attribute vec3 aVertexPos;
+attribute vec3 aVertexNormal;
+attribute vec2 aVertexTextureCoords;
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+uniform mat4 uNMatrix;
+uniform int uPosLights; 
+uniform int uDirLights;
+uniform int uUseTexture;
+uniform vec4 uAmbientLight;
+uniform float uShininess;
+uniform vec4 uSpecularColor;
+uniform vec4 uMaterialColor;
+uniform vec4 uAmbientColor;
+uniform bool uUpdateLightPosition;
+uniform mat4 uLMatrix;
+uniform float uCutOff;
+#ifdef MAX_POS_LIGHTS
+uniform vec3 uLightPosition[MAX_POS_LIGHTS];
+uniform vec4 uLightSpecular[MAX_POS_LIGHTS];
+uniform	vec4 uPLightColor[MAX_POS_LIGHTS];
+uniform vec3 uLightPositionDir[MAX_POS_LIGHTS];
+varying vec3 lightdir[MAX_POS_LIGHTS];
+#endif
+uniform int shaderType;         
+#ifdef MAX_DIR_LIGHTS
+uniform vec3 uLightDirection[MAX_DIR_LIGHTS];
+uniform	vec4 uDLightColor[MAX_DIR_LIGHTS];
+uniform	vec4 uDLightSpecular[MAX_DIR_LIGHTS];
+#endif
+varying vec4 vColor;
+varying vec2 vTextureCoords;
+varying vec3 eyeVec;
+varying vec3 vNormal;
+#ifdef MAX_SHADOWS
+uniform mat4 uWLPMatrix[MAX_SHADOWS];
+varying vec4 shadowPosition[MAX_SHADOWS];
+uniform mat4 shadowBiasMatrix;
+uniform int uActiveShadow;
+uniform int uShadowCount;
+#endif
+
+void phong(void){
+    vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
+    eyeVec = -vertex.xyz;
+    vNormal = vec3(uNMatrix * vec4(aVertexNormal, 1.0));
+	#ifdef MAX_POS_LIGHTS
+    for(int i = 0; i < MAX_POS_LIGHTS; i++){
+        vec4 pos = uLMatrix * vec4(uLightPosition[i], 1.0);
+        lightdir[i] = vertex.xyz - pos.xyz;
+    }
+	#endif
+    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPos, 1.0);
+    vTextureCoords = aVertexTextureCoords;
+}
+
+void goroud(void){
+    vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
+    vec3 eyeVec = -vec3(vertex.xyz);
+    vec3 E = normalize(eyeVec);
+    vec4 Ia = uAmbientLight * uAmbientColor;
+    vColor = vec4(0.0, 0.0, 0.0, 1.0);
+    #ifdef MAX_POS_LIGHTS
+    for(int i = 0; i < MAX_POS_LIGHTS; i++){
+        vec3 N = normalize(vec3(uNMatrix * vec4(aVertexNormal, 1.0))-uLightPositionDir[i]);
+        vec4 pos = uLMatrix * vec4(uLightPosition[i], 1.0);
+        vec3 lightdir = vertex.xyz - pos.xyz;
+        vec3 L = normalize(lightdir);
+        vec3 R = reflect(L, N);
+        float lt = dot(N, -L);
+        float specular = pow(max(dot(R,E), 0.0), uShininess);
+        float f = 40.0001; 
+        vec4 Id = uMaterialColor * uPLightColor[i] * pow(lt, f * uCutOff);
+        vec4 Is = uSpecularColor * uLightSpecular[i] * specular;
+        vColor += Id + Is;
+    }
+    #endif
+
+    #ifdef MAX_DIR_LIGHTS
+    vec3 N = normalize(vec3(uNMatrix * vec4(aVertexNormal, 1.0)));
+    for(int i = 0; i < MAX_DIR_LIGHTS; i++){
+        vec3 L = normalize(uLightDirection[i]);
+        vec3 R = reflect(L, N);
+        float lt = dot(N, -L);
+        float specular = pow(max(dot(R,E), 0.0), uShininess);
+        float f = 40.0001; 
+        vec4 Id = uMaterialColor * uDLightColor[i] * pow(lt, f * uCutOff);
+        vec4 Is = uSpecularColor * uDLightSpecular[i] * specular;
+        vColor += Id + Is;
+    }
+    #endif
+	
+    vColor += Ia;
+    vColor[3] = uMaterialColor[3];
+    gl_Position = uPMatrix * vertex;
+    gl_PointSize = 1.0;
+	if (uUseTexture != 0) {
+    	vTextureCoords = aVertexTextureCoords;
+	}
+}
+
+void flatMode(void){
+    vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);
+    gl_Position = uPMatrix * vertex;
+    gl_PointSize = 1.0;
+}
+
+#ifdef MAX_SHADOWS
+void depthMap(void) {		
+	for (int i = 0; i < MAX_SHADOWS; i++) {
+		if (i == uActiveShadow) {
+			gl_Position = uWLPMatrix[i] * vec4(aVertexPos, 1.0);
+			vec3 vertexShifted = vec3(aVertexPos) + 0.5;
+			shadowPosition[i] = shadowBiasMatrix * uWLPMatrix[i] * vec4(vertexShifted, 1.0);
+			break;
+		}
+	}
+}
+
+void shadowMapping(void) {
+	vec3 vertexShifted = vec3(aVertexPos) + 0.5;
+	for (int i = 0; i < MAX_SHADOWS; i++) {
+		if (i >= uShadowCount) break;
+		shadowPosition[i] = shadowBiasMatrix * uWLPMatrix[i] * vec4(vertexShifted, 1.0);
+	}
+}
+#endif
+void main(void) {
+    if (shaderType == 1) {
+        goroud();
+    } else if (shaderType == 2) {
+        phong();
+	} else if (shaderType == 3) {
+		#ifdef MAX_SHADOWS
+		depthMap();
+		#endif	
+	} else if (shaderType == 4) {
+		goroud();
+		#ifdef MAX_SHADOWS
+		shadowMapping();
+		#endif
+	} else if (shaderType == 5) {
+		#ifdef MAX_SHADOWS
+		phong();
+		shadowMapping();
+		#endif
+    } else {
+        flatMode();
+    }
+}

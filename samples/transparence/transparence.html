@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
+	<script type="text/javascript" src="../resources/sphere.js"></script>
+	<script type="text/javascript" src="../resources/cubomagico.js"></script>
+	<script type="text/javascript" src="../../api/sphere.js"></script>
+	<script type="text/javascript" src="../../api/jquery.js"></script>
+	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
+	<script type="text/javascript" src="../../api/jsgutils.js"></script>
+	<script type="text/javascript">
+		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
+
+		function init() {
+			shaders = {};
+			jsg = new jsggl.JsgGl("scenecanvas");
+			jsg.display = display;
+			jsg.initialize = initialize;
+			jsg.finalize = finalize; 
+		
+			shader  = jsggl.Shader;
+			jsg.shader = new shader(jsg);
+			scene = new jsggl.Scene("Default", jsg);
+
+	
+			jsggl.Material.loadFromJSON(jsg, cubomagicomtl);
+			jsggl.Material.loadFromJSON(jsg, Spheremtl);
+			
+			var sphere = new jsggl.Object.loadFromJSON(Sphere, "object");
+			scene.addObject(sphere);
+			
+			var cube = new jsggl.Object.loadFromJSON(cubomagico, "object");
+			cube.showOneTime = false;
+			scene.addObject(cube);		
+		
+			var floor = jsggl.builtin.getFloor(jsg, 50, 50);
+			scene.addObject(floor);
+            
+			var proj = jsggl.Projection.newPerspective(30 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.1, 1000);
+            var orth = jsggl.Projection.newOrtographic(-30, 30, -30, 30, 0.01, 30);
+
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
+			scene.setActiveCamera("orbiting");
+			
+			cam = scene.getActiveCamera();
+			
+			installLights();			
+
+			jsg.addScene(scene);
+			
+			jsg.setActiveScene(scene.name);	
+			configureEvents();
+			if (!jsg.build()){
+				alert("Error: " + jsg.compileProgramStatus);			
+			}			
+			jsg.mainLoop();
+		}
+		
+		function configureEvents() {
+			$("#scenecanvas").mousedown(function(evt){
+				pos = [evt.clientX, evt.clientY];
+			});
+
+			$("#scenecanvas").mouseleave(function(evt){
+				pos = null;
+			});
+
+			$(document).keydown(function(evt){
+				if (cam){ 
+					switch(evt.which){
+					case 38:
+						z = -1;
+						break;
+					case 40:
+						z = 1;
+						break;
+					}	
+
+					cam.position[2] += z;
+					cam.update();
+				}
+			});
+
+			$("#scenecanvas").mouseup(function(evt){
+				pos = null;
+			});
+
+			$("#scenecanvas").mousemove(function(evt){
+				if (pos != null && cam) {
+					var npos = [evt.clientX, evt.clientY, 0.0];
+					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
+					delta[0] = delta[0] * 0.01;
+					delta[1] = delta[1] * 0.01;
+					cam.azimute += delta[0] * 10;
+					cam.elevation += delta[1] * 10;
+					cam.update();					
+					pos = npos;
+				}
+			});
+		}
+
+		function initialize() {
+			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
+			jsg.clearDepth(100.0);
+			jsg.enableDepthTest();
+			jsg.gl.enable(jsg.gl.BLEND);
+			jsg.gl.blendEquation(jsg.gl.FUNC_ADD);
+			jsg.gl.blendFunc(jsg.gl.SRC_ALPHA, jsg.gl.ONE_MINUS_SRC_ALPHA);
+			jsg.depthFunc(jsg.gl.LEQUAL);
+			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
+		}
+		
+		function updateLights(){
+			var x = parseFloat($("#txtX").attr("value")),
+				y = parseFloat($("#txtY").attr("value")),
+				z = parseFloat($("#txtZ").attr("value"));
+			var R = parseFloat($("#txtR").attr("value")),
+				G = parseFloat($("#txtG").attr("value")),
+				B = parseFloat($("#txtB").attr("value"));
+			var pos = [x, y, z];
+			var color = [R, G, B, 1.0];
+			var l = scene.lights.get("Red");
+			l.position = pos;
+			l.color = color;
+			scene.updateLights();
+			jsg.shader.setGlobalValues();
+		}
+		
+		function installLights(){
+			scene.lights.clear();
+			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.0, 2.0, -41.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0], [0.0, 1.0, 0.0]);
+			scene.addLight(red);
+			var green = new jsggl.Light("Green", jsggl.Light.types.POSITIONAL).build([-1.0, 0.0, -41.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [-1.0, -1.0, 0.0]);
+			scene.addLight(green);
+			var blue = new jsggl.Light("Blue", jsggl.Light.types.DIRECTIONAL).build([1.0, 0.0, -41.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0], [1.0, -1.0, 0.0]);
+			scene.addLight(blue);
+			scene.updateLights();
+			jsg.beforeDraw = function() {
+				//jsg.lightMatrix = jsg.modelView;
+			}
+		}
+
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			jsg.run();
+		}
+		
+		function finalize() {
+		
+		}
+
+		function setShininess(evt){
+			shininess = evt.value;
+		}	
+
+		function selectCameraType(evt){
+			if (cam) {
+				scene.setActiveCamera(evt.value);
+				cam = scene.getActiveCamera();	
+				cam.reset();
+			}
+		}
+
+	</script>
+</head>
+<body onload="init();">
+	<div>
+		Utilize as setas para mudar a posic&acedil;o da c&acirc;mera. Para girar a cena, com o bot&atilde;o esquerdo pressionado, movimente o mouse.
+	</div>
+	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
+	<div>Camera Type</div>
+	<div>
+		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
+		<input type="radio"   onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
+	</div>
+</body>
+</html>
+

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="../api/jsg_collections.js"></script>
+	<script type="text/javascript" src="../api/jquery.js"></script>
+	<script type="text/javascript">
+		var dict;
+		
+		function init(){
+			dict = new jsgcol.ArrayMap();
+		}
+
+		function update(){
+			var build = "<ul>";
+			var key = dict.getKeys();
+			for (var i = 0; i < key.length; i++){
+				build += "<li>" + key[i] + " - " + dict.get(key[i]) +  "</li>";
+			}
+			build += "</ul>";
+			$("#display").html(build);
+		}
+
+		function add() {
+			var k = $("#txtKey").attr("value");
+			var n = $("#txtName").attr("value");
+			dict.put(k, n);
+			update();
+		}	
+
+		function rem(){
+			var k = $("#txtKey2").attr("value");
+			if (dict.remove(k)){
+				update();
+			}
+		}
+
+	</script>
+</head>
+<body onload="init();">
+	<div>
+		<label for="txtKey">Key</label><input id="txtKey" type="text"></input>
+		<label for="txtName">Name</label><input id="txtName" type="text"></input>	
+		<div><button id="btnAdd" onclick="add()">Add</button></div>
+	</div>
+	<hr />	
+	<div id="display">
+			
+	</div>
+	<hr />
+	<div>
+		<label for="txtKey">Key</label><input id="txtKey2" type="text"></input>	
+		<div><button id="btnRemove" onclick="rem()">Remove</button></div>
+	</div>
+</body>
+</html>
+

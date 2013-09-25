@@ -1,0 +1,11 @@
+precision highp float;        
+precision highp int;
+
+attribute vec3 aVertexPos;
+varying vec2 vZW;
+uniform mat4 uWLPMatrix;
+        
+void main(void) {
+        gl_Position = uWLPMatrix * vec4(aVertexPosition, 1.0);
+        vZW = gl_Position.zw;
+}

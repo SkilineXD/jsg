@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
+	<script type="text/javascript" src="../resources/cubo.js"></script>
+	<script type="text/javascript" src="../resources/wall.js"></script>
+	<script type="text/javascript" src="../../api/jquery.js"></script>
+	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_extras.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
+	<script type="text/javascript" src="../../api/jsgutils.js"></script>
+	<script type="text/javascript">
+		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0;
+		var cam;
+
+		function init() {
+			jsg = new jsggl.JsgGl("scenecanvas");
+			jsg.display = display;
+			jsg.initialize = initialize;
+			jsg.finalize = finalize; 
+		
+			jsg.shader = new jsggl.Shader(jsg);
+			scene = new jsggl.Scene("Default", jsg);
+
+			jsggl.Material.loadFromJSON(jsg, Cubomtl);
+			jsggl.Material.loadFromJSON(jsg, Planmtl);
+
+			var plan = jsggl.Object.loadFromJSON(Plan, "object");
+			plan.scale([1.2, 0.09, 1.2]);
+			plan.shadowEnabled = false;
+			plan.receiveShadow = true;
+			scene.addObject(plan);
+			
+			var cube = jsggl.Object.loadFromJSON(Cubo, "object");
+			cube.scale([0.5, 0.5, 0.5]);
+			cube.shadowEnabled = true;
+			cube.receiveShadow = true;
+			cube.setPosition([0.0, 2.0, 0.0]);			
+			scene.addObject(cube);
+
+			var cube2 = jsggl.Object.loadFromJSON(Cubo, "object");
+			cube2.name = "cube2";
+			cube2.scale([0.5, 0.5, 0.5]);
+			cube2.shadowEnabled = true;
+			cube2.receiveShadow = false;
+			cube2.setPosition([2.01, 5.0, 0.01]);			
+			scene.addObject(cube2);
+			
+			scene.shadowEnabled = true;
+
+			var proj = jsggl.Projection.newPerspective(45 * Math.PI/180.0,(jsg.canvas.width)/jsg.canvas.height, 0.1, 1000);
+
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
+			scene.setActiveCamera("orbiting");
+
+			cam = scene.getActiveCamera();
+			cam.position[1] += 6;
+			cam.position[2] += 4;
+			cam.update();
+			installLights();			
+
+			jsg.addScene(scene);
+
+			jsg.setActiveScene(scene.name);	
+			configureEvents();
+			if (!jsg.build()){
+				alert("Error: " + jsg.compileProgramStatus);			
+			}			
+			jsg.mainLoop();
+		}
+
+		function configureEvents() {
+			$("#scenecanvas").mousedown(function(evt){
+				pos = [evt.clientX, evt.clientY];
+			});
+
+			$("#scenecanvas").mouseleave(function(evt){
+				pos = null;
+			});
+
+			$(document).keydown(function(evt){
+				if (cam){ 
+					switch(evt.which){
+					case 38:
+						z = -1;
+						break;
+					case 40:
+						z = 1;
+						break;
+					}	
+
+					cam.position[2] += z;
+					cam.update();
+				}
+			});
+
+			$("#scenecanvas").mouseup(function(evt){
+				pos = null;
+			});
+
+			$("#scenecanvas").mousemove(function(evt){
+				if (pos != null && cam) {
+					var npos = [evt.clientX, evt.clientY, 0.0];
+					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
+					delta[0] = delta[0] * 0.01;
+					delta[1] = delta[1] * 0.01;
+					cam.azimute += delta[0] * 10;
+					cam.elevation += delta[1] * 10;
+					cam.update();					
+					pos = npos;
+				}
+			});
+		}
+
+		function initialize() {
+			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
+			jsg.clearDepth(100.0);
+			jsg.enableDepthTest();
+			jsg.depthFunc(jsg.gl.LEQUAL);
+			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
+		}
+		
+		function updateLights(){
+			var x = parseFloat($("#txtX").attr("value")),
+				y = parseFloat($("#txtY").attr("value")),
+				z = parseFloat($("#txtZ").attr("value"));
+			var R = parseFloat($("#txtR").attr("value")),
+				G = parseFloat($("#txtG").attr("value")),
+				B = parseFloat($("#txtB").attr("value"));
+			var pos = [x, y, z];
+			var color = [R, G, B, 1.0];
+			var l = scene.lights.get("Red");
+			l.position = pos;
+			l.color = color;
+			scene.updateLights();
+			jsg.shader.setGlobalValues();
+		}
+		
+		function installLights(){
+			scene.lights.clear();
+			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.001, 14.0, 0.0001], [0.5, 0.5, 0.5, 1.0], [0.01, 0.01, 0.01, 1.0]);
+			var red2 = new jsggl.Light("Red2", jsggl.Light.types.POSITIONAL).build([0, 15.0, -20], [1.0, 1.0, 1.0, 1.0], [0.001, 0.001, 0.001, 1.0]);
+			red.shadowEnabled = true;
+		//	red2.shadowEnabled = true;
+			scene.addLight(red);
+			scene.addLight(red2);
+			scene.updateLights();
+			jsg.beforeDraw = function() {
+				//jsg.lightMatrix = jsg.modelView;
+			}
+		}
+
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			jsg.run();
+		}
+		
+		function finalize() {
+		
+		}
+
+		function setShininess(evt){
+			shininess = evt.value;
+		}	
+
+		function selectCameraType(evt){
+			if (cam) {
+				scene.setActiveCamera(evt.value);
+				cam = scene.getActiveCamera();	
+				cam.reset();
+			}
+		}
+
+	</script>
+</head>
+<body onload="init();">
+	<div>
+		Utilize as setas para mudar a posic&cedil;o da c&atilde;mera. Para girar a cena, com o bot&atilde;o esquerdo pressionado, movimente o mouse.
+	</div>
+	<canvas id="scenecanvas" width="512" height="512" style="border: 1px dotted"></canvas>
+	<div>Camera Type</div>
+	<div>
+		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
+		<input type="radio"   onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
+	</div>
+</body>
+</html>
+
