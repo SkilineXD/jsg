@@ -3,20 +3,20 @@
 <html>
 <head>
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
-	<script type="text/javascript" src="gl-matrix.js"></script>
-	<script type="text/javascript" src="sphere.js"></script>
-	<script type="text/javascript" src="cubomagico.js"></script>
-	<script type="text/javascript" src="sphere.js"></script>
-	<script type="text/javascript" src="jquery.js"></script>
-	<script type="text/javascript" src="jsg_collections.js"></script>
-	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="jsgwebgl.js"></script>
-	<script type="text/javascript" src="jsgutils.js"></script>
+	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
+	<script type="text/javascript" src="../resources/sphere.js"></script>
+	<script type="text/javascript" src="../resources/cubomagico.js"></script>
+	<script type="text/javascript" src="../../api/sphere.js"></script>
+	<script type="text/javascript" src="../../api/jquery.js"></script>
+	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
+	<script type="text/javascript" src="../../api/jsgutils.js"></script>
 	<script type="text/javascript">
 		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 
@@ -175,7 +175,7 @@
 </head>
 <body onload="init();">
 	<div>
-		Utilize as setas para mudar a posic&cedil;o da c&acirc;mera. Para girar a cena, com o bot&atilde;o esquerdo pressionado, movimente o mouse.
+		Utilize as setas para mudar a posic&acedil;o da c&acirc;mera. Para girar a cena, com o bot&atilde;o esquerdo pressionado, movimente o mouse.
 	</div>
 	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
 	<div>Camera Type</div>

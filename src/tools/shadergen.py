@@ -25,7 +25,7 @@ def generateShaders(ss, vsp, fsp):
 		sst = open(ss, 'r')
 		vspt = open(vsp, 'r');
 		fspt = open(fsp, 'r');
-		out = open("jsgwebgl_shader.js", "w");
+		out = open("../api/jsgwebgl_shader.js", "w");
 		
 		for sline in sst:
 			if (sline.find("//LOAD_SHADERS") != -1):
@@ -51,9 +51,9 @@ def generateShaders(ss, vsp, fsp):
 		sst.close();
 		vspt.close();
 		fspt.close();
-shaderScript = "shaderscript.tpl"
-vertexShader = "shadervs.txt"
-fragShader = "shaderfs.txt"
+shaderScript = "../templates/shaderscript.tpl"
+vertexShader = "../templates/shadervs.txt"
+fragShader = "../templates/shaderfs.txt"
 
 n = len(sys.argv)
 if (n == 3):

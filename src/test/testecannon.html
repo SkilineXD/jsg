@@ -7,21 +7,21 @@ Publication Date: 25 de julho de 2013.
 <html>
 <head>
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
-	<script type="text/javascript" src="gl-matrix.js"></script>
-	<script type="text/javascript" src="cannon.js"></script>
-	<script type="text/javascript" src="cubo.js"></script>
-	<script type="text/javascript" src="wall.js"></script>
-	<script type="text/javascript" src="jquery.js"></script>
-	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="jsggl_interaction.js"></script>
-	<script type="text/javascript" src="jsg_collections.js"></script>
-	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="jsgwebgl.js"></script>
-	<script type="text/javascript" src="jsgutils.js"></script>
+	<script type="text/javascript" src="../api/gl-matrix.js"></script>
+	<script type="text/javascript" src="../api/cannon.js"></script>
+	<script type="text/javascript" src="../samples/resources/cubo.js"></script>
+	<script type="text/javascript" src="../samples/resources/wall.js"></script>
+	<script type="text/javascript" src="../api/jquery.js"></script>
+	<script type="text/javascript" src="../api/jsgwebgl_obj.js"></script>
+	<script type="text/javascript" src="../api/jsggl_interaction.js"></script>
+	<script type="text/javascript" src="../api/jsg_collections.js"></script>
+	<script type="text/javascript" src="../api/jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="../api/jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="../api/jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="../api/jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="../api/jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="../api/jsgwebgl.js"></script>
+	<script type="text/javascript" src="../api/jsgutils.js"></script>
 	<script type="text/javascript">
 		var jsg, scene, shader, objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam, world, cubo, mass, shape;
 		
@@ -87,7 +87,7 @@ Publication Date: 25 de julho de 2013.
 			jsg.setActiveScene(scene.name); //It define active scene
 			
 
-			jsg.shader = new jsggl.PhongShader(jsg); //Here is defined shader method
+			jsg.shader = new jsggl.Shader(jsg); //Here is defined shader method
 
 			if (!jsg.build()){ //Here JSG system is built
 				alert("Error: " + jsg.compileProgramStatus); //If configurations error is found...			

@@ -12,7 +12,7 @@ jsggl.Light = function(name, type){
 			this.position = arg1;
 			pos = this.position;
 			this.direction = positionDirection || [0.0, 0.0, 0.0];
-			this.projection = jsggl.Projection.newPerspective(20 * Math.PI/180.0, (jsg.canvas.width)/(jsg.canvas.height), 0.1, 1000);
+			this.projection = jsggl.Projection.newPerspective(17 * Math.PI/180.0, (jsg.canvas.width)/(jsg.canvas.height), 0.1, 1000);
 		} else if (this.type == jsggl.Light.types.DIRECTIONAL) {
 			this.direction = arg1;
 			pos = this.direction;

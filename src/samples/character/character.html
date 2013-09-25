@@ -8,25 +8,23 @@ Publication Date: 10 de julho de 2013.
 <head>
 	<meta charset="UTF-8">
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
-	<script type="text/javascript" src="gl-matrix.js"></script>
-	<script type="text/javascript" src="cone.js"></script>
-	<script type="text/javascript" src="sphere.js"></script>
-	<script type="text/javascript" src="wall.js"></script>
+	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
+	<script type="text/javascript" src="../resources/wall.js"></script>
 	<script type="text/javascript" src="jimmy.js"></script>
-	<script type="text/javascript" src="jquery.js"></script>
-	<script type="text/javascript" src="jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="jsggl_interaction.js"></script>
-	<script type="text/javascript" src="jsg_collections.js"></script>
-	<script type="text/javascript" src="jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="jsgwebgl_extras.js"></script>
-	<script type="text/javascript" src="jsgwebgl.js"></script>
-	<script type="text/javascript" src="jsgutils.js"></script>
+	<script type="text/javascript" src="../../api/jquery.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
+	<script type="text/javascript" src="../../api/jsggl_interaction.js"></script>
+	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl_extras.js"></script>
+	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
+	<script type="text/javascript" src="../../api/jsgutils.js"></script>
 	<script type="text/javascript">
-		var jsg, scene, shader, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
+		var jsg, scene, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		function init() {
 			
 			jsg = new jsggl.JsgGl("scenecanvas");
@@ -42,16 +40,17 @@ Publication Date: 10 de julho de 2013.
 			cam = scene.getActiveCamera();
 			
 			var plan = jsggl.Object.loadFromJSON(Plan, "object");
-			plan.scale([1.2, 0.09, 1.2]);
+			plan.scale([4.2, 1.0, 2.2]);
+			plan.translate([0.0, -0.16, 0.0]);
 			plan.shadowEnabled = false;
 			plan.receiveShadow = true;
 			scene.addObject(plan);
 			
 			
-			var olist = [Cone, Sphere, jimmy];
-			var mlist = [Conemtl, Spheremtl, jimmymtl];	
+			var olist = [jimmy];
+			var mlist = [jimmymtl];	
 	
-			for (var j = 2; j < olist.length; j++) {			
+			for (var j = 0; j < olist.length; j++) {			
 				var objson = olist[j];
 				var objsonmtl = mlist[j];
 				jsggl.Material.loadFromJSON(jsg, objsonmtl);
@@ -66,10 +65,6 @@ Publication Date: 10 de julho de 2013.
 						var newObj = jsggl.Object.loadFromJSON(objson, "object", i);
 						newObj.shadowEnabled = true;
 						newObj.receiveShadow = true;
-						if (newObj.name=="Cone") {
-							newObj.scale([0.7, 0.7, 0.7]);
-							newObj.translate([0.0, -1.2, 0.0]);
-						}
 						scene.addObject(newObj);
 					}
 				}
@@ -84,9 +79,8 @@ Publication Date: 10 de julho de 2013.
 			jsg.setActiveScene(scene.name);
 			//END:CONFIGURE SCENE
 			
-			//BEGIN: SETUP SHADER
-			shader  = jsggl.Shader;			
-			jsg.shader = new shader(jsg);
+			//BEGIN: SETUP SHADER	
+			jsg.shader = new jsggl.Shader(jsg);
 			//END: SETUP SHADER
 			
 			//BEGIN:ENVIRONMENT BUILDING
@@ -176,7 +170,7 @@ Publication Date: 10 de julho de 2013.
 
 		function installLights(){
 			scene.lights.clear();
-			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([0.0001, 12.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
+			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([-0.0001, 12.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
 			pos0.shadowEnabled = true;
 			var pos1 = new jsggl.Light("B", jsggl.Light.types.POSITIONAL).build([0.0, 0.0, -2.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
 			
@@ -190,22 +184,6 @@ Publication Date: 10 de julho de 2013.
 			scene.updateLights();
 		}
 		
-		function updateLights(){
-			var x = parseFloat($("#txtX").attr("value")),
-				y = parseFloat($("#txtY").attr("value")),
-				z = parseFloat($("#txtZ").attr("value"));
-			var R = parseFloat($("#txtR").attr("value")),
-				G = parseFloat($("#txtG").attr("value")),
-				B = parseFloat($("#txtB").attr("value"));
-			var pos = [x, y, z];
-			var color = [R, G, B, 1.0];
-			var l = scene.lights.get("A");
-			l.position = pos;
-			l.color = color;
-			scene.updateLights();
-			jsg.shader.setGlobalValues();
-		}
-
 		function selectCameraType(evt){
 			scene.setActiveCamera(evt.value);
 			cam = scene.getActiveCamera();	
