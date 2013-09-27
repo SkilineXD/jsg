@@ -7,7 +7,6 @@ $IF_POSITIVE_DIR_LIGHT_QTD
 $IF_SHADOWMAP_ON
 #define MAX_SHADOWS  $JSG_MAX_SHADOWS
 
-
 attribute vec3 aVertexPos;
 attribute vec3 aVertexNormal;
 attribute vec2 aVertexTextureCoords;

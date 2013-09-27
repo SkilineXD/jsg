@@ -1,6 +1,5 @@
 var jsggl = jsggl || {};
 
-
 jsggl.Projection = function(type){
 	this.type = type;
 	if (type == jsggl.Projection.type.PERSPECTIVE) {

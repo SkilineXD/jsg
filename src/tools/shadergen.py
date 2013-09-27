@@ -2,7 +2,6 @@
 import string
 import sys
 
-
 def parseLine(line, shaderType, tabs):
 	line = line.strip()
 	oline = line + ""

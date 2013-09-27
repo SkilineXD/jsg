@@ -573,7 +573,7 @@ jsggl.Shader = function(jsg){
 		this.fragShader.text.push("flatMode();");
 		this.fragShader.text.push("}");
 		this.fragShader.text.push("}");
-        	this.updateGlobalValues();
+        this.updateGlobalValues();
 	}
 	return this;
 }

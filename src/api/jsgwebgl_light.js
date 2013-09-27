@@ -1,6 +1,5 @@
 var jsggl = jsggl || {};
 
-
 jsggl.Light = function(name, type){
 	this.name = name;
 	this.type = type;

@@ -234,7 +234,7 @@ jsggl.Shader = function(jsg){
 			throw new Error("Shadow light quantity limit is " + this.maxShadows + ",  but " + jsg.shadowCount + " shadow light quantity was found.");
 		}
 		//LOAD_SHADERS, 2
-        	this.updateGlobalValues();
+        this.updateGlobalValues();
 	}
 	return this;
 }

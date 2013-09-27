@@ -1,3 +1,4 @@
+var jsggl = jsggl ||  {};
 
 jsggl.Scene = function(name, jsg){
 	this.name = name;

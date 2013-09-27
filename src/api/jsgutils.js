@@ -1,7 +1,5 @@
-
 var jsgutils = jsgutils || {}
  
-
 jsgutils.Point2D = function(x, y) {
 	this.x = x;
 	this.y = y;
@@ -294,4 +292,3 @@ jsgutils.calcNormals = function(vertices, indices) {
 	
 	return normals;
 };
-
