@@ -11,7 +11,7 @@ class Option:
 		self.arguments.add(arg)
 		
 	def generateJSON(self):
-		print(""),
+		print("", end='')
 		
 class TexMap:
 	def __init__(self, name):
@@ -27,13 +27,13 @@ class TexMap:
 		self.currentOption = self.options[i]
 		
 	def generateJSON(self):
-		print("{"),
-		print("\"texpath\":\"{0}\"".format(self.texpath)),
+		print("{", end='')
+		print("\"texpath\":\"{0}\"".format(self.texpath), end='')
 		if (len(self.options) > 0):
-			print(", "),
+			print(", ", end='')
 			for op in options:
 				op.generateJSN()
-		print("}"),
+		print("}", end='')
 class Material:
 	def __init__(self, name, ambColor, diffColor, specColor, shininess, transparence, opticalDensity):
 		self.name = name
@@ -47,23 +47,25 @@ class Material:
 		self.mapkd = None
 		
 	def generateJSON(self):
-		print("{"),
-		print("\"name\":\"{0}\",".format(self.name)),
-		print("\"ambient\":[{0}, {1}, {2}, {3}],".format(self.ambient[0], self.ambient[1], self.ambient[2], self.ambient[3])),
-		print("\"diffuse\":[{0}, {1}, {2}, {3}],".format(self.diffuse[0], self.diffuse[1], self.diffuse[2], self.diffuse[3])),
-		print("\"specular\":[{0}, {1}, {2}, {3}],".format(self.specular[0], self.specular[1], self.specular[2], self.specular[3])),
-		print("\"shininess\":{0},".format(self.shininess)),
-		print("\"transparence\":{0},".format(self.transparence)),
-		print("\"opticalDensity\":{0}".format(self.opticalDensity)),
+		print("{", end='')
+		print("\"name\":\"{0}\",".format(self.name), end='')
+		print("\"ambient\":[{0}, {1}, {2}, {3}],".format(self.ambient[0], self.ambient[1], self.ambient[2], self.ambient[3]), end='')
+		print("\"diffuse\":[{0}, {1}, {2}, {3}],".format(self.diffuse[0], self.diffuse[1], self.diffuse[2], self.diffuse[3]), end='')
+		print("\"specular\":[{0}, {1}, {2}, {3}],".format(self.specular[0], self.specular[1], self.specular[2], self.specular[3]), end='')
+		print("\"shininess\":{0},".format(self.shininess), end='')
+		print("\"transparence\":{0},".format(self.transparence), end='')
+		print("\"opticalDensity\":{0},".format(self.opticalDensity), end='')
+		print("\"shaderType\":{0}".format("1"), end='')
 		if (self.mapkd):
-			print(", "),
-			print("\"mapkd\": "),
+			print(", ", end='')
+			print("\"mapkd\": ", end='')
 			self.mapkd.generateJSON()
 		if (self.mapka):
-			print(", "),
-			print("\"mapka\": "),
+			print(", ", end='')
+			print("\"mapka\": ", end='')
 			self.mapka.generateJSON()
-		print("}"),
+		print("}", end='')
+
 class ModelDescription:
 	def __init__(self, name):
 		self.materials = []
@@ -74,7 +76,7 @@ class ModelDescription:
 
 	def generateJSON(self):
 		print("var {0} = {1}".format(self.name,"{"))
-		print("\"materialList\":["),
+		print("\"materialList\":[", end='')
 		i = 0
 		for mat in self.materials:
 			if i > 0:

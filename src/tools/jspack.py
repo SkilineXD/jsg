@@ -15,8 +15,7 @@ def pack(outpath):
 			out.write(line)
 		script.close();
 	out.close()
-	
-	
+
 n = len(sys.argv)
 path = "../dist/jsg3d.js"
 if (n > 1):

@@ -2,52 +2,57 @@
 
 <html>
 <head>
+	<meta charset="UTF-8">
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
-	<script type="text/javascript" src="../resources/wall.js"></script>
+	<script type="text/javascript" src="../resources/boxman.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
 	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
+
 	<script type="text/javascript">
-		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
-		
+		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0;
+		var cam;
+
 		function init() {
-			shaders = {};
 			jsg = new jsggl.JsgGl("scenecanvas");
 			jsg.display = display;
 			jsg.initialize = initialize;
 			jsg.finalize = finalize; 
-
-			shader = jsggl.Shader;
-			jsg.shader = new shader(jsg);
+		
+			jsg.shader = new jsggl.Shader(jsg);
 			scene = new jsggl.Scene("Default", jsg);
+
+			jsggl.Material.loadFromJSON(jsg, boxmanmtl);
 			
-			jsggl.Material.loadFromJSON(jsg, wallmtl);
-			var wall0 = new jsggl.Object.loadFromJSON(wall, "object");
-			wall0.translate([0.0, 1.0, -30.0]);
-			wall0.scale([8.0, 8.0, 1.0]);
-			wall0.rotate(90 * Math.PI/180, [1.0, 0.0, 0.0]);
-			scene.addObject(wall0);
-			
-			var proj = jsggl.Projection.newPerspective(30 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.1, 1000);
-			
+			var boxman3d = jsggl.Object.loadFromJSON(boxman, "object");
+			boxman3d.scale([0.5, 0.5, 0.5]);
+			boxman3d.shadowEnabled = true;
+			boxman3d.receiveShadow = false;
+			boxman3d.setPosition([0.0, 2.0, 0.0]);			
+			scene.addObject(boxman3d);
+
+			var proj = jsggl.Projection.newPerspective(45 * Math.PI/180.0,(jsg.canvas.width)/jsg.canvas.height, 0.1, 1000);
+
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
 			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
 			scene.setActiveCamera("orbiting");
-			
+
 			cam = scene.getActiveCamera();
-			
+			cam.position[1] += 6;
+			cam.position[2] += 4;
+			cam.update();
 			installLights();			
 
 			jsg.addScene(scene);
-			
-			jsg.setActiveScene(scene.name);
+
+			jsg.setActiveScene(scene.name);	
 			configureEvents();
 			if (!jsg.build()){
 				alert("Error: " + jsg.compileProgramStatus);			
 			}			
 			jsg.mainLoop();
 		}
-		
+
 		function configureEvents() {
 			$("#scenecanvas").mousedown(function(evt){
 				pos = [evt.clientX, evt.clientY];
@@ -95,8 +100,6 @@
 			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
 			jsg.clearDepth(100.0);
 			jsg.enableDepthTest();
-			//jsg.gl.enable(jsg.gl.BLEND);
-			//jsg.gl.blendEquation(jsg.gl.FUNC_ADD);
 			jsg.depthFunc(jsg.gl.LEQUAL);
 			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
 		}
@@ -119,12 +122,12 @@
 		
 		function installLights(){
 			scene.lights.clear();
-			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.0, 2.0, -41.0], [1.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0]);
+			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.001, 14.0, 0.0001], [0.5, 0.5, 0.5, 1.0], [0.01, 0.01, 0.01, 1.0]);
+			var red2 = new jsggl.Light("Red2", jsggl.Light.types.POSITIONAL).build([0, 15.0, 0], [1.0, 1.0, 1.0, 1.0], [0.001, 0.001, 0.001, 1.0]);
+		//	red.shadowEnabled = true;
+		//	red2.shadowEnabled = true;
 			scene.addLight(red);
-			var green = new jsggl.Light("Green", jsggl.Light.types.POSITIONAL).build([-1.0, 0.0, -41.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [-1.0, -1.0, 0.0]);
-			scene.addLight(green);
-			var blue = new jsggl.Light("Blue", jsggl.Light.types.POSITIONAL).build([1.0, 0.0, -41.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0], [1.0, -1.0, 0.0]);
-			scene.addLight(blue);
+			scene.addLight(red2);
 			scene.updateLights();
 			jsg.beforeDraw = function() {
 				//jsg.lightMatrix = jsg.modelView;
@@ -140,7 +143,6 @@
 		
 		}
 
-		
 		function setShininess(evt){
 			shininess = evt.value;
 		}	
@@ -157,10 +159,9 @@
 </head>
 <body onload="init();">
 	<div>
-		Utilize as setas para mudar a posi&ccedil;&atilde;o da c&acirc;mera. Para girar a cena, com o bot&atilde;o esquerdo pressionado, movimente o mouse.
+		Utilize as setas para mudar a posic&cedil;o da c&atilde;mera. Para girar a cena, com o bot&atilde;o esquerdo pressionado, movimente o mouse.
 	</div>
-	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
-	</div>
+	<canvas id="scenecanvas" width="512" height="512" style="border: 1px dotted"></canvas>
 	<div>Camera Type</div>
 	<div>
 		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
@@ -168,3 +169,4 @@
 	</div>
 </body>
 </html>
+

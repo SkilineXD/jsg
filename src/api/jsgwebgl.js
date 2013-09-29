@@ -38,6 +38,7 @@ jsggl.JsgGl = function(id){
 	//BEGIN: state attributes
 	this.id = id;
 	this.materials = {};
+	this.materials["Material"] =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1};
 	this.scenes = new jsgcol.ArrayMap();
 	this.activeScene = null;
 	this.currentScene = null;
@@ -275,7 +276,7 @@ jsggl.Drawable = function(name, globj){
 	this.texBuffer = undefined;
 	this.renderingmode = this.gl.LINES;
 	this.groupNameList = []
-	this.material = undefined;
+	this.material = [];
     this.textureRendering = function(){
         this.build = function(){};
         this.bind = function(){};
@@ -297,9 +298,8 @@ jsggl.Drawable.prototype = {
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
 			this.vertexBuffer.push(vBuffer)
-			
 			if (this.textures) {
-				if (this.textures.length > 0 && this.textures[0] && this.textures[0][0] != -2) {
+				if (this.textures.length > 0 && this.textures[i] != undefined && this.textures[i][0] != -2) {
 					var tBuffer = this.gl.createBuffer();
 					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tBuffer); 
 					this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.textures[i]), this.gl.STATIC_DRAW);
@@ -338,47 +338,34 @@ jsggl.Drawable.prototype = {
 	},
 
 	draw : function() {
+		var DEPTH_SHADER = 3, SHADER_SHIFT=3, FLAT_SHADER=-1;
         var prg = this.jsg.program;
-		this.jsg.beforeDraw();
-		var mvMatrix = this.jsg.getModelView();
 		var stbkp = this.jsg.shaderType;
+
+		this.jsg.beforeDraw(); //EVENT NOTIFICATION
+
+		var mvMatrix = this.jsg.getModelView();
 		var nMatrix = mat4.create();
-		mat4.transpose(nMatrix, mvMatrix);
-		
+		mat4.transpose(nMatrix, mvMatrix);	
 		this.jsg.normalMatrix = nMatrix;
-	
-		if (this.material) {
-			var material = this.material;
-			this.jsg.materialColor = material.diffuse;
-		}
 		
+		var materialList = this.material;
 		for (var i = 0; i < this.indexBuffer.length; i++) {
-			var group = this.groupNameList[i]
-					
-			if (!this.material) {
-				var material = this.jsg.materials[group];
-				if (!material) { 
-					material = {};
-					material.diffuse = [1.0, 1.0, 1.0, 1.0];
-					material.ambient = [0.001, 0.001, 0.001, 1.0];
-					material.specular = [0.0, 0.0, 0.0, 1.0];
-					material.shininess = 1.0;
-					material.shaderType = 1;
-				}
-				this.jsg.materialColor = material.diffuse;
-				this.jsg.ambientColor = material.ambient;
-				this.jsg.specularColor = material.specular;
-				this.jsg.shininess = material.shininess;
-			} 
-
-
-			if (this.jsg.shaderType != 3){
-				this.jsg.shaderType = material.shaderType || -1;
+			var group = materialList[i];
+			var material = this.forceMaterial || this.jsg.materials[group];
+			this.jsg.materialColor = material.diffuse;
+			this.jsg.ambientColor = material.ambient;
+			this.jsg.specularColor = material.specular;
+			this.jsg.shininess = material.shininess;
+	 
+			if (this.jsg.shaderType != DEPTH_SHADER){
+				this.jsg.shaderType = material.shaderType || FLAT_SHADER;
 			}
 
-			if ( (this.receiveShadow) && this.jsg.shaderType != 3) { //3 = make depth map
-				this.jsg.shaderType =  material.shaderType + 3; //gouroud or phong shading
+			if ( (this.receiveShadow) && this.jsg.shaderType != DEPTH_SHADER) { //3 = make depth map
+				this.jsg.shaderType =  material.shaderType + SHADER_SHIFT; //gouroud or phong shading
 			} 
+			
 			this.jsg.currentVertexPosition = this.vertexBuffer[i];
 			this.jsg.currentVertexNormal = this.normalsBuffer[i];
 			this.jsg.currentTexPosition = this.texBuffer[i];
@@ -404,7 +391,8 @@ jsggl.Drawable.prototype = {
 		this.currentVertexNormal = null;
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-		this.jsg.afterDraw();
+		
+		this.jsg.afterDraw(); //EVENT NOTIFICATION
 	},
 
 	simpleDraw: function(i) {

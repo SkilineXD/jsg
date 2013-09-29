@@ -34,10 +34,10 @@ jsggl.builtin.getFloor = function(jsg, dim, lines){
 	g.vertices = [v];
 	g.indices = [i];
 	g.groupNameList = ["floor"];
+	g.material = ["floor"]
 	var obj  = new jsggl.Object("floor");
 	obj.addGroup(g);
-	obj.material =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1};
-	
+	jsg.materials["floor"] =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1};
 	return obj;
 }
 
@@ -48,13 +48,13 @@ jsggl.Object = function(name) {
 	this.showBackFace = true;
 	this.shadowEnabled = false;
 	this.receiveShadow = false;
-	this.renderGroup = new jsgcol.ArrayMap();
+	this.group = new jsgcol.ArrayMap();
 	this.transforms = mat4.create();
 	this.center = vec3.fromValues(0.0, 0.0, 0.0);
 	mat4.identity(this.transforms);
 
 	this.getGroup = function(name) {
-		return this.renderGroup.get(name);
+		return this.group.get(name);
 	}
 	
 	this.setPosition = function(pos){
@@ -82,7 +82,6 @@ jsggl.Object = function(name) {
 	this.getPivot = function() {
 		var c = this.center;
 		var v = vec3.fromValues(c[0], c[1], c[2]);
-		//return vec4.(vec4.create(), v, this.getTransformations());
 		return vec3.add(vec3.create(), v, this.getTranslations());
 	}
 	
@@ -90,7 +89,7 @@ jsggl.Object = function(name) {
 		var x = [1000000, -1000000];
 		var y = [1000000, -1000000];
 		var z = [1000000, -1000000];
-		this.renderGroup.forEach(function(g){
+		this.group.forEach(function(g){
 			var vl = g.vertices[0];
 			for (var i = 0; i < vl.length; i = i + 3) {
 				if (x[0] > vl[i]) {
@@ -129,12 +128,16 @@ jsggl.Object = function(name) {
 		return vec3.fromValues(this.transforms[12], this.transforms[13], this.transforms[14]);
 	}
 
+	this.setMaterial = function(mat) {
+		this.material = mat;
+	}
+	
 	this.addGroup = function(g){
-		this.renderGroup.put(g.name, g);
+		this.group.put(g.name, g);
 	}
 
 	this.removeGroup = function(name){
-		this.renderGroup.remove(name);
+		this.group.remove(name);
 	}
 
 	this.translate = function(tv){
@@ -151,22 +154,24 @@ jsggl.Object = function(name) {
 
 	this.linkDataCopy = function(name) {
 		var obj = new jsggl.Object(name);
-		obj.renderGroup = this.renderGroup;
+		this.forEachGroup(function(g){
+			obj.addGroup(g);
+		});
 		return obj;
 	}
 
-	this.forEachRenderGroup = function(callback){
-		var keys = this.renderGroup.getKeys();
+	this.forEachGroup = function(callback){
+		var keys = this.group.getKeys();
 		for (var i = 0; i < keys.length; i++) {
-			var g = this.renderGroup.get(keys[i]);
+			var g = this.group.get(keys[i]);
 			callback(g);
 		}
 	}
 
 	this.build = function(){
-		var keys = this.renderGroup.getKeys();
+		var keys = this.group.getKeys();
 		for (var i = 0; i < keys.length; i++) {
-			this.renderGroup.get(keys[i]).build();
+			this.group.get(keys[i]).build();
 		}
 		this.centerToGeometry();
 	}
@@ -174,16 +179,16 @@ jsggl.Object = function(name) {
 	this.draw = function(jsg){
 		jsg.pushModelView();
 		mat4.multiply(jsg.modelView, jsg.modelView, this.transforms);
-		var keys = this.renderGroup.getKeys();
+		var keys = this.group.getKeys();
 		for (var i = 0; i < keys.length; i++) {
-			var g = this.renderGroup.get(keys[i]);
+			var g = this.group.get(keys[i]);
 			g.showFrontFace = this.showFrontFace;
 			g.showBackFace = this.showBackFace;
 			g.showOneTime = this.showOneTime;			
-			g.material = this.material;
 			var bkp = [g.shadowEnabled, g.receiveShadow];
 			g.shadowEnabled = this.shadowEnabled;
 			g.receiveShadow = this.receiveShadow;
+			g.forceMaterial = this.material;
 			g.draw();
 			g.shadowEnabled = bkp[0];
 			g.receiveShadow = bkp[1];
@@ -202,7 +207,8 @@ jsggl.Object.loadFromJSON = function(objson, type, ID) {
 			obj3d.indices = ob.indices;
 			obj3d.vertices = ob.vertices;
 			obj3d.textures = ob.textmap;
-			obj3d.groupNameList = ob.groupName;				
+			obj3d.groupNameList = ob.groupName;
+			obj3d.material = ob.groupMaterial;
 			obj3d.setRenderingMode(jsg.TRIANGLES);
 			obj.addGroup(obj3d);
 		}
@@ -213,7 +219,9 @@ jsggl.Object.loadFromJSON = function(objson, type, ID) {
 		var obj3d = new jsggl.Drawable(ob.name, jsg);
 		obj3d.indices = ob.indices;
 		obj3d.vertices = ob.vertices;			
-		obj3d.groupNameList = ob.groupName;				
+		obj3d.textures = ob.textmap;
+		obj3d.groupNameList = ob.groupName;	
+		obj3d.material = ob.groupMaterial;
 		obj3d.setRenderingMode(jsg.TRIANGLES);
 		obj.addGroup(obj3d);
 		return obj;

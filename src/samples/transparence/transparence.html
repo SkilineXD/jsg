@@ -33,14 +33,14 @@
 
 	
 			jsggl.Material.loadFromJSON(jsg, cubomagicomtl);
-			jsggl.Material.loadFromJSON(jsg, Spheremtl);
+			jsggl.Material.loadFromJSON(jsg, spheremtl);
 			
-			var sphere = new jsggl.Object.loadFromJSON(Sphere, "object");
-			scene.addObject(sphere);
+			var sphere3d = new jsggl.Object.loadFromJSON(sphere, "object");
+			scene.addObject(sphere3d);
 			
-			var cube = new jsggl.Object.loadFromJSON(cubomagico, "object");
-			cube.showOneTime = false;
-			scene.addObject(cube);		
+			var cube3d = new jsggl.Object.loadFromJSON(cubomagico, "object");
+			cube3d.showOneTime = false;
+			scene.addObject(cube3d);		
 		
 			var floor = jsggl.builtin.getFloor(jsg, 50, 50);
 			scene.addObject(floor);
