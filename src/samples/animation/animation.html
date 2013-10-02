@@ -5,12 +5,12 @@
 	<meta charset="UTF-8">
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
-	<script type="text/javascript" src="../resources/boxman.js"></script>
+	<script type="text/javascript" src="../resources/boxman2.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
 	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
 
 	<script type="text/javascript">
-		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0;
+		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, headrot=0;
 		var cam;
 
 		function init() {
@@ -24,11 +24,8 @@
 
 			jsggl.Material.loadFromJSON(jsg, boxmanmtl);
 			
-			var boxman3d = jsggl.Object.loadFromJSON(boxman, "object");
-			boxman3d.scale([0.5, 0.5, 0.5]);
-			boxman3d.shadowEnabled = true;
-			boxman3d.receiveShadow = false;
-			boxman3d.setPosition([0.0, 2.0, 0.0]);			
+			var boxman3d = jsggl.Object.loadFromJSON(jsg, boxman, "object", {"drawType":jsg.DYNAMIC_DRAW});
+			boxman3d.setPosition([0.0, 7.0, 0.0]);			
 			scene.addObject(boxman3d);
 
 			var proj = jsggl.Projection.newPerspective(45 * Math.PI/180.0,(jsg.canvas.width)/jsg.canvas.height, 0.1, 1000);
@@ -65,12 +62,24 @@
 			$(document).keydown(function(evt){
 				if (cam){ 
 					switch(evt.which){
-					case 38:
-						z = -1;
-						break;
-					case 40:
-						z = 1;
-						break;
+						case 38:
+							z = -1;
+							break;
+						case 40:
+							z = 1;
+							break;
+						case 65:
+							headrot += 1;
+							var ob = scene.objects.get("Cube");
+							var t = mat4.create();
+							ob.setGroupTransformation(jsg, "Bone.003", mat4.rotate(t, t, headrot, vec3.fromValues(0, 1, 0)));
+							break;
+						case 66:
+							headrot -= 1;
+							var ob = scene.objects.get("Cube");
+							var t = mat4.create();
+							ob.setGroupTransformation(jsg, "Bone.003", mat4.rotate(t, t, headrot, vec3.fromValues(0, 1, 0)));
+							break;
 					}	
 
 					cam.position[2] += z;
@@ -127,7 +136,7 @@
 		//	red.shadowEnabled = true;
 		//	red2.shadowEnabled = true;
 			scene.addLight(red);
-			scene.addLight(red2);
+			//scene.addLight(red2);
 			scene.updateLights();
 			jsg.beforeDraw = function() {
 				//jsg.lightMatrix = jsg.modelView;

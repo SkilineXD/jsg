@@ -22,7 +22,7 @@
 			scene = new jsggl.Scene("Default", jsg);
 			
 			jsggl.Material.loadFromJSON(jsg, wallmtl);
-			var wall0 = new jsggl.Object.loadFromJSON(wall, "object");
+			var wall0 = new jsggl.Object.loadFromJSON(jsg, wall, "object");
 			wall0.translate([0.0, 1.0, -30.0]);
 			wall0.scale([8.0, 8.0, 1.0]);
 			wall0.rotate(90 * Math.PI/180, [1.0, 0.0, 0.0]);

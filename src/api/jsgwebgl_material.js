@@ -67,6 +67,10 @@ jsggl.Texture = function(jsg, texpath) {
 		jsg.gl.activeTexture(jsg.gl.TEXTURE0+self.number);
 		jsg.gl.bindTexture(jsg.gl.TEXTURE_2D, self.texture);
 	}
+	
+	this.desactive = function() {
+		jsg.gl.bindTexture(jsg.gl.TEXTURE_2D, null);		
+	}
 
 	this.delete = function(){
 		this.jsg.gl.deleteTexture(this.texture);

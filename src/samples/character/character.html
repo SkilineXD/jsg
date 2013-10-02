@@ -31,7 +31,7 @@ Publication Date: 10 de julho de 2013.
 			scene.shadowEnabled = true;
 			cam = scene.getActiveCamera();
 			
-			var plan = jsggl.Object.loadFromJSON(wall, "object");
+			var plan = jsggl.Object.loadFromJSON(jsg, wall, "object");
 			plan.scale([4.2, 1.0, 2.2]);
 			plan.translate([0.0, -0.16, 0.0]);
 			plan.shadowEnabled = false;
@@ -39,13 +39,6 @@ Publication Date: 10 de julho de 2013.
 			scene.addObject(plan);
 			jsggl.Material.loadFromJSON(jsg, wallmtl);
 			
-			/*
-			jsggl.Material.loadFromJSON(jsg, Jimmymtl);
-			var newObj = jsggl.Object.loadFromJSON(Jimmy, "object", 0);
-			newObj.shadowEnabled = true;
-			newObj.receiveShadow = false;
-			scene.addObject(newObj);
-			*/
 
 			var olist = [Jimmy];
 			var mlist = [Jimmymtl];	
@@ -55,13 +48,13 @@ Publication Date: 10 de julho de 2013.
 				var objsonmtl = mlist[j];
 				jsggl.Material.loadFromJSON(jsg, objsonmtl);
 				if (objson.type == "group"){
-					var newObj = jsggl.Object.loadFromJSON(objson, "group", "default");
+					var newObj = jsggl.Object.loadFromJSON(jsg, objson, "group", {}, "default");
 					newObj.shadowEnabled = true;
 					newObj.receiveShadow = false;
 					scene.addObject(newObj);
 				} else {
 					for (var i = 0; i < objson.objectList.length; i++) {
-						var newObj = jsggl.Object.loadFromJSON(objson, "object", i);
+						var newObj = jsggl.Object.loadFromJSON(jsg, objson, "object",{}, i);
 						newObj.shadowEnabled = true;
 						newObj.receiveShadow = false;
 						scene.addObject(newObj);

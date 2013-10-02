@@ -35,10 +35,10 @@
 			jsggl.Material.loadFromJSON(jsg, cubomagicomtl);
 			jsggl.Material.loadFromJSON(jsg, spheremtl);
 			
-			var sphere3d = new jsggl.Object.loadFromJSON(sphere, "object");
+			var sphere3d = new jsggl.Object.loadFromJSON(jsg, sphere, "object");
 			scene.addObject(sphere3d);
 			
-			var cube3d = new jsggl.Object.loadFromJSON(cubomagico, "object");
+			var cube3d = new jsggl.Object.loadFromJSON(jsg, cubomagico, "object");
 			cube3d.showOneTime = false;
 			scene.addObject(cube3d);		
 		
@@ -138,11 +138,11 @@
 		
 		function installLights(){
 			scene.lights.clear();
-			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.0, 2.0, -41.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0], [0.0, 1.0, 0.0]);
+			var red = new jsggl.Light("Red", jsggl.Light.types.POSITIONAL).build([0.0, 2.0, -1.0], [1.0, 0.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0], [0.0, 1.0, 0.0]);
 			scene.addLight(red);
-			var green = new jsggl.Light("Green", jsggl.Light.types.POSITIONAL).build([-1.0, 0.0, -41.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [-1.0, -1.0, 0.0]);
+			var green = new jsggl.Light("Green", jsggl.Light.types.POSITIONAL).build([-1.0, 0.0, -1.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [-1.0, -1.0, 0.0]);
 			scene.addLight(green);
-			var blue = new jsggl.Light("Blue", jsggl.Light.types.DIRECTIONAL).build([1.0, 0.0, -41.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0], [1.0, -1.0, 0.0]);
+			var blue = new jsggl.Light("Blue", jsggl.Light.types.DIRECTIONAL).build([1.0, 0.0, -1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0], [1.0, -1.0, 0.0]);
 			scene.addLight(blue);
 			scene.updateLights();
 			jsg.beforeDraw = function() {

@@ -35,11 +35,15 @@ class VertexGroup:
 		self.map = {}
 		self.vertexList = []
 		self.texList = []
+		self.normalList = []
 		self.max = 65535
 		self.sum = 0
-	def addIndexValue(self, model, idx, te): 
+		self.infGroups = [] #influence groups		
+
+	def addIndexValue(self, model, idx, te, tn):
 		vertices = model.vertices
 		texVertices = model.texVertices
+		normalVertices = model.normalVertices
 		n = len(self.vertexList)/3
 		if (idx in self.map.keys()):
 			n = self.map[idx]
@@ -47,6 +51,10 @@ class VertexGroup:
 		else:
 			v = vertices[idx]
 			vt = None
+			vn = None
+			if (tn != None):
+				if (len(normalVertices) > 0):
+					vn = normalVertices[tn];
 			if (te != None):
 				vt =  texVertices[te]
 			self.map[idx] = n
@@ -61,9 +69,19 @@ class VertexGroup:
 				self.texList.append(-2)
 				self.texList.append(-2)
 				self.texList.append(-2)
+			if (vn != None):
+				self.normalList.append(vn.x)
+				self.normalList.append(vn.y)
+				self.normalList.append(vn.z)
+			else:
+				self.normalList.append(-2)
+				self.normalList.append(-2)
+				self.normalList.append(-2)				
 			self.indexList.append(n)
 			self.sum = self.sum + 3
 			if (self.sum >= self.max):
+				ig = self.infGroups[len(self.infGroups)-1]
+				ig.count = len(self.indexList) - ig.start + 1
 				self.sum = 0
 				return True
 		return False
@@ -104,6 +122,33 @@ class VertexGroup:
 			print(i, end='')
 		print("]", end='')
 
+	def generateJSON4(self):
+		k = 0
+		print("[", end=''),
+		for idx in range(0, len(self.normalList)):
+			i = self.normalList[idx]
+			if (k > 0):
+				print(",", end=' ')
+			else:
+				k = k + 1
+			print(i, end='')
+		print("]", end='')
+
+	def generateJSON5(self):
+		k = 0
+		for idx in range(0, len(self.infGroups)):
+			i = self.infGroups[idx]
+			if (i.count > 0 or i.count==-1):
+				if (k > 0):
+					print(",", end=' ')
+				else:
+					k = k + 1
+				print("{", end=''),
+				print("\"name\":\"{0}\",".format(i.name), end='')
+				print("\"range\":[{0}, {1}],".format(i.start, i.count), end='')
+				print("\"material\":\"{0}\"".format(i.material), end='')
+				print("}", end='')
+
 #Representa um objeto 3D contendo vértices e/ou grupos de vértices.
 class Object3D:
 	def __init__(self, name):
@@ -111,10 +156,8 @@ class Object3D:
 		self.s = ""
 		self.group = []
 		self.vertices = []
-		self.groupName = []
-		self.material = "Material"
-		self.groupMaterial = []
 		self.type = "o"
+		self.groupName = []
 		
 	def addVertexGroup(self, f):
 		self.groupName.append(f.group)
@@ -154,26 +197,26 @@ class Object3D:
 				j = j + 1
 			g.generateJSON3()
 		print("],")
+		#print("\"normal\":[", end=' ')
+		#j = 0;	
+		#for g in self.group:
+		#	if (j > 0):
+		#		print(",", end=' ')
+		#	else:
+		#		j = j + 1
+		#	g.generateJSON4()
+		#print("],")
 
-		j = 0
-		print("\"groupName\":[", end=' ')
-		for str in self.groupName:
+		j = 0;	
+		print("\"influenceGroups\" : [", end=' ')
+		for g in self.group:
 			if (j > 0):
-				print (",", end=' ')
+				print(",", end=' ')
 			else:
 				j = j + 1
-			print("\"" + str + "\"", end=' ')
-		print("],")
-		j = 0
-		print("\"groupMaterial\":[", end=' ')
-		for str in self.groupMaterial:
-			if (j > 0):
-				print (",", end=' ')
-			else:
-				j = j + 1
-			print("\"" + str + "\"", end=' ')
+			g.generateJSON5()
 		print("]")
-		print("}", end='')
+		print("}")
 
 class ModelDescription:
 	def __init__(self, name):
@@ -181,6 +224,7 @@ class ModelDescription:
 		self.objects = []
 		self.vertices = []
 		self.texVertices = []
+		self.normalVertices = []
 		self.name = name
 		self.type = "group"
 	
@@ -189,6 +233,9 @@ class ModelDescription:
 
 	def addTexVertex(self, v):
 		self.texVertices.append(v)
+		
+	def addNormalVertex(self, v):
+		self.normalVertices.append(v)
 		
 	def generateJSON(self):
 		print("var {0} = {1}".format(self.name,"{"))
@@ -206,17 +253,122 @@ class ModelDescription:
 		print("]")
 		print("};")
 
-def makeModelDescription(path, name):
-	source = None
-	model = None
-	groups = {}
-	cvGroupCount = 0
+class InfGroup: #influence group
+	def __init__(self, name, start, qtd):
+		self.name = name
+		self.start = start
+		self.count = qtd
+		self.material = "Material"
+
+#main script		
+model = None
+cvGroupCount = 0
+currentObject = None
+currentMat = "Material"
+cvGroup = None
+ciGroup = None
+
+def addNewGroup(obname):
+	global cvGroup
+	global ciGroup
+	global currentObject
+	global model
+	global currentMat
+	if (cvGroup == None):
+		if (currentObject == None):
+			currentObject = Object3D(obname)
+			model.objects.append(currentObject);
+			currentObject.type = "object"
+		cvGroup = VertexGroup(currentObject.name)
+		currentObject.addVertexGroup(cvGroup)
+	else:
+		if (len(cvGroup.infGroups)==0):
+			cvGroup.infGroups.append(InfGroup("default", 0, -1))
+	if (ciGroup != None):
+		ciGroup.count = len(cvGroup.indexList) - ciGroup.start;
+	ciGroup = InfGroup(obname, len(cvGroup.indexList), 0)
+	ciGroup.material = currentMat
+	cvGroup.infGroups.append(ciGroup)
+
+def closePreviewGroup():
+	global cvGroup
+	global ciGroup
+	global currentObject
+	global model
+	global currentMat
+	if (cvGroup != None):
+		if (ciGroup != None):
+			if (len(cvGroup.infGroups) == 0):
+				cvGroup.infGroups.append(InfGroup("default", 0, -1))
+			ciGroup.count  = len(cvGroup.indexList) - ciGroup.start
+			
+def handleFaceInformation(data):
+	global cvGroup
+	global ciGroup
+	global currentObject
+	global model
+	global currentMat
+	if (cvGroup==None):
+		if (ciGroup == None):
+			ciGroup = InfGroup("default", 0, -1)
+		cvGroup = VertexGroup(currentMat)
+		cvGroup.infGroups.append(ciGroup);
+		if (currentObject == None):
+			currentObject = Object3D("Default")
+		currentObject.addVertexGroup(cvGroup)
+	for vi in data[1::]:
+		vi = vi.strip()
+		l = vi
+		j = None
+		k = None
+		i = None
+		if (not vi.isdigit()):
+			l = vi.split("/")
+			i = int(l[0]) - 1
+			if (len(l) > 1 and l[1].isdigit()):
+				j = int(l[1]) - 1
+			if (len(l) > 2 and l[2].isdigit()):
+				k = int(l[2]) - 1
+		else:
+			i = int(l) - 1
+		if cvGroup.addIndexValue(model, i, j, k):
+			if (len(cvGroup.infGroups) == 0):
+				cvGroup.infGroups.append(InfGroup("default", 0, -1))
+			ng = VertexGroup(cvGroup.name)
+			cvGroup = ng
+			ciGroup = InfGroup(ciGroup.name, 0, 0)
+			ng.infGroups.apppend(ciGroup)
+			currentObject.addVertexGroup(cvGroup)
+			cvGroupCount = 0
+			
+def handleObjectInformation(data):
+	global cvGroup
+	global ciGroup
+	global currentObject
+	global model
+	global currentMat
+	closePreviewGroup()
+	obname = data[1];
+	currentObject = Object3D(obname)
+	currentObject.type = "object";
+	model.objects.append(currentObject)	
+	cvGroup = None
+	ciGroup = None			
+			
+def makeModelDescription(path, name, options):
+	options = options or {}
+	useMaterialGroups = "false"
+	if ("useMaterialGroup" in options.keys()):
+		useMaterialGroups = options["useMaterialGroup"]
 	try:
+		global cvGroup
+		global ciGroup
+		global currentObject
+		global model
+		global currentMat
 		source = open(path, 'r')
 		model = ModelDescription(name)
-		currentObject = None
-		currentMat = None
-		cvGroup = None
+		cvGroupCount = 0
 		lines = source.readlines()
 		for line in lines:
 			line = line.strip()
@@ -229,63 +381,32 @@ def makeModelDescription(path, name):
 			elif data[0] == "vt":
 				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
 				model.addTexVertex(v)
+			elif data[0] == "vn":
+				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
+				model.addNormalVertex(v)
 		for line in lines:
 			line = line.strip()
 			data = line.split()
 			if (len(line) == 0):
 				continue
 			elif data[0] == "f":
-				if (cvGroup==None):
-					cvGroup = VertexGroup(currentObject.material)
-					currentObject.addVertexGroup(cvGroup)
-					cvGroupCount = cvGroupCount + 1
-				for vi in data[1::]:
-					vi = vi.strip()
-					l = vi
-					j = None
-					k = None
-					i = None
-					#print(":) " + l);
-					if (not vi.isdigit()):
-						l = vi.split("/")
-						i = int(l[0]) - 1
-						if (len(l) > 1 and l[1].isdigit()):
-							j = int(l[1]) - 1
-					else:
-						i = int(l) - 1
-					if cvGroup.addIndexValue(model, i, j):
-						ng = VertexGroup(cvGroup.name)
-						cvGroup = ng
-						currentObject.groupMaterial.append(currentMat)
-						currentObject.addVertexGroup(cvGroup)
-						cvGroupCount = 0
+				handleFaceInformation(data)
 			elif (data[0] == "o"):
-				obname = data[1];
-				currentObject = Object3D(obname)
-				currentObject.type = data[0];
-				model.objects.append(currentObject)
+				handleObjectInformation(data)
 			elif (data[0] == "g"):
-				obname = data[1];
-				if currentObject == None:
-					currentObject = Object3D(obname)
-					currentObject.type = data[0]
-					model.objects.append(currentObject)
-				if (obname in currentObject.groupName):
-					idx = currentObject.groupName.index(obname)
-					cvGroup = currentObject.group[idx]
-				else:
-					cvGroup = VertexGroup(data[1])
-					currentObject.addVertexGroup(cvGroup)
-					cvGroupCount = cvGroupCount + 1
+				obname = data[1]
+				addNewGroup(obname)
 			elif data[0] == "mtllib":
 				model.mtllib = data[1]
 			elif data[0] == "usemtl":
 				currentMat = data[1]
-				for g in range(cvGroupCount):
-					currentObject.groupMaterial.append(currentMat)
-				cvGroupCount = 0
-		for g in range(cvGroupCount):
-			currentObject.groupMaterial.append(currentMat)
+				if (useMaterialGroups in ["true", "yes"]):
+					obname = currentMat
+					addNewGroup(obname)
+				else:
+					if (ciGroup != None):
+						ciGroup.material = currentMat
+		closePreviewGroup()
 	except error :
 		print(error)
 		print('Try again...')

@@ -103,9 +103,7 @@ void goroud(void){
     vColor[3] = uMaterialColor[3];
     gl_Position = uPMatrix * vertex;
     gl_PointSize = 1.0;
-	if (uUseTexture != 0) {
-    	vTextureCoords = aVertexTextureCoords;
-	}
+    vTextureCoords = aVertexTextureCoords;
 }
 
 void flatMode(void){

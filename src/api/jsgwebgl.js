@@ -82,6 +82,8 @@ jsggl.JsgGl = function(id){
 	this.TRIANGLE_STRIP = this.gl.TRIANGLE_STRIP;
 	this.TRIANGLES = this.gl.TRIANGLES;
 	this.POINTS = this.gl.POINTS;
+	this.STATIC_DRAW = this.gl.STATIC_DRAW;
+	this.DYNAMIC_DRAW = this.gl.DYNAMIC_DRAW;
 	//END: WEBGL CONTEXT SHORTCUTS
 	this.beforeDraw = function(){};
 	this.afterDraw = function(){};
@@ -265,6 +267,8 @@ jsggl.Drawable = function(name, globj){
 	this.name = name;
 	this.vboName = "";
 	this.idoName = "";
+	this.vertexStore = [];
+	this.texturesStore = [];
 	this.showFrontFace = true;
 	this.showBackFace = true;
 	this.showOneTine = true;
@@ -277,6 +281,8 @@ jsggl.Drawable = function(name, globj){
 	this.renderingmode = this.gl.LINES;
 	this.groupNameList = []
 	this.material = [];
+	this.transforms = mat4.create();
+	this.drawType = this.gl.STATIC_DRAW;
     this.textureRendering = function(){
         this.build = function(){};
         this.bind = function(){};
@@ -288,45 +294,163 @@ jsggl.Drawable = function(name, globj){
 }
 
 jsggl.Drawable.prototype = {
-	build: function() {
-		if (this.built) return;
-		this.built = true;
-		this.vertexBuffer = [];
+	pushVertices: function(i) {
+		this.vertexStore.push(new Float32Array(this.vertices[i]));
+	},
+
+	popVertices : function(i) {
+		this.vertices[i] = this.vertexStore.pop();
+	},
+
+	setVertices : function(va, i) {
+		if (i == undefined){
+			for (var j = 0; j < va.length; j++) {
+				var v = new Float32Array(va[j]);
+				this.vertices.push(v);
+			}
+		} else {
+			this.vertices[i] = new Float32Array(va);
+		}
+	},
+
+	setIndices : function(va, i) {
+		if (i == undefined){
+			for (var j = 0; j < va.length; j++) {
+				var v = new Uint16Array(va[j]);
+				this.indices.push(v);
+			}
+		} else {
+			this.indices[i] = new Uint16Array(va);
+		}
+	},
+	
+	setNormals : function(va, i){
+		if (va) {
+			this.normals = [];
+			if (i == undefined){
+				for (var j = 0; j < va.length; j++) {
+					var v = new Float32Array(va[j]);
+					this.normals.push(v);
+				}
+			} else {
+				this.normals[i] = new Float32Array(va);
+			}			
+		}
+	},
+	
+	setTextures : function(va, i) {
+		if (va) {
+			if (i == undefined){
+				this.textures = this.textures || [];
+				for (var j = 0; j < va.length; j++) {
+					var v = new Float32Array(va[j]);
+					this.textures.push(v);
+				}
+			} else {
+				this.textures[i] = new Float32Array(va);
+			}
+		}
+	},
+	
+	updateIndexData: function(i) {
+		if (this.drawType == this.gl.DYNAMIC_DRAW){
+			var iBuffer  = this.indexBuffer[i];
+			var nBuffer = this.normalsBuffer[i];
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+			this.gl.bufferSubData(this.gl.ELEMENT_ARRAY_BUFFER, 0, this.indices[i]);
+			var normals;
+			
+			if (this.normals && this.normals[i] && this.normals[i][0] != -2) {
+				normals = this.normals[i];
+			} else {
+				normals = jsgutils.calcNormals(this.vertices[i], this.indices[i]);
+			}
+			
+    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
+    		this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, normals);
+			
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+			this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
+		}
+	},
+	
+	updateVertices: function(i) {
+		if (this.drawType == this.gl.DYNAMIC_DRAW){
+			var vBuffer = this.vertexBuffer[i];
+			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
+			this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, this.vertices[i]);
+			if (this.textures) {
+				if (this.textures.length > 0 && this.textures[i] != undefined) {
+					var tBuffer = this.texBuffer[i];
+					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tBuffer); 
+					this.gl.bufferData(this.gl.ARRAY_BUFFER, 0, this.textures[i]);
+				}
+			}
+
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+			this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
+		}
+	},
+	
+	buildVertices: function(vertices) {
 		this.texBuffer = [];
+		this.vertexBuffer = [];
+		if (this.built) {
+			for (var i = 0; i < this.vertexBuffer.length; i++){
+				this.gl.deleteBuffer(this.vertexBuffer[i]);
+			}
+		}
 		for (var i = 0; i < this.vertices.length; i++){
 			var vBuffer = this.gl.createBuffer();
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
+			this.gl.bufferData(this.gl.ARRAY_BUFFER, this.vertices[i], this.drawType);
 			this.vertexBuffer.push(vBuffer)
 			if (this.textures) {
-				if (this.textures.length > 0 && this.textures[i] != undefined && this.textures[i][0] != -2) {
+				if (this.textures.length > 0 && this.textures[i] != undefined) {
 					var tBuffer = this.gl.createBuffer();
 					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tBuffer); 
-					this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.textures[i]), this.gl.STATIC_DRAW);
+					this.gl.bufferData(this.gl.ARRAY_BUFFER, this.textures[i], this.drawType);
 					this.texBuffer.push(tBuffer);
 				} else {
 					this.texBuffer.push(undefined);
 				}
 			}
 		}
+	},
 
+	buildIndices: function() {
+		if (this.built) this.delete();
 		this.indexBuffer = [];
 		this.normalsBuffer = [];
 		for (var i = 0; i < this.indices.length; i++) {
 			var iBuffer  = this.gl.createBuffer();
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices[i]), this.gl.STATIC_DRAW);
-			var normals = jsgutils.calcNormals(this.vertices[i], this.indices[i]);
-		
+			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.indices[i], this.drawType);
+			var normals;
+
+			if (this.normals && this.normals[i] && this.normals[i][0] != -2) {
+				normals = this.normals[i];
+			} else {
+				normals = new Float32Array(jsgutils.calcNormals(this.vertices[i], this.indices[i]));
+			}
+
    			var nBuffer = this.gl.createBuffer();
 			this.indexBuffer.push(iBuffer);
 			this.normalsBuffer.push(nBuffer);
     		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
-    		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
+    		this.gl.bufferData(this.gl.ARRAY_BUFFER, normals, this.drawType);
 		}
-
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     	this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
+	},
+	
+	build: function() {
+		if (this.built) return;
+		this.buildVertices();
+		this.buildIndices();
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
+		this.built = true;
 	},
 	
 	setRenderingMode: function(rm) {
@@ -340,52 +464,67 @@ jsggl.Drawable.prototype = {
 	draw : function() {
 		var DEPTH_SHADER = 3, SHADER_SHIFT=3, FLAT_SHADER=-1;
         var prg = this.jsg.program;
-		var stbkp = this.jsg.shaderType;
-
 		this.jsg.beforeDraw(); //EVENT NOTIFICATION
-
-		var mvMatrix = this.jsg.getModelView();
-		var nMatrix = mat4.create();
-		mat4.transpose(nMatrix, mvMatrix);	
-		this.jsg.normalMatrix = nMatrix;
 		
-		var materialList = this.material;
 		for (var i = 0; i < this.indexBuffer.length; i++) {
-			var group = materialList[i];
-			var material = this.forceMaterial || this.jsg.materials[group];
-			this.jsg.materialColor = material.diffuse;
-			this.jsg.ambientColor = material.ambient;
-			this.jsg.specularColor = material.specular;
-			this.jsg.shininess = material.shininess;
-	 
-			if (this.jsg.shaderType != DEPTH_SHADER){
-				this.jsg.shaderType = material.shaderType || FLAT_SHADER;
-			}
-
-			if ( (this.receiveShadow) && this.jsg.shaderType != DEPTH_SHADER) { //3 = make depth map
-				this.jsg.shaderType =  material.shaderType + SHADER_SHIFT; //gouroud or phong shading
-			} 
-			
-			this.jsg.currentVertexPosition = this.vertexBuffer[i];
-			this.jsg.currentVertexNormal = this.normalsBuffer[i];
-			this.jsg.currentTexPosition = this.texBuffer[i];
-			this.jsg.useTextureKa = material.useTextureKa;
-			this.jsg.useTextureKd = material.useTextureKd;
-            
-			if (material.textureka && this.texBuffer[i]) {
-				this.jsg.texSamplerKa = material.textureka.number;
-				var tex = material.textureka;
-				tex.active();
-			}
-			if (material.texturekd && this.texBuffer[i]) {
-				this.jsg.texSamplerKd = material.texturekd.number;
-				var tex = material.texturekd;
-				tex.active();
-			}
-			this.jsg.shader.setLocalValues();				
+			var stbkp = this.jsg.shaderType;
+			var mvMatrix = this.jsg.getModelView();
+			var nMatrix = mat4.create();
+			mat4.transpose(nMatrix, mvMatrix);	
+			this.jsg.normalMatrix = nMatrix;
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);
-			this.simpleDraw(i);
-            this.jsg.shaderType = stbkp;
+			for (var j = 0; j < this.influenceGroups.length; j++) {
+				var influence = this.influenceGroups[j];
+				var start = influence.range[0];
+				var texIdx = this.indices[i][start] * 3;
+				var qtd =   influence.range[1];
+				if (qtd == -1){
+					qtd = this.indices[i].length - start;
+					influence.range[1] = qtd;
+				}
+				//jsg.pushModelView();
+				//mat4.multiply(jsg.modelView, jsg.modelView, this.influenceTransforms[j]);
+				
+				var groupMaterial = jsg.materials[influence.material];
+				
+				var material = this.forceMaterial || groupMaterial;
+				this.jsg.materialColor = material.diffuse;
+				this.jsg.ambientColor = material.ambient;
+				this.jsg.specularColor = material.specular;
+				this.jsg.shininess = material.shininess;
+		 
+				if (this.jsg.shaderType != DEPTH_SHADER){
+					this.jsg.shaderType = material.shaderType || FLAT_SHADER;
+				}
+
+				if ( (this.receiveShadow) && this.jsg.shaderType != DEPTH_SHADER) { //3 = make depth map
+					this.jsg.shaderType =  material.shaderType + SHADER_SHIFT; //gouroud or phong shading
+				} 
+				
+				this.jsg.currentVertexPosition = this.vertexBuffer[i];
+				this.jsg.currentVertexNormal = this.normalsBuffer[i];
+				this.jsg.currentTexPosition = this.texBuffer[i];
+				this.jsg.useTextureKa = material.useTextureKa;
+				this.jsg.useTextureKd = material.useTextureKd;
+				
+
+				if (this.textures[i] && this.textures[i][texIdx] >= -1.9 && material.textureka && this.texBuffer[i]) {
+					this.jsg.texSamplerKa = material.textureka.number;
+					var tex = material.textureka;
+					tex.active();
+				}
+				
+				if (this.textures[i] && this.textures[i][texIdx] >= -1.9 && material.texturekd && this.texBuffer[i]) {
+					this.jsg.texSamplerKd = material.texturekd.number;
+					var tex = material.texturekd;
+					tex.active();
+				}
+				
+				this.jsg.shader.setLocalValues();				
+				this.simpleDraw(start, qtd);
+				//jsg.popModelView();
+				this.jsg.shaderType = stbkp;
+			}
 		}
 		this.currentVertexPosition = null;
 		this.currentVertexNormal = null;
@@ -395,32 +534,36 @@ jsggl.Drawable.prototype = {
 		this.jsg.afterDraw(); //EVENT NOTIFICATION
 	},
 
-	simpleDraw: function(i) {
+	simpleDraw: function(start, qtd) {
 			if (this.showOneTime){
-				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+				this.gl.drawElements(this.getRenderingMode(), qtd, this.gl.UNSIGNED_SHORT, start*2);
 			} else {
 				if (this.showBackFace) {
 					this.gl.cullFace(this.gl.FRONT);
-					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+					this.gl.drawElements(this.getRenderingMode(), qtd, this.gl.UNSIGNED_SHORT, start*2);
 				}
 				if (this.showFrontFace) {
 					this.gl.cullFace(this.gl.BACK);
-					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
+					this.gl.drawElements(this.getRenderingMode(), qtd, this.gl.UNSIGNED_SHORT, start*2);
 				}
 			}
 	},
 	
 	delete: function(){
 		for (var i = 0; i < this.indexBuffer.length; i++){
-			this.gl.deleteBuffer(this.indedexBuffer[i]);
+			this.gl.deleteBuffer(this.indexBuffer[i]);
 			this.gl.deleteBuffer(this.vertexBuffer[i]);
 			if (this.normalsBuffer && this.normalsBuffer[i]){
 				this.gl.deleteBuffer(this.normalsBuffer[i]);
+			}
+			if (this.texBuffer && this.texBuffer[i]){
+				this.gl.deleteBuffer(this.texBuffer[i]);
 			}
 		}
 		this.indexBuffer = null;
 		this.vertexBuffer = null;
 		this.normalsBuffer = null;
+		this.texBuffer = null;
 	}			
 }
 

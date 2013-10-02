@@ -34,20 +34,20 @@
 			jsggl.Material.loadFromJSON(jsg, cubemtl);
 			jsggl.Material.loadFromJSON(jsg, wallmtl);
 
-			var plan = jsggl.Object.loadFromJSON(wall, "object");
+			var plan = jsggl.Object.loadFromJSON(jsg, wall, "object");
 			plan.scale([1.2, 0.09, 1.2]);
 			plan.shadowEnabled = false;
 			plan.receiveShadow = true;
 			scene.addObject(plan);
 			
-			var cube3d = jsggl.Object.loadFromJSON(cube, "object");
+			var cube3d = jsggl.Object.loadFromJSON(jsg, cube, "object");
 			cube3d.scale([0.5, 0.5, 0.5]);
 			cube3d.shadowEnabled = true;
 			cube3d.receiveShadow = true;
 			cube3d.setPosition([0.0, 2.0, 0.0]);			
 			scene.addObject(cube3d);
 
-			var cube2 = jsggl.Object.loadFromJSON(cube, "object");
+			var cube2 = jsggl.Object.loadFromJSON(jsg, cube, "object");
 			cube2.name = "cube2";
 			cube2.scale([0.5, 0.5, 0.5]);
 			cube2.shadowEnabled = true;

@@ -6,15 +6,7 @@
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
 	<script type="text/javascript" src="../resources/sphere.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
-	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
-	<script type="text/javascript" src="../../api/jsgutils.js"></script>  
+	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
 	<script type="text/javascript">
 		var jsg, scene, shader, shaders, shininess=100, SPHERE_QTD = 100; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		function init() {
@@ -33,12 +25,12 @@
 			}
 
 			jsggl.Material.loadFromJSON(jsg, spheremtl);
-			var sphere0 = new jsggl.Object.loadFromJSON(sphere, "object");
+			var sphere0 = jsggl.Object.loadFromJSON(jsg, sphere, "object");
 			sphere0.name = "sphere0";
 			sphere0.scale([0.5, 0.5, 0.5]);
 			scene.addObject(sphere0);
 			for (var j = 1; j < SPHERE_QTD; j++) {			
-				var csphere = sphere0.linkDataCopy("sphere" + j);
+				var csphere = sphere0.linkDataCopy(jsg, "sphere" + j);
 				var pos = randomPosition();
 				csphere.setPosition(pos);
 				csphere.scale([0.5, 0.5, 0.5]);

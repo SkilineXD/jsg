@@ -31,17 +31,18 @@ jsggl.builtin.getFloor = function(jsg, dim, lines){
 	}
 	
 	var g = new jsggl.Drawable("floor", jsg);
-	g.vertices = [v];
-	g.indices = [i];
-	g.groupNameList = ["floor"];
-	g.material = ["floor"]
-	var obj  = new jsggl.Object("floor");
+	g.setVertices([v]);
+	g.setIndices([i]);
+	g.influenceGroups = [{"name":"floorvertices", "range":[0, -1], "material": "floor"}];
+	
+	var obj  = new jsggl.Object(jsg, "floor");
+	obj.setMaterial({ "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1});
 	obj.addGroup(g);
-	jsg.materials["floor"] =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1};
+
 	return obj;
 }
 
-jsggl.Object = function(name) {
+jsggl.Object = function(jsg, name) {
 	this.name = name;
 	this.showOneTime = true;
 	this.showFrontFace = true;
@@ -51,6 +52,8 @@ jsggl.Object = function(name) {
 	this.group = new jsgcol.ArrayMap();
 	this.transforms = mat4.create();
 	this.center = vec3.fromValues(0.0, 0.0, 0.0);
+	this.drawType = jsg.STATIC_DRAW;
+	
 	mat4.identity(this.transforms);
 
 	this.getGroup = function(name) {
@@ -132,7 +135,36 @@ jsggl.Object = function(name) {
 		this.material = mat;
 	}
 	
+	this.setGroupTransformation = function(jsg, gn, mat) {
+		var g = this.group.get(this.name);
+		
+		var indices = g.indices[0];
+		var vertices = g.vertices[0];
+		var idx = g.influenceIndices[gn];
+		g.pushVertices(0);
+		var max = -1000;
+		var checked = {};
+		for (var i = 0; i < idx.length; i++) {
+			var range = g.influenceGroups[idx[i]].range;
+			var n = range[0] + range[1];
+			for (var j = range[0]; j < n; j++) {
+				var vi = indices[j] * 3;
+				if (!checked[vi]){
+					checked[vi] = true;
+					var v = vec4.fromValues(vertices[vi], vertices[vi+1], vertices[vi+2], 1.0);
+					v = vec4.transformMat4(vec4.create(), v, mat);
+					vertices[vi] = v[0];
+					vertices[vi+1] = v[1];
+					vertices[vi+2] = v[2];
+				}
+			}
+		}
+		g.updateVertices(0);
+		g.popVertices(0);
+	}
+
 	this.addGroup = function(g){
+		g.drawType = this.drawType;
 		this.group.put(g.name, g);
 	}
 
@@ -152,8 +184,8 @@ jsggl.Object = function(name) {
 		mat4.scale(this.transforms, this.transforms,  params);
 	}
 
-	this.linkDataCopy = function(name) {
-		var obj = new jsggl.Object(name);
+	this.linkDataCopy = function(jsg, name) {
+		var obj = new jsggl.Object(jsg, name);
 		this.forEachGroup(function(g){
 			obj.addGroup(g);
 		});
@@ -197,34 +229,57 @@ jsggl.Object = function(name) {
 	}
 }
 
-jsggl.Object.loadFromJSON = function(objson, type, ID) {
+jsggl.Object.loadFromJSON = function(jsg, objson, type, params, ID) {
+	params = params || {};
 	if (!type) type = "object";
 	if (type == "group") {
-		var obj = new jsggl.Object(ID || "default");
+		var obj = new jsggl.Object(jsg, ID || "default");
 		for (var i = 0; i < objson.objectList.length; i++) {
-			var ob = objson.objectList[i];
+			var ob = objson.objectList [i];
 			var obj3d = new jsggl.Drawable(ob.name, jsg);
-			obj3d.indices = ob.indices;
-			obj3d.vertices = ob.vertices;
-			obj3d.textures = ob.textmap;
-			obj3d.groupNameList = ob.groupName;
-			obj3d.material = ob.groupMaterial;
+			obj3d.setIndices(ob.indices);
+			obj3d.setVertices(ob.vertices);
+			obj3d.setTextures(ob.textmap);
+			obj3d.setNormals(ob.normal);
+			obj3d.transforms = [];
+			obj3d.influenceGroups = ob.influenceGroups;
+			if (obj3d.influenceGroups){
+				obj3d.influenceTransforms = new Array(obj3d.influenceGroups.length);
+				obj3d.influenceIndices = {};
+				for (var j = 0; j < obj3d.influenceGroups.length; j++) {
+					obj3d.influenceIndices[obj3d.influenceGroups[j].name] = obj3d.influenceIndices[obj3d.influenceGroups[j].name] || [];
+					obj3d.influenceIndices[obj3d.influenceGroups[j].name].push(j);
+					obj3d.influenceTransforms[j] = mat4.create();
+				}
+			}
 			obj3d.setRenderingMode(jsg.TRIANGLES);
 			obj.addGroup(obj3d);
 		}
 		return obj;
 	} else if (type == "object") {
 		var ob = objson.objectList[ID || 0];
-		var obj = new jsggl.Object(ob.name);
+		var obj = new jsggl.Object(jsg, ob.name);
+		for (param in params){
+			obj[param] = params[param]
+		}
 		var obj3d = new jsggl.Drawable(ob.name, jsg);
-		obj3d.indices = ob.indices;
-		obj3d.vertices = ob.vertices;			
-		obj3d.textures = ob.textmap;
-		obj3d.groupNameList = ob.groupName;	
-		obj3d.material = ob.groupMaterial;
+		obj3d.setIndices(ob.indices);
+		obj3d.setVertices(ob.vertices);			
+		obj3d.setTextures(ob.textmap);
+		obj3d.setNormals(ob.normal);	
+		obj3d.transforms = [];
+		obj3d.influenceGroups = ob.influenceGroups;
+		if (obj3d.influenceGroups){
+			obj3d.influenceTransforms = new Array(obj3d.influenceGroups.length);
+			obj3d.influenceIndices = {};
+			for (var j = 0; j < obj3d.influenceGroups.length; j++) {
+				obj3d.influenceIndices[obj3d.influenceGroups[j].name] = obj3d.influenceIndices[obj3d.influenceGroups[j].name] || [];
+				obj3d.influenceIndices[obj3d.influenceGroups[j].name].push(j);
+				obj3d.influenceTransforms[j] = mat4.create();
+			}
+		}
 		obj3d.setRenderingMode(jsg.TRIANGLES);
 		obj.addGroup(obj3d);
 		return obj;
 	}
 }
-

@@ -328,9 +328,7 @@ jsggl.Shader = function(jsg){
 		this.vertexShader.text.push("vColor[3] = uMaterialColor[3];");
 		this.vertexShader.text.push("gl_Position = uPMatrix * vertex;");
 		this.vertexShader.text.push("gl_PointSize = 1.0;");
-		this.vertexShader.text.push("if (uUseTexture != 0) {");
 		this.vertexShader.text.push("vTextureCoords = aVertexTextureCoords;");
-		this.vertexShader.text.push("}");
 		this.vertexShader.text.push("}");
 		this.vertexShader.text.push("void flatMode(void){");
 		this.vertexShader.text.push("vec4 vertex = uMVMatrix * vec4(aVertexPos, 1.0);");
