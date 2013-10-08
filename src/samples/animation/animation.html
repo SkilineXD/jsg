@@ -36,7 +36,7 @@
 
 			cam = scene.getActiveCamera();
 			cam.position[1] += 6;
-			cam.position[2] += 4;
+			cam.position[2] += 15;
 			cam.update();
 			installLights();			
 
@@ -72,13 +72,13 @@
 							headrot += 1;
 							var ob = scene.objects.get("Cube");
 							var t = mat4.create();
-							ob.setGroupTransformation(jsg, "Bone.003", mat4.rotate(t, t, headrot, vec3.fromValues(0, 1, 0)));
+							ob.setGroupTransformation(jsg, "Bone", mat4.rotate(t, t, headrot, vec3.fromValues(0, 1, 0)));
 							break;
 						case 66:
 							headrot -= 1;
 							var ob = scene.objects.get("Cube");
 							var t = mat4.create();
-							ob.setGroupTransformation(jsg, "Bone.003", mat4.rotate(t, t, headrot, vec3.fromValues(0, 1, 0)));
+							ob.setGroupTransformation(jsg, "Bone", mat4.rotate(t, t, headrot, vec3.fromValues(0, 1, 0)));
 							break;
 					}	
 

@@ -286,7 +286,7 @@ def addNewGroup(obname):
 			cvGroup.infGroups.append(InfGroup("default", 0, -1))
 	if (ciGroup != None):
 		ciGroup.count = len(cvGroup.indexList) - ciGroup.start;
-	ciGroup = InfGroup(obname, len(cvGroup.indexList), 0)
+	ciGroup = InfGroup(obname, len(cvGroup.indexList), -1)
 	ciGroup.material = currentMat
 	cvGroup.infGroups.append(ciGroup)
 
@@ -340,7 +340,7 @@ def handleFaceInformation(data):
 			ng.infGroups.apppend(ciGroup)
 			currentObject.addVertexGroup(cvGroup)
 			cvGroupCount = 0
-			
+		
 def handleObjectInformation(data):
 	global cvGroup
 	global ciGroup
@@ -379,7 +379,10 @@ def makeModelDescription(path, name, options):
 				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
 				model.addVertex(v)
 			elif data[0] == "vt":
-				v = Vertex(float(data[1]), float(data[2]),float(data[3]))
+				data3 = 0.0;
+				if (len(data) > 3):
+					data3 = float(data[3]);
+				v = Vertex(float(data[1]), float(data[2]), data3)
 				model.addTexVertex(v)
 			elif data[0] == "vn":
 				v = Vertex(float(data[1]), float(data[2]),float(data[3]))

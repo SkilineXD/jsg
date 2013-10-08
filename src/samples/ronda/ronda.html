@@ -9,8 +9,7 @@ Publication Date: 10 de julho de 2013.
 	<meta charset="UTF-8">
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
-	<script type="text/javascript" src="../resources/wall.js"></script>
-	<script type="text/javascript" src="../resources/Jimmy.js"></script>
+	<script type="text/javascript" src="../resources/city.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
 	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
 	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
@@ -28,7 +27,7 @@ Publication Date: 10 de julho de 2013.
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
 			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
 			scene.setActiveCamera("orbiting");
-			scene.shadowEnabled = true;
+			//scene.shadowEnabled = true;
 			cam = scene.getActiveCamera();
 			
 			
@@ -36,17 +35,9 @@ Publication Date: 10 de julho de 2013.
 			cam.position[2] += 7;
 			cam.update();
 			
-			var plan = jsggl.Object.loadFromJSON(jsg, wall, "object");
-			plan.scale([4.2, 1.0, 2.2]);
-			plan.translate([0.0, -0.16, 0.0]);
-			plan.shadowEnabled = false;
-			plan.receiveShadow = true;
-			scene.addObject(plan);
-			jsggl.Material.loadFromJSON(jsg, wallmtl);
-			
 
-			var olist = [Jimmy];
-			var mlist = [Jimmymtl];	
+			var olist = [city];
+			var mlist = [citymtl];	
 			
 			for (var j = 0; j < olist.length; j++) {			
 				var objson = olist[j];
@@ -54,14 +45,14 @@ Publication Date: 10 de julho de 2013.
 				jsggl.Material.loadFromJSON(jsg, objsonmtl);
 				if (objson.type == "group"){
 					var newObj = jsggl.Object.loadFromJSON(jsg, objson, "group", {}, "default");
-					newObj.shadowEnabled = true;
-					newObj.receiveShadow = false;
+					//newObj.shadowEnabled = true;
+					//newObj.receiveShadow = false;
 					scene.addObject(newObj);
 				} else {
 					for (var i = 0; i < objson.objectList.length; i++) {
 						var newObj = jsggl.Object.loadFromJSON(jsg, objson, "object",{}, i);
-						newObj.shadowEnabled = true;
-						newObj.receiveShadow = false;
+						//newObj.shadowEnabled = true;
+						//newObj.receiveShadow = false;
 						scene.addObject(newObj);
 					}
 				}
@@ -165,7 +156,7 @@ Publication Date: 10 de julho de 2013.
 		function installLights(){
 			scene.lights.clear();
 			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([-0.0001, 12.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
-			pos0.shadowEnabled = true;
+			//pos0.shadowEnabled = true;
 			var pos1 = new jsggl.Light("B", jsggl.Light.types.POSITIONAL).build([0.0, 0.0, -2.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
 			
 			var pos2 = new jsggl.Light("C", jsggl.Light.types.POSITIONAL).build([0.0, 0.0, 2.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);

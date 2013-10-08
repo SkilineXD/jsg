@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
+	<script type="text/javascript" src="../../api/jquery.js"></script>
+	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
+	<script type="text/javascript">
+		var jsg;
+		
+		function init() {
+			jsg = new jsggl.JsgGl("cv");
+			jsg.display = display;
+		
+			jsg.shader = new jsggl.Shader(jsg);
+
+			scene = new jsggl.Scene("Default", jsg);
+			
+			scene.cameras["camera0"] = new jsggl.Camera("camera0");
+			scene.setActiveCamera("camera0");
+			
+			var data = new jsggl.Drawable("Default", jsg);
+			data.setIndices([[0, 1, 2]]);
+			data.setVertices([[0.0, 0.0, 0.0, 1, 1, 0, 0, 1, 0]]); 
+			data.setRenderingMode(jsg.TRIANGLES);
+			data.influenceGroups = [{name: "Default", "range":[0, 3], "material":"Material"}];
+			
+			var triangle =  new jsggl.Object(jsg, "Default");
+			triangle.setMaterial({ "name":"Material", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.8, 0.5, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1});
+			triangle.addGroup(data);
+			
+			scene.addObject(triangle);
+			jsg.addScene(scene);
+			jsg.setActiveScene(scene.name);	
+
+			if (!jsg.build()){
+				alert("Error: " + jsg.compileProgramStatus);			
+			}			
+			jsg.mainLoop();
+		}
+		
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			jsg.run();
+		}
+	</script>
+</head>
+<body onload="init();">
+	<canvas id="cv" width="600" height="400" style="border: solid 1px;">
+		O Navegador do usuário não suporta HTML5.
+	</canvas>
+</body>
+</html>

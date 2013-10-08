@@ -49,7 +49,9 @@
 			scene.setActiveCamera("orbiting");
 			
 			cam = scene.getActiveCamera();
-			
+			cam.position[1] += 30;
+			cam.position[2] += 90;
+			cam.update();
 			installLights();			
 
 			jsg.addScene(scene);
