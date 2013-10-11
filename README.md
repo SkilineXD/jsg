@@ -4,9 +4,13 @@ JavaScript Graphics (JSG)
 JavaScript Graphics (JSG)  is a library for developing 3D web applications. JSG has support for the following features:
 
 **scenes**
+
 **cameras**
+
 **lights**
+
 **shadows**
+
 **animation (key frame interpolation)**
 
 
