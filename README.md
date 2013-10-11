@@ -1,15 +1,19 @@
 JavaScript Graphics (JSG)
 =========================
 
-JavaScript Graphics (JSG) is a library for Interactive Graphics. JSG Current version includes:
-
+JavaScript Graphics (JSG)  is a library for developing 3D web applications. JSG has support for the following features:
 #
-JSG: Core for 2D Applications.
+scenes
 #
-JSGWEBGL: Core for 3D Applications.
-
+cameras
+#
+lights
+#
+shadows
+#
+animation (key frame interpolation)
+#
 
 Support
 =======
-Get JSG releases and documentation in http://gilzamir.github.io/jsg.
-
+Documentation and the latest releases of the JSG can be obtained from http://gilzamir.github.io/jsg.
