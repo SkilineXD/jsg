@@ -1,0 +1,192 @@
+<!--
+Test interpolation method in jsgwebgl_math.html.
+Author: Gilzamir F. Gomes.
+Publication Date: 10/10/2013.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
+	<script type="text/javascript" src="../api/gl-matrix.js"></script>
+	<script type="text/javascript" src="resources/test2_jsgwebgl_math/braco1.js"></script>
+	<script type="text/javascript" src="resources/test2_jsgwebgl_math/braco2.js"></script>
+	<script type="text/javascript" src="resources/test2_jsgwebgl_math/braco3.js"></script>
+	<script type="text/javascript" src="../api/jquery.js"></script>
+	<script type="text/javascript" src="../dist/jsg3d.js"></script>
+	<script type="text/javascript">
+		var jsg, scene, shader, objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam, cubo1, cubo2, cubo3, cubo, cubogeo, shape, t = 0.0;
+		
+		
+		function init() {
+			//JSG object point to canvas with ID 'scenecanvas'
+			jsg = new jsggl.JsgGl("scenecanvas");
+
+			//It creates new scene with identifier 'Default'. This scene points to jsg object
+			scene = new jsggl.Scene("Default", jsg);
+			
+			//It creates projection object to camera visualization
+			var proj = jsggl.Projection.newPerspective(90 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			
+			//It creates two new cameras
+			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
+			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
+			scene.setActiveCamera("tracking"); //It defines active camera
+			cam = scene.getActiveCamera(); //It gets active camera reference to future camera manipulation
+			cam.position[2] += 6;
+			cam.update();
+			
+			//It creates new object sphere of JSON geometry description object named Sphere. 
+			cubo1 = jsggl.Object.loadFromJSON(jsg, braco1, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, braco1mtl); //Load sphere  materials in JSON format
+			
+			//It does center of object sphere to geometry center
+			//cubo1.centerToGeometry(); 
+			//It adds sphere object to scene...
+			//scene.addObject(cubo1);
+
+			//It creates new object sphere of JSON geometry description object named Sphere. 
+			cubo2 = jsggl.Object.loadFromJSON(jsg, braco2, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, braco2mtl); //Load sphere  materials in JSON format
+			
+			//It does center of object sphere to geometry center
+			//cubo2.centerToGeometry(); 
+			//It adds sphere object to scene...
+			//scene.addObject(cubo2);			
+			
+			cubo3 = jsggl.Object.loadFromJSON(jsg, braco3, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, braco3mtl);
+
+			cubo  = new jsggl.Object(jsg, "Cube");
+			cubo.drawType = jsg.DYNAMIC_DRAW;
+			cubogeo = jsggl.Drawable.loadFromJSON(jsg, braco1, 0);
+			cubogeo.drawType = jsg.DYNAMIC_DRAW;
+			cubogeo.name = "Cube";
+			cubo.addGroup(cubogeo);
+			scene.addObject(cubo);
+			
+			installLights(); //It configures lights 
+			jsg.addScene(scene); //It add scene object to JSG system
+			jsg.setActiveScene(scene.name); //It define active scene
+			
+
+			jsg.shader = new jsggl.Shader(jsg); //Here is defined shader method
+
+			if (!jsg.build()){ //Here JSG system is built
+				alert("Error: " + jsg.compileProgramStatus); //If configurations error is found...			
+			}			
+			
+			configureEvents(); //Here user interactions is defined...
+			
+			jsg.display = display; //Here simulation loop is defined...
+			jsg.initialize = initialize; //This method is ran before of first simulation loop iteraction...
+			
+			jsg.mainLoop(); //This method start simulation loop iteractions
+		}
+		
+		function configureEvents() {
+			$("#scenecanvas").mousedown(function(evt){
+				pos = [evt.clientX, evt.clientY];
+			});
+
+			$("#scenecanvas").mouseleave(function(evt){
+				pos = null;
+			});
+			var r = [cubo1.group.get("Cube1"), cubo2.group.get("Cube2"), cubo3.group.get("Cube3")];
+			$(document).keyup(function(evt){
+				switch(evt.which){
+					case 87://W
+						break;
+					case 83: //S
+						break;
+					case 68://D
+						t += 0.1;
+						cubogeo = jsggl.interpolate.linearStepN(r, t, cubogeo);
+						cubogeo.renderingmode = jsg.TRIANGLES;
+						break;
+					case 65://A
+						t -= 0.1;
+						cubogeo = jsggl.interpolate.linearStepN(r, t, cubogeo); 
+						cubogeo.renderingmode = jsg.TRIANGLES;
+						break;
+					case 38:
+						z = 1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+					case 40:
+						z = -1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+				}	
+			});
+			
+			$(document).keydown(function(evt){
+				//alert(evt.which);
+				switch(evt.which){
+					case 87://W
+						break;
+					case 83: //S
+						break;
+					case 68://D
+						break;
+					case 65://A
+						break;
+					case 38:
+						z = 1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+					case 40:
+						z = -1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+				}	
+			});
+
+			$("#scenecanvas").mouseup(function(evt){
+				pos = null;
+			});
+
+			$("#scenecanvas").mousemove(function(evt){
+				if (pos != null) {
+					var npos = [evt.clientX, evt.clientY, 0.0];
+					var delta = [npos[0] - pos[0], npos[1] - pos[1]];
+					delta[0] = delta[0] * 0.005;
+					delta[1] = delta[1] * 0.005;
+					cam.azimute += -delta[0] * 10;
+					cam.elevation += -delta[1] * 10;
+					cam.update();					
+					pos = npos;
+				}
+			});
+		}
+
+		function initialize() {
+			jsg.clearColor(0.1, 0.1, 0.2, 1.0);
+			jsg.clearDepth(100.0);
+			jsg.enableDepthTest();
+			jsg.depthFunc(jsg.gl.LEQUAL);
+			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
+		}
+		
+		function display() {
+			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
+			jsg.run();
+		}
+
+		function installLights(){
+			scene.lights.clear();
+			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([0.0, 50.0, 0.0], [1.0, 1.0, 1.0, 1.0], [0.5, 0.5, 0.5, 1.0]);
+			scene.addLight(pos0);			
+			scene.updateLights();
+		}
+	</script>
+</head>
+<body onload="init();">
+	<canvas id="scenecanvas" width="800" height="600" style="border: 1px dotted"></canvas>
+	<div id="display"></div>
+</body>
+</html>
+

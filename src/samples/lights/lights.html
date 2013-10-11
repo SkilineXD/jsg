@@ -36,6 +36,9 @@
 			
 			cam = scene.getActiveCamera();
 			
+			cam.position[2] += 12;
+			cam.update();
+			
 			installLights();			
 
 			jsg.addScene(scene);

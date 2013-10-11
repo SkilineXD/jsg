@@ -30,8 +30,7 @@
 			shader  = jsggl.Shader;
 			jsg.shader = new shader(jsg);
 			scene = new jsggl.Scene("Default", jsg);
-
-	
+			
 			jsggl.Material.loadFromJSON(jsg, cubomagicomtl);
 			jsggl.Material.loadFromJSON(jsg, spheremtl);
 			
@@ -53,6 +52,8 @@
 			scene.setActiveCamera("orbiting");
 			
 			cam = scene.getActiveCamera();
+			cam.position[2] += 15;
+			cam.update();
 			
 			installLights();			
 

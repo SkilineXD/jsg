@@ -1,63 +1,23 @@
 <!--
-This file contains code to demonstrate physics simulation implemented in JSG library.
+Test interpolation method in jsgwebgl_math.html.
 Author: Gilzamir F. Gomes.
-Publication Date: 25 de julho de 2013.
+Publication Date: 10/10/2013.
 -->
 <!DOCTYPE html>
 <html>
 <head>
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="../api/gl-matrix.js"></script>
-	<script type="text/javascript" src="../api/cannon.js"></script>
-	<script type="text/javascript" src="../samples/resources/cubo.js"></script>
-	<script type="text/javascript" src="../samples/resources/wall.js"></script>
+	<script type="text/javascript" src="resources/test3_jsgwebgl_math/braco1.js"></script>
+	<script type="text/javascript" src="resources/test3_jsgwebgl_math/braco2.js"></script>
+	<script type="text/javascript" src="resources/test3_jsgwebgl_math/braco3.js"></script>
 	<script type="text/javascript" src="../api/jquery.js"></script>
-	<script type="text/javascript" src="../api/jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="../api/jsggl_interaction.js"></script>
-	<script type="text/javascript" src="../api/jsg_collections.js"></script>
-	<script type="text/javascript" src="../api/jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="../api/jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="../api/jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="../api/jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="../api/jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="../api/jsgwebgl.js"></script>
-	<script type="text/javascript" src="../api/jsgutils.js"></script>
+	<script type="text/javascript" src="../dist/jsg3d.js"></script>
 	<script type="text/javascript">
-		var jsg, scene, shader, objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam, world, cubo, mass, shape;
+		var jsg, scene, shader, objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam, cubo1, cubo2, cubo3, cubo, cubogeo, shape, t = 0.0;
 		
-		function initCannon() {
-          world = new CANNON.World();
-          world.gravity.set(0,0,0);
-          world.broadphase = new CANNON.NaiveBroadphase();
-          world.solver.iterations = 10;
-          
-          shape = new CANNON.Box(new CANNON.Vec3(1,1,1));
-          mass = 1;
-          body = new CANNON.RigidBody(mass,shape);
-          body.angularVelocity.set(0,1.0,0);
-          body.angularDamping = 0.01;
-          world.add(body);
-		}
-		
-		function updatePhysics() {  
-          // Step the physics world
-          world.step(1/60);
-
-		  var p = {"x": 0.0, "y": 0.0, "z": 0.0};
-		  var q = {"x":0.0, "y": 0.0, "z": 0.0, "w": 0.0};
-		  
-          // Copy coordinates from Cannon.js to Three.js
-          body.position.copy(p);
-          body.quaternion.copy(q);
-		  cubo.setPosition([p.x, p.y, p.z]);
-		  cubo.rotate(q.w, [q.x, q.y, q.z]);
-      }
 		
 		function init() {
-		
-			initCannon();
-		
-		
 			//JSG object point to canvas with ID 'scenecanvas'
 			jsg = new jsggl.JsgGl("scenecanvas");
 
@@ -65,23 +25,36 @@ Publication Date: 25 de julho de 2013.
 			scene = new jsggl.Scene("Default", jsg);
 			
 			//It creates projection object to camera visualization
-			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			var proj = jsggl.Projection.newPerspective(90 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
 			
 			//It creates two new cameras
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
 			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
-			scene.setActiveCamera("orbiting"); //It defines active camera
+			scene.setActiveCamera("tracking"); //It defines active camera
 			cam = scene.getActiveCamera(); //It gets active camera reference to future camera manipulation
+			cam.position[2] += 6;
+			cam.update();
 			
 			//It creates new object sphere of JSON geometry description object named Sphere. 
-			cubo = jsggl.Object.loadFromJSON(Cubo, "object", 0);
-			jsggl.Material.loadFromJSON(jsg, Cubomtl); //Load sphere  materials in JSON format
+			cubo1 = jsggl.Object.loadFromJSON(jsg, braco1, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, braco1mtl); //Load sphere  materials in JSON format
 			
-			//It does center of object sphere to geometry center
-			cubo.centerToGeometry(); 
-			//It adds sphere object to scene...
+			//It creates new object sphere of JSON geometry description object named Sphere. 
+			cubo2 = jsggl.Object.loadFromJSON(jsg, braco2, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, braco2mtl); //Load sphere  materials in JSON format
+			
+			
+			cubo3 = jsggl.Object.loadFromJSON(jsg, braco3, "object", 0);
+			jsggl.Material.loadFromJSON(jsg, braco3mtl);
+
+			cubo  = new jsggl.Object(jsg, "Cube");
+			cubo.drawType = jsg.DYNAMIC_DRAW;
+			cubogeo = jsggl.Drawable.loadFromJSON(jsg, braco1, 0);
+			cubogeo.drawType = jsg.DYNAMIC_DRAW;
+			cubogeo.name = "Cube";
+			cubo.addGroup(cubogeo);
 			scene.addObject(cubo);
-		
+			
 			installLights(); //It configures lights 
 			jsg.addScene(scene); //It add scene object to JSG system
 			jsg.setActiveScene(scene.name); //It define active scene
@@ -109,26 +82,26 @@ Publication Date: 25 de julho de 2013.
 			$("#scenecanvas").mouseleave(function(evt){
 				pos = null;
 			});
-
-			
+			var r = [cubo1.group.get("Cube1"), cubo2.group.get("Cube2"), cubo3.group.get("Cube3")];
 			$(document).keyup(function(evt){
-				//alert(evt.which);
 				switch(evt.which){
 					case 87://W
-						sphere2.phy.userForce[1] = 0.0;
-						sphere2.phy.updateForceChange(1);
 						break;
 					case 83: //S
-						sphere2.phy.userForce[1] = 0.0;
-						sphere2.phy.updateForceChange(1);
 						break;
 					case 68://D
-						sphere2.phy.userForce[0] = 0.0;
-						sphere2.phy.updateForceChange(0);
+						t += 0.1;
+						cubogeo = jsggl.interpolate.linearStepN(r, t);
+						cubogeo.name = "Cube";
+						cubogeo.renderingmode = jsg.TRIANGLES;
+						cubo.addGroup(cubogeo);
 						break;
 					case 65://A
-						sphere2.phy.userForce[0] = 0.0;
-						sphere2.phy.updateForceChange(0);
+						t -= 0.1;
+						cubogeo = jsggl.interpolate.linearStepN(r, t); 
+						cubogeo.name = "Cube";
+						cubogeo.renderingmode = jsg.TRIANGLES;
+						cubo.addGroup(cubogeo);
 						break;
 					case 38:
 						z = 1;
@@ -147,16 +120,12 @@ Publication Date: 25 de julho de 2013.
 				//alert(evt.which);
 				switch(evt.which){
 					case 87://W
-						sphere2.phy.userForce[1] += 0.1;
 						break;
 					case 83: //S
-						sphere2.phy.userForce[1] -= 0.1;
 						break;
 					case 68://D
-						sphere2.phy.userForce[0] += 0.1;
 						break;
 					case 65://A
-						sphere2.phy.userForce[0] -= 0.1;
 						break;
 					case 38:
 						z = 1;
@@ -199,13 +168,12 @@ Publication Date: 25 de julho de 2013.
 		
 		function display() {
 			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
-			updatePhysics();
 			jsg.run();
 		}
 
 		function installLights(){
 			scene.lights.clear();
-			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([0.0, 50.0, 0.0], [1.0, 0.0, 0.0, 1.0], [0.5, 0.5, 0.5, 1.0]);
+			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([0.0, 50.0, 0.0], [1.0, 1.0, 1.0, 1.0], [0.5, 0.5, 0.5, 1.0]);
 			scene.addLight(pos0);			
 			scene.updateLights();
 		}

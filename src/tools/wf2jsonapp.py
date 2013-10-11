@@ -20,16 +20,18 @@ for i in range(3, n):
 	params = option.split('=')
 	options[params[0]] = params[1]
 	
-if (not path.endswith(os.sep)):
-		path = path + os.sep	
-
 if "modelType" in options.keys():
 	model.type = options["modelType"]
-		
-model = wavefront2json2.makeModelDescription(path+name+".obj", name, options)
+
+dirname = os.path.dirname(path)
+
+if (not dirname.endswith(os.sep)):
+		dirname = dirname + os.sep	
+	
+model = wavefront2json2.makeModelDescription(path, name, options)
 model.type = mtype
 model.generateJSON()
 
-model2 = wavefront2json1.makeModelDescription(path+model.mtllib, name + "mtl")
+model2 = wavefront2json1.makeModelDescription(dirname+model.mtllib, name + "mtl")
 if (model2):
 	model2.generateJSON()
