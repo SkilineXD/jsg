@@ -6,15 +6,7 @@
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
 	<script type="text/javascript" src="../resources/wall.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
-	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
-	<script type="text/javascript" src="../../api/jsgutils.js"></script>
+	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
 	<script type="text/javascript">
 		var jsg, scene, shader, shininess=100, SPHERE_QTD = 300; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		
@@ -29,8 +21,8 @@
 			jsg.shader = new shader(jsg);
 			scene = new jsggl.Scene("Default", jsg);
 			
-			jsggl.Material.loadFromJSON(jsg, Planmtl);
-			var wall0 = new jsggl.Object.loadFromJSON(Plan, "object");
+			jsggl.Material.loadFromJSON(jsg, wallmtl);
+			var wall0 = new jsggl.Object.loadFromJSON(jsg, wall, "object");
 			wall0.translate([0.0, 1.0, -30.0]);
 			wall0.scale([8.0, 8.0, 1.0]);
 			wall0.rotate(90 * Math.PI/180, [1.0, 0.0, 0.0]);
@@ -43,6 +35,9 @@
 			scene.setActiveCamera("orbiting");
 			
 			cam = scene.getActiveCamera();
+			
+			cam.position[2] += 12;
+			cam.update();
 			
 			installLights();			
 

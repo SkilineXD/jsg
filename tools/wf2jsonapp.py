@@ -1,24 +1,37 @@
 #!/usr/bin/python
 import wavefront2json1
 import wavefront2json2
-import sys
+import sys, os, glob
 
-path = "default.obj"
+path = ""
 name = "default"
 mtype = "object"
+useMaterialGroup = False
+options = {}
 
 n = len(sys.argv)
-if (n >= 2):
+if (n >= 3):
 	path = sys.argv[1]
-if (n >=3):
 	name = sys.argv[2]
-if (n >=4):
-	mtype = sys.argv[3]
+else:
+	print("Error: invalid argument list.")
+for i in range(3, n):
+	option = sys.argv[i]
+	params = option.split('=')
+	options[params[0]] = params[1]
+	
+if "modelType" in options.keys():
+	model.type = options["modelType"]
 
-model = wavefront2json2.makeModelDescription(path, name)
+dirname = os.path.dirname(path)
+
+if (not dirname.endswith(os.sep)):
+		dirname = dirname + os.sep	
+	
+model = wavefront2json2.makeModelDescription(path, name, options)
 model.type = mtype
 model.generateJSON()
 
-model2 = wavefront2json1.makeModelDescription(model.mtllib, name + "mtl")
+model2 = wavefront2json1.makeModelDescription(dirname+model.mtllib, name + "mtl")
 if (model2):
 	model2.generateJSON()

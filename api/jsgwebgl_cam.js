@@ -1,6 +1,5 @@
 var jsggl = jsggl || {};
 
-
 jsggl.Projection = function(type){
 	this.type = type;
 	if (type == jsggl.Projection.type.PERSPECTIVE) {
@@ -51,16 +50,16 @@ jsggl.Projection.type.PERSPECTIVE = 0;
 jsggl.Projection.type.ORTOGRAPHIC = 1;
 
 jsggl.Camera = function(name, type, projection){
-	this.type = type;
+	this.type = (type != undefined && type != null) ? type : jsggl.Camera.TRACKING;
 	this.name = name;
-	this.projection = projection || new jsggl.Projection(jsggl.Projection.type.PERSPECTIVE);
+	this.projection = projection || new jsggl.Projection(jsggl.Projection.type.ORTOGRAPHIC);
 
 	var self = this;
 	this.reset = function() {
 		self.position = vec4.create();
-		self.position[2] = 10.0;
-		self.position[1] = 1.0;
-		self.position[0] = 0.0;
+		self.position[2] = 0.01;
+		self.position[1] = 0.01;
+		self.position[0] = 0.01;
 		self.azimute = 0.0;
 		self.elevation = 0.0;
 		self.roll = 0.0;

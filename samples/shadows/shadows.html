@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
-	<script type="text/javascript" src="../resources/cubo.js"></script>
+	<script type="text/javascript" src="../resources/cube.js"></script>
 	<script type="text/javascript" src="../resources/wall.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
 	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
@@ -31,23 +31,23 @@
 			jsg.shader = new jsggl.Shader(jsg);
 			scene = new jsggl.Scene("Default", jsg);
 
-			jsggl.Material.loadFromJSON(jsg, Cubomtl);
-			jsggl.Material.loadFromJSON(jsg, Planmtl);
+			jsggl.Material.loadFromJSON(jsg, cubemtl);
+			jsggl.Material.loadFromJSON(jsg, wallmtl);
 
-			var plan = jsggl.Object.loadFromJSON(Plan, "object");
+			var plan = jsggl.Object.loadFromJSON(jsg, wall, "object");
 			plan.scale([1.2, 0.09, 1.2]);
 			plan.shadowEnabled = false;
 			plan.receiveShadow = true;
 			scene.addObject(plan);
 			
-			var cube = jsggl.Object.loadFromJSON(Cubo, "object");
-			cube.scale([0.5, 0.5, 0.5]);
-			cube.shadowEnabled = true;
-			cube.receiveShadow = true;
-			cube.setPosition([0.0, 2.0, 0.0]);			
-			scene.addObject(cube);
+			var cube3d = jsggl.Object.loadFromJSON(jsg, cube, "object");
+			cube3d.scale([0.5, 0.5, 0.5]);
+			cube3d.shadowEnabled = true;
+			cube3d.receiveShadow = true;
+			cube3d.setPosition([0.0, 2.0, 0.0]);			
+			scene.addObject(cube3d);
 
-			var cube2 = jsggl.Object.loadFromJSON(Cubo, "object");
+			var cube2 = jsggl.Object.loadFromJSON(jsg, cube, "object");
 			cube2.name = "cube2";
 			cube2.scale([0.5, 0.5, 0.5]);
 			cube2.shadowEnabled = true;
@@ -65,7 +65,7 @@
 
 			cam = scene.getActiveCamera();
 			cam.position[1] += 6;
-			cam.position[2] += 4;
+			cam.position[2] += 20;
 			cam.update();
 			installLights();			
 

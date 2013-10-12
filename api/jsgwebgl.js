@@ -38,6 +38,7 @@ jsggl.JsgGl = function(id){
 	//BEGIN: state attributes
 	this.id = id;
 	this.materials = {};
+	this.materials["Material"] =  { "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1};
 	this.scenes = new jsgcol.ArrayMap();
 	this.activeScene = null;
 	this.currentScene = null;
@@ -81,6 +82,8 @@ jsggl.JsgGl = function(id){
 	this.TRIANGLE_STRIP = this.gl.TRIANGLE_STRIP;
 	this.TRIANGLES = this.gl.TRIANGLES;
 	this.POINTS = this.gl.POINTS;
+	this.STATIC_DRAW = this.gl.STATIC_DRAW;
+	this.DYNAMIC_DRAW = this.gl.DYNAMIC_DRAW;
 	//END: WEBGL CONTEXT SHORTCUTS
 	this.beforeDraw = function(){};
 	this.afterDraw = function(){};
@@ -257,182 +260,7 @@ jsggl.JsgGl.prototype = {
 	}
 }
 
-jsggl.Drawable = function(name, globj){	
-	this.vertices = [];
-	this.indices = [];
-	this.textures = [];
-	this.name = name;
-	this.vboName = "";
-	this.idoName = "";
-	this.showFrontFace = true;
-	this.showBackFace = true;
-	this.showOneTine = true;
-	this.gl = globj.gl;
-	this.jsg = globj;
-	this.vertexBuffer = undefined;
-	this.indexBuffer = undefined;
-	this.normalsBuffer = undefined;
-	this.texBuffer = undefined;
-	this.renderingmode = this.gl.LINES;
-	this.groupNameList = []
-	this.material = undefined;
-    this.textureRendering = function(){
-        this.build = function(){};
-        this.bind = function(){};
-        this.unbind = function(){};
-    };
-    this.shadowEnabled = false;
-	this.receiveShadow = false;
-	var self = this;
-}
-
-jsggl.Drawable.prototype = {
-	build: function() {
-		if (this.built) return;
-		this.built = true;
-		this.vertexBuffer = [];
-		this.texBuffer = [];
-		for (var i = 0; i < this.vertices.length; i++){
-			var vBuffer = this.gl.createBuffer();
-			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vBuffer);
-			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.vertices[i]), this.gl.STATIC_DRAW);
-			this.vertexBuffer.push(vBuffer)
-			
-			if (this.textures) {
-				if (this.textures.length > 0 && this.textures[0] && this.textures[0][0] != -2) {
-					var tBuffer = this.gl.createBuffer();
-					this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tBuffer); 
-					this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(this.textures[i]), this.gl.STATIC_DRAW);
-					this.texBuffer.push(tBuffer);
-				} else {
-					this.texBuffer.push(undefined);
-				}
-			}
-		}
-
-		this.indexBuffer = [];
-		this.normalsBuffer = [];
-		for (var i = 0; i < this.indices.length; i++) {
-			var iBuffer  = this.gl.createBuffer();
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices[i]), this.gl.STATIC_DRAW);
-			var normals = jsgutils.calcNormals(this.vertices[i], this.indices[i]);
-		
-   			var nBuffer = this.gl.createBuffer();
-			this.indexBuffer.push(iBuffer);
-			this.normalsBuffer.push(nBuffer);
-    		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
-    		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normals), this.gl.STATIC_DRAW);
-		}
-
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER,null);
-	},
-	
-	setRenderingMode: function(rm) {
-		this.renderingmode = rm;
-	},
-
-	getRenderingMode: function() {
-		return this.renderingmode;
-	},
-
-	draw : function() {
-        var prg = this.jsg.program;
-		this.jsg.beforeDraw();
-		var mvMatrix = this.jsg.getModelView();
-		var stbkp = this.jsg.shaderType;
-		var nMatrix = mat4.create();
-		mat4.transpose(nMatrix, mvMatrix);
-		
-		this.jsg.normalMatrix = nMatrix;
-	
-		if (this.material) {
-			var material = this.material;
-			this.jsg.materialColor = material.diffuse;
-		}
-		
-		for (var i = 0; i < this.indexBuffer.length; i++) {
-			var group = this.groupNameList[i]
-					
-			if (!this.material) {
-				var material = this.jsg.materials[group];
-				if (!material) { 
-					material = {};
-					material.diffuse = [1.0, 1.0, 1.0, 1.0];
-					material.ambient = [0.001, 0.001, 0.001, 1.0];
-					material.specular = [0.0, 0.0, 0.0, 1.0];
-					material.shininess = 1.0;
-					material.shaderType = 1;
-				}
-				this.jsg.materialColor = material.diffuse;
-				this.jsg.ambientColor = material.ambient;
-				this.jsg.specularColor = material.specular;
-				this.jsg.shininess = material.shininess;
-			} 
 
 
-			if (this.jsg.shaderType != 3){
-				this.jsg.shaderType = material.shaderType || -1;
-			}
 
-			if ( (this.receiveShadow) && this.jsg.shaderType != 3) { //3 = make depth map
-				this.jsg.shaderType =  material.shaderType + 3; //gouroud or phong shading
-			} 
-			this.jsg.currentVertexPosition = this.vertexBuffer[i];
-			this.jsg.currentVertexNormal = this.normalsBuffer[i];
-			this.jsg.currentTexPosition = this.texBuffer[i];
-			this.jsg.useTextureKa = material.useTextureKa;
-			this.jsg.useTextureKd = material.useTextureKd;
-            
-			if (material.textureka && this.texBuffer[i]) {
-				this.jsg.texSamplerKa = material.textureka.number;
-				var tex = material.textureka;
-				tex.active();
-			}
-			if (material.texturekd && this.texBuffer[i]) {
-				this.jsg.texSamplerKd = material.texturekd.number;
-				var tex = material.texturekd;
-				tex.active();
-			}
-			this.jsg.shader.setLocalValues();				
-			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer[i]);
-			this.simpleDraw(i);
-            this.jsg.shaderType = stbkp;
-		}
-		this.currentVertexPosition = null;
-		this.currentVertexNormal = null;
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
-    	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-		this.jsg.afterDraw();
-	},
-
-	simpleDraw: function(i) {
-			if (this.showOneTime){
-				this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
-			} else {
-				if (this.showBackFace) {
-					this.gl.cullFace(this.gl.FRONT);
-					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
-				}
-				if (this.showFrontFace) {
-					this.gl.cullFace(this.gl.BACK);
-					this.gl.drawElements(this.getRenderingMode(), this.indices[i].length, this.gl.UNSIGNED_SHORT, 0);
-				}
-			}
-	},
-	
-	delete: function(){
-		for (var i = 0; i < this.indexBuffer.length; i++){
-			this.gl.deleteBuffer(this.indedexBuffer[i]);
-			this.gl.deleteBuffer(this.vertexBuffer[i]);
-			if (this.normalsBuffer && this.normalsBuffer[i]){
-				this.gl.deleteBuffer(this.normalsBuffer[i]);
-			}
-		}
-		this.indexBuffer = null;
-		this.vertexBuffer = null;
-		this.normalsBuffer = null;
-	}			
-}
 

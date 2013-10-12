@@ -9,7 +9,6 @@ jsggl.Material = function(name, matAmb, matDiffuse, matSpecular, shininess) {
     this.shaderType = 1;
 }
 
-
 jsggl.Material.newMaterial = function(name, ambient, diffuse, specular, s, t, o) {
  	return {"name":name, "ambient":ambient, "diffuse":diffuse, "specular":specular || [0.0, 0.0, 0.0, 1.0], "shininess":s || 100.0, "transparence":t || 1.0, "opticalDensity":o || 1.0, "shaderType": 1};
 }
@@ -67,6 +66,10 @@ jsggl.Texture = function(jsg, texpath) {
 		var jsg = this.jsg;
 		jsg.gl.activeTexture(jsg.gl.TEXTURE0+self.number);
 		jsg.gl.bindTexture(jsg.gl.TEXTURE_2D, self.texture);
+	}
+	
+	this.desactive = function() {
+		jsg.gl.bindTexture(jsg.gl.TEXTURE_2D, null);		
 	}
 
 	this.delete = function(){

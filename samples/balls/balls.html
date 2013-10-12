@@ -6,15 +6,7 @@
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
 	<script type="text/javascript" src="../resources/sphere.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
-	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
-	<script type="text/javascript" src="../../api/jsgutils.js"></script>  
+	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
 	<script type="text/javascript">
 		var jsg, scene, shader, shaders, shininess=100, SPHERE_QTD = 100; objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		function init() {
@@ -32,25 +24,24 @@
 				return [6 * Math.random() - 3, 6 * Math.random() - 3, 6 * Math.random() - 3];
 			}
 
-			jsggl.Material.loadFromJSON(jsg, Spheremtl);
-			var sphere0 = new jsggl.Object.loadFromJSON(Sphere, "object");
+			jsggl.Material.loadFromJSON(jsg, spheremtl);
+			var sphere0 = jsggl.Object.loadFromJSON(jsg, sphere, "object");
 			sphere0.name = "sphere0";
 			sphere0.scale([0.5, 0.5, 0.5]);
 			scene.addObject(sphere0);
 			for (var j = 1; j < SPHERE_QTD; j++) {			
-				var sphere = sphere0.linkDataCopy("sphere" + j);
+				var csphere = sphere0.linkDataCopy(jsg, "sphere" + j);
 				var pos = randomPosition();
-				sphere.setPosition(pos);
-				sphere.scale([0.5, 0.5, 0.5]);
-				sphere.material = jsggl.Material.newMaterial("sphere", [0.0, 0.0, 0.0, 1.0], [Math.random(), Math.random(), Math.random(), 1.0]);
-				scene.addObject(sphere);
-				sphere
+				csphere.setPosition(pos);
+				csphere.scale([0.5, 0.5, 0.5]);
+				csphere.setMaterial(jsggl.Material.newMaterial("sphere" + j, [0.0, 0.0, 0.0, 0.0], [Math.random(), Math.random(), Math.random(), 1.0]));
+				scene.addObject(csphere);
 			}
 			
 			var floor = jsggl.builtin.getFloor(jsg, 50, 50);
 			scene.addObject(floor);
 			
-			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			var proj = jsggl.Projection.newPerspective(45 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
 			//var proj = jsggl.Projection.newOrtographic(-1.0, 1.0, -1.0, 1.0, 0.001, 10000);
 
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
@@ -58,7 +49,9 @@
 			scene.setActiveCamera("orbiting");
 			
 			cam = scene.getActiveCamera();
-			
+			cam.position[1] += 30;
+			cam.position[2] += 90;
+			cam.update();
 			installLights();			
 
 			jsg.addScene(scene);

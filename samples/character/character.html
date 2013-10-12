@@ -10,19 +10,11 @@ Publication Date: 10 de julho de 2013.
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
 	<script type="text/javascript" src="../resources/wall.js"></script>
-	<script type="text/javascript" src="jimmy.js"></script>
+	<script type="text/javascript" src="../resources/Jimmy.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
 	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
-	<script type="text/javascript" src="../../api/jsggl_interaction.js"></script>
-	<script type="text/javascript" src="../../api/jsg_collections.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_shader.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_light.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_material.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_cam.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_scene.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_extras.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl.js"></script>
-	<script type="text/javascript" src="../../api/jsgutils.js"></script>
+	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
+	
 	<script type="text/javascript">
 		var jsg, scene, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
 		function init() {
@@ -39,39 +31,41 @@ Publication Date: 10 de julho de 2013.
 			scene.shadowEnabled = true;
 			cam = scene.getActiveCamera();
 			
-			var plan = jsggl.Object.loadFromJSON(Plan, "object");
+			
+			cam.position[1] += 3;
+			cam.position[2] += 7;
+			cam.update();
+			
+			var plan = jsggl.Object.loadFromJSON(jsg, wall, "object");
 			plan.scale([4.2, 1.0, 2.2]);
 			plan.translate([0.0, -0.16, 0.0]);
 			plan.shadowEnabled = false;
 			plan.receiveShadow = true;
 			scene.addObject(plan);
+			jsggl.Material.loadFromJSON(jsg, wallmtl);
 			
+
+			var olist = [Jimmy];
+			var mlist = [Jimmymtl];	
 			
-			var olist = [jimmy];
-			var mlist = [jimmymtl];	
-	
 			for (var j = 0; j < olist.length; j++) {			
 				var objson = olist[j];
 				var objsonmtl = mlist[j];
 				jsggl.Material.loadFromJSON(jsg, objsonmtl);
-
 				if (objson.type == "group"){
-					var newObj = jsggl.Object.loadFromJSON(objson, "group", "default");
+					var newObj = jsggl.Object.loadFromJSON(jsg, objson, "group", {}, "default");
 					newObj.shadowEnabled = true;
-					newObj.receiveShadow = true;
+					newObj.receiveShadow = false;
 					scene.addObject(newObj);
 				} else {
 					for (var i = 0; i < objson.objectList.length; i++) {
-						var newObj = jsggl.Object.loadFromJSON(objson, "object", i);
+						var newObj = jsggl.Object.loadFromJSON(jsg, objson, "object",{}, i);
 						newObj.shadowEnabled = true;
-						newObj.receiveShadow = true;
+						newObj.receiveShadow = false;
 						scene.addObject(newObj);
 					}
 				}
 			}
-			
-			
-
 			scene.shadowEnabled = true;
 			
 			installLights();
