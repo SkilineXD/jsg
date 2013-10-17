@@ -1,89 +1,82 @@
 <!--
-This file implements JSG (JavaScript for Graphics) application for demonstration propose.
+This file contains code to demonstrate physics simulation implemented in JSG library.
 Author: Gilzamir F. Gomes.
-Publication Date: 10 de julho de 2013.
+Publication Date: 25 de julho de 2013.
 -->
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="UTF-8">
 	<title>JSGWEBGL - A GRAPHICAL LIBRARY FOR JAVASCRIPT DEVELOPERS</title>
 	<script type="text/javascript" src="../../api/gl-matrix.js"></script>
-	<script type="text/javascript" src="../resources/city.js"></script>
+	<script type="text/javascript" src="runnerf1.js"></script>
+	<script type="text/javascript" src="runnerf2.js"></script>
+	<script type="text/javascript" src="runnerf3.js"></script>
 	<script type="text/javascript" src="../../api/jquery.js"></script>
-	<script type="text/javascript" src="../../api/jsgwebgl_obj.js"></script>
 	<script type="text/javascript" src="../../dist/jsg3d.js"></script>
-	
 	<script type="text/javascript">
-		var jsg, scene, objpos = [0, 0, 0], objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam;
+		var jsg, scene, shader, objdir = -1, pos = null, z = 0, az = 0, el = 0, roll = 0, cam, cubo1, cubo2, cubo3, cubo, cubogeo, shape, t = 0.0, cf = 0, framecount = 3;
+		
+		
 		function init() {
-			
+			//JSG object point to canvas with ID 'scenecanvas'
 			jsg = new jsggl.JsgGl("scenecanvas");
-	
-			//BEGIN:CONFIGURE SCENE
+
+			//It creates new scene with identifier 'Default'. This scene points to jsg object
 			scene = new jsggl.Scene("Default", jsg);
 			
-			var proj = jsggl.Projection.newPerspective(45, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			//It creates projection object to camera visualization
+			var proj = jsggl.Projection.newPerspective(45 * Math.PI/180.0, jsg.canvas.width/jsg.canvas.height, 0.001, 10000);
+			
+			//It creates two new cameras
 			scene.cameras["orbiting"] = new jsggl.Camera("orbiting", jsggl.Camera.ORBITING, proj);
 			scene.cameras["tracking"] = new jsggl.Camera("tracking", jsggl.Camera.TRACKING, proj);
-			scene.setActiveCamera("orbiting");
-			//scene.shadowEnabled = true;
-			cam = scene.getActiveCamera();
-			
-			
-			cam.position[1] += 3;
-			cam.position[2] += 7;
+			scene.setActiveCamera("orbiting"); //It defines active camera
+			cam = scene.getActiveCamera(); //It gets active camera reference to future camera manipulation
+			cam.position[2] += 90;
 			cam.update();
 			
+			//It creates new object sphere of JSON geometry description object named Sphere. 
+			cubo1 = jsggl.Object.loadFromJSON(jsg, runnerf1,"group",  {}, "default1");;
+			jsggl.Material.loadFromJSON(jsg, runnerf1mtl); //Load sphere  materials in JSON format
+			
+			//It does center of object sphere to geometry center
+			//cubo1.centerToGeometry(); 
+			//It adds sphere object to scene...
+			//scene.addObject(cubo1);
 
-			var olist = [city];
-			var mlist = [citymtl];	
+			//It creates new object sphere of JSON geometry description object named Sphere. 
+			cubo2 = jsggl.Object.loadFromJSON(jsg, runnerf2, "group", {}, "default2");
+			jsggl.Material.loadFromJSON(jsg, runnerf2mtl); //Load sphere  materials in JSON format
 			
-			for (var j = 0; j < olist.length; j++) {			
-				var objson = olist[j];
-				var objsonmtl = mlist[j];
-				jsggl.Material.loadFromJSON(jsg, objsonmtl);
-				if (objson.type == "group"){
-					var newObj = jsggl.Object.loadFromJSON(jsg, objson, "group", {}, "default");
-					//newObj.shadowEnabled = true;
-					//newObj.receiveShadow = false;
-					scene.addObject(newObj);
-				} else {
-					for (var i = 0; i < objson.objectList.length; i++) {
-						var newObj = jsggl.Object.loadFromJSON(jsg, objson, "object",{}, i);
-						//newObj.shadowEnabled = true;
-						//newObj.receiveShadow = false;
-						scene.addObject(newObj);
-					}
-				}
-			}
-			scene.shadowEnabled = true;
+			//It does center of object sphere to geometry center
+			//cubo2.centerToGeometry(); 
+			//It adds sphere object to scene...
+			//scene.addObject(cubo2);			
 			
-			installLights();
-			jsg.addScene(scene);
-			jsg.setActiveScene(scene.name);
-			//END:CONFIGURE SCENE
+			cubo3 = jsggl.Object.loadFromJSON(jsg, runnerf3, "group", {}, "default3");
+			jsggl.Material.loadFromJSON(jsg, runnerf3mtl);
+
+			cubo  = new jsggl.Object.loadFromJSON(jsg, runnerf1, "group", {}, "default4");
+			cubo.drawType = jsg.DYNAMIC_DRAW;
+			scene.addObject(cubo);
 			
-			//BEGIN: SETUP SHADER	
-			jsg.shader = new jsggl.Shader(jsg);
-			//END: SETUP SHADER
+			installLights(); //It configures lights 
+			jsg.addScene(scene); //It add scene object to JSG system
+			jsg.setActiveScene(scene.name); //It define active scene
 			
-			//BEGIN:ENVIRONMENT BUILDING
-			if (!jsg.build()){
-				alert("Error: " + jsg.compileProgramStatus);			
+
+			jsg.shader = new jsggl.Shader(jsg); //Here is defined shader method
+
+			if (!jsg.build()){ //Here JSG system is built
+				alert("Error: " + jsg.compileProgramStatus); //If configurations error is found...			
 			}			
-			configureEvents();
-			//END: ENVIRONMENT BUILDING
 			
-			//BEGIN:APPLICATION LOOP CONFIGURATION
-			jsg.display = display;
-			jsg.initialize = initialize;
-			jsg.finalize = finalize; 
-			//END:APLICATION LOOP CONFIGURATION
+			configureEvents(); //Here user interactions is defined...
 			
-			//BEGIN:APPLICATION LOOP INICIALIZATION
-			jsg.mainLoop();
-			//END:APPLICATION LOOP INICIALIZATION
+			jsg.display = display; //Here simulation loop is defined...
+			jsg.initialize = initialize; //This method is ran before of first simulation loop iteraction...
+			
+			jsggl.start(jsg); //This method start simulation loop iteractions
 		}
 		
 		function configureEvents() {
@@ -95,19 +88,55 @@ Publication Date: 10 de julho de 2013.
 				pos = null;
 			});
 
-			$(document).keydown(function(evt){
-
+			$(document).keyup(function(evt){
 				switch(evt.which){
+					case 87://W
+						break;
+					case 83: //S
+						break;
+					case 68://D
+						t += 0.1;
+						jsggl.inter.obj.step2(cubo1, cubo2, t, cubo);
+						break;
+					case 65://A
+						t -= 0.1;
+						jsggl.inter.obj.step2(cubo1, cubo2, t, cubo);
+						break;
 					case 38:
 						z = 1;
+						cam.position[2] += z;
+						cam.update();
 						break;
 					case 40:
 						z = -1;
+						cam.position[2] += z;
+						cam.update();
 						break;
 				}	
-
-				cam.position[2] += z;
-				cam.update();
+			});
+			
+			$(document).keydown(function(evt){
+				//alert(evt.which);
+				switch(evt.which){
+					case 87://W
+						break;
+					case 83: //S
+						break;
+					case 68://D
+						break;
+					case 65://A
+						break;
+					case 38:
+						z = 1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+					case 40:
+						z = -1;
+						cam.position[2] += z;
+						cam.update();
+						break;
+				}	
 			});
 
 			$("#scenecanvas").mouseup(function(evt){
@@ -129,64 +158,29 @@ Publication Date: 10 de julho de 2013.
 		}
 
 		function initialize() {
-			jsg.clearColor(0.3, 0.3, 0.3, 1.0);
+			jsg.clearColor(0.1, 0.1, 0.2, 1.0);
 			jsg.clearDepth(100.0);
 			jsg.enableDepthTest();
 			jsg.depthFunc(jsg.gl.LEQUAL);
 			jsg.viewport(0, 0, jsg.canvas.width, jsg.canvas.height);
 		}
 		
-		function calcPositions() {
-			objpos[2] += objdir;
-			scene.objects.get("Sphere").translate([0,0,objdir * 0.2]);
-			scene.objects.get("Cone").translate([objdir * 0.2, 0,0]);
-			if (objpos[2] >= 50 || objpos[2] <= -50) objdir = -objdir;
-		}
-
 		function display() {
 			jsg.clear(jsg.COLOR_BUFFER_BIT | jsg.DEPTH_BUFFER_BIT);
-			//calcPositions();
 			jsg.run();
-		}
-		
-		function finalize() {
-		
 		}
 
 		function installLights(){
 			scene.lights.clear();
-			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([-0.0001, 12.0, 0.0001], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
-			//pos0.shadowEnabled = true;
-			var pos1 = new jsggl.Light("B", jsggl.Light.types.POSITIONAL).build([0.0, 0.0, -2.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
-			
-			var pos2 = new jsggl.Light("C", jsggl.Light.types.POSITIONAL).build([0.0, 0.0, 2.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]);
-			
-			var pos3 = new jsggl.Light("D", jsggl.Light.types.POSITIONAL).build([0.0, -2.0, 0.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 0.0]);
+			var pos0 = new jsggl.Light("A", jsggl.Light.types.POSITIONAL).build([0.0, 50.0, 0.0], [1.0, 1.0, 1.0, 1.0], [0.5, 0.5, 0.5, 1.0]);
 			scene.addLight(pos0);			
-			scene.addLight(pos1);
-			scene.addLight(pos2);
-			scene.addLight(pos3);
 			scene.updateLights();
 		}
-		
-		function selectCameraType(evt){
-			scene.setActiveCamera(evt.value);
-			cam = scene.getActiveCamera();	
-			cam.reset();
-		}
-
 	</script>
 </head>
 <body onload="init();">
-	<div>
-		Utilize as setas para mudar a posi&ccedil;o da c&acirc;mera. Para girar a cena, com o bot&atilde;o esquerdo pressionado, movimente o mouse.
-	</div>
-	<canvas id="scenecanvas" width="680" height="400" style="border: 1px dotted"></canvas>
-	<div>Camera Type</div>
-	<div>
-		<input type="radio" checked="true" onchange="selectCameraType(this);" value="orbiting" name="CameraType">Orbit</input>
-		<input type="radio"   onchange="selectCameraType(this);" value="tracking" name="CameraType">Tracking</input>
-	</div>
+	<canvas id="scenecanvas" width="800" height="600" style="border: 1px dotted"></canvas>
+	<div id="display"></div>
 </body>
 </html>
 

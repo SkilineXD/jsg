@@ -315,48 +315,6 @@ jsggl.Drawable.loadFromJSON = function(jsg, objson, idx) {
 	return obj3d;
 }
 
-jsggl.builtin = jsggl.builtin || {};
-
-jsggl.builtin.getFloor = function(jsg, dim, lines){
-	var inc = 2*dim/lines;
-	var v = [];
-	var i = [];
-	
-	for(var l=0;l<=lines;l++){
-		v[6*l] = -dim; 
-	    v[6*l+1] = 0;
-	    v[6*l+2] = -dim+(l*inc);
-	                        
-	    v[6*l+3] = dim;
-	    v[6*l+4] = 0;
-	    v[6*l+5] = -dim+(l*inc);
-                        
-	    v[6*(lines+1)+6*l] = -dim+(l*inc); 
-	    v[6*(lines+1)+6*l+1] = 0;
-	    v[6*(lines+1)+6*l+2] = -dim;
-                        
-	    v[6*(lines+1)+6*l+3] = -dim+(l*inc);
-	    v[6*(lines+1)+6*l+4] = 0;
-	    v[6*(lines+1)+6*l+5] = dim;
-	                        
-	    i[2*l] = 2*l;
-	    i[2*l+1] = 2*l+1;
-	    i[2*(lines+1)+2*l] = 2*(lines+1)+2*l;
-	    i[2*(lines+1)+2*l+1] = 2*(lines+1)+2*l+1;        
-	}
-	
-	var g = new jsggl.Drawable("floor", jsg);
-	g.setVertices([v]);
-	g.setIndices([i]);
-	g.influenceGroups = [{"name":"floorvertices", "range":[0, -1], "material": "floor"}];
-	
-	var obj  = new jsggl.Object(jsg, "floor");
-	obj.setMaterial({ "name":"floor", "ambient":[0.000000, 0.000000, 0.000000, 1.0], "diffuse":[0.0, 0.0, 0.0, 1.0], "specular":[0.0, 0.0, 0.0, 1.0], "shininess":0, "transparence":1, "opticalDensity":0, "shaderType":-1});
-	obj.addGroup(g);
-
-	return obj;
-}
-
 jsggl.Object = function(jsg, name) {
 	this.name = name;
 	this.showOneTime = true;
@@ -532,13 +490,15 @@ jsggl.Object = function(jsg, name) {
 			g.showFrontFace = this.showFrontFace;
 			g.showBackFace = this.showBackFace;
 			g.showOneTime = this.showOneTime;			
-			var bkp = [g.shadowEnabled, g.receiveShadow];
+			var bkp = [g.shadowEnabled, g.receiveShadow, g.drawType];
 			g.shadowEnabled = this.shadowEnabled;
 			g.receiveShadow = this.receiveShadow;
 			g.forceMaterial = this.material;
+			g.drawType = this.drawType;
 			g.draw();
 			g.shadowEnabled = bkp[0];
 			g.receiveShadow = bkp[1];
+			g.drawType = bkp[2];
 		}
 		jsg.popModelView();
 	}
@@ -549,6 +509,7 @@ jsggl.Object.loadFromJSON = function(jsg, objson, type, params, ID) {
 	if (!type) type = "object";
 	if (type == "group") {
 		var obj = new jsggl.Object(jsg, ID || "default");
+		obj.name = ID;
 		for (var i = 0; i < objson.objectList.length; i++) {
 			var obj3d = jsggl.Drawable.loadFromJSON(jsg, objson, i);
 			obj.addGroup(obj3d);
@@ -564,3 +525,4 @@ jsggl.Object.loadFromJSON = function(jsg, objson, type, params, ID) {
 		return obj;
 	}
 }
+

@@ -2,12 +2,14 @@ var jsggl = jsggl || {};
 
 jsggl.interpolate = jsggl.interpolate || {};
 
-jsggl.interpolate.LINEAR = function(v1, v2, t) {
+jsggl.inter = jsggl.interpolate; //alias to jsggl.interpolate namespace.
+
+jsggl.inter.LINEAR = function(v1, v2, t) {
 	return vec3.fromValues((1-t) * v1[0] + t * v2[0], (1-t) * v1[1] + t * v2[1], (1-t) * v1[2] + t * v2[2]);  
 }
 
-jsggl.interpolate.step2 = function(d1, d2, t, target, method){
-	method = method || jsggl.interpolate.LINEAR;
+jsggl.inter.step2 = function(d1, d2, t, target, method){
+	method = method || jsggl.inter.LINEAR;
 	var d3 = target || new jsggl.Drawable(d1.name+"_"+t, d1.jsg);
 	if (!d1.built) d1.build();
 	if (!target) {
@@ -36,7 +38,7 @@ jsggl.interpolate.step2 = function(d1, d2, t, target, method){
 		for (var k = 0; k < d3.vertices.length; k++) {
 			d3.updateVertices(k);
 		}
-	} else {
+	} else { 
 		d3.delete();
 		d3.build();
 	}
@@ -59,5 +61,18 @@ jsggl.interpolate.linearStepN = function(r, t, target){
 	return jsggl.interpolate.step2(r[i], r[i+1], t, target); 
 }
 
+jsggl.inter.obj = jsggl.inter.obj || {};
 
+jsggl.inter.obj.step2 = function(o1, o2, t, target){ 
+	var n = o1.group.data.length;
+	for (var j = 0; j < n; j++) {
+		var group1 = o1.group.data[j];
+		var group2 = o2.group.data[j];
+		if (group1 && group2) {
+			var targ = target.group.data[j];
+			targ = jsggl.inter.step2(group1, group2, t, targ);
+		}
+	}
+	return target;
+}
 
